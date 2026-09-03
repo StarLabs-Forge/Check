@@ -1,16 +1,558 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CHECK</title>
-    <link rel="stylesheet" href="css/styles.css" />
-  </head>
-  <body>
-    <main>
-      <h1>CHECK</h1>
-      <p>Sitio web. Reemplaza este contenido con la página HTML, CSS y JavaScript.</p>
-    </main>
-    <script src="js/main.js"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHECK — La puerta digital de tu local | La Paz, Bolivia</title>
+    
+    <!-- Google Fonts Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- 1. Header / Nav -->
+    <header class="header">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <img src="logo horizontal.png" alt="CHECK — Control total de tus eventos" class="logo-image logo-header-image">
+            </a>
+            <ul class="nav-links">
+                <li><a href="#nosotros" class="nav-link">Nosotros</a></li>
+                <li><a href="#como-funciona" class="nav-link">Cómo funciona</a></li>
+                <li><a href="#modulos" class="nav-link">Módulos</a></li>
+                <li><a href="#planes" class="nav-link">Planes</a></li>
+                <li><a href="#contacto" class="nav-link">Contacto</a></li>
+            </ul>
+            <a href="#contacto" class="btn btn-primary">Solicitar demo</a>
+        </div>
+    </header>
+
+    <!-- 2. Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="reveal">
+                    <div class="kicker">PILOTO ACTIVO EN LA PAZ</div>
+                    <h1 class="hero-title">La puerta digital de <span>tu local.</span></h1>
+                    <p class="hero-subtitle">Reemplaza lista de papel y conteo a mano por QR escaneado en segundos, con estado en tiempo real desde la puerta hasta el dashboard.</p>
+                    <div class="hero-actions">
+                        <a href="#contacto" class="btn btn-primary">Solicitar demo</a>
+                        <a href="#como-funciona" class="btn btn-outline">Ver cómo funciona</a>
+                    </div>
+                    <div class="metrics-bar">
+                        <span>&lt; 1s por escaneo</span>
+                        <span class="dot">•</span>
+                        <span>3 estados en puerta</span>
+                        <span class="dot">•</span>
+                        <span>100% trazabilidad</span>
+                    </div>
+                </div>
+
+                <!-- Dispositivo de puerta (Elemento Distintivo) -->
+                <div class="device-wrapper reveal">
+                    <div class="device-container" id="doorDevice">
+                        <div class="device-header">
+                            <div class="device-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                PUERTA PRINCIPAL
+                            </div>
+                            <div class="font-mono" id="liveClock">23:14:02</div>
+                        </div>
+
+                        <div class="qr-stage">
+                            <div class="scan-beam"></div>
+                            <div class="qr-ring" id="qrRing">
+                                <div class="qr-inner">
+                                    <div class="qr-svg-wrap">
+                                        <!-- Clean SVG QR Graphic -->
+                                        <svg width="90" height="90" viewBox="0 0 100 100" fill="none">
+                                            <rect width="100" height="100" fill="#0B0E14"/>
+                                            <!-- Corner anchors -->
+                                            <rect x="10" y="10" width="25" height="25" fill="#F5F6FA"/>
+                                            <rect x="15" y="15" width="15" height="15" fill="#0B0E14"/>
+                                            <rect x="18" y="18" width="9" height="9" fill="#F5F6FA"/>
+                                            
+                                            <rect x="65" y="10" width="25" height="25" fill="#F5F6FA"/>
+                                            <rect x="70" y="15" width="15" height="15" fill="#0B0E14"/>
+                                            <rect x="73" y="18" width="9" height="9" fill="#F5F6FA"/>
+
+                                            <rect x="10" y="65" width="25" height="25" fill="#F5F6FA"/>
+                                            <rect x="15" y="70" width="15" height="15" fill="#0B0E14"/>
+                                            <rect x="18" y="73" width="9" height="9" fill="#F5F6FA"/>
+
+                                            <!-- Data Pattern -->
+                                            <rect x="42" y="12" width="7" height="7" fill="#F5F6FA"/>
+                                            <rect x="52" y="20" width="7" height="7" fill="#F5F6FA"/>
+                                            <rect x="12" y="42" width="7" height="7" fill="#F5F6FA"/>
+                                            <rect x="22" y="50" width="7" height="7" fill="#F5F6FA"/>
+                                            <rect x="42" y="42" width="16" height="16" fill="#F5F6FA"/>
+                                            <rect x="65" y="42" width="8" height="8" fill="#F5F6FA"/>
+                                            <rect x="78" y="52" width="8" height="8" fill="#F5F6FA"/>
+                                            <rect x="42" y="70" width="8" height="18" fill="#F5F6FA"/>
+                                            <rect x="58" y="78" width="18" height="8" fill="#F5F6FA"/>
+                                            <rect x="80" y="80" width="10" height="10" fill="#F5F6FA"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="device-status-badge" id="deviceBadge">
+                            <div class="device-status-main" id="deviceStatusMain">
+                                <span class="state-dot v" id="deviceDot"></span>
+                                <span id="deviceText">VALIDO · INGRESA DIRECTO</span>
+                            </div>
+                            <div class="device-status-sub" id="deviceSub">Camila Ruiz — Mesa VIP 04 (Pagado)</div>
+                        </div>
+
+                        <div class="device-footer">
+                            <span>ID: <strong id="ticketCode" style="color:var(--text);">TK-8842-OK</strong></span>
+                            <span>CHECK OS v1.2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Nosotros -->
+    <section class="section section-alt" id="nosotros">
+        <div class="container">
+            <div class="about-grid">
+                <div class="reveal">
+                    <div class="kicker">QUIÉNES SOMOS</div>
+                    <h2 class="section-title">Nacido en la noche paceña, no en un pizarrón.</h2>
+                    <div class="prose">
+                        <p>CHECK nació en la operación real de la noche paceña.<br>Resolvemos filas, poca señal y reservas sin respaldo.<br>No somos software genérico: damos control de accesos, mesas y caja.<br><strong>Operación probada en puerta antes de prometer nada.</strong></p>
+                    </div>
+                </div>
+
+                <div class="reveal">
+                    <!-- Credencial de organización -->
+                    <div class="badge-card">
+                        <div class="badge-header">
+                            <div class="badge-brand">CHECK</div>
+                            <div class="badge-chip">SISTEMA ACTIVO</div>
+                        </div>
+                        <div class="badge-table">
+                            <div class="badge-row">
+                                <span class="badge-label">Sede principal</span>
+                                <span class="badge-val">La Paz, Bolivia</span>
+                            </div>
+                            <div class="badge-row">
+                                <span class="badge-label">Enfoque</span>
+                                <span class="badge-val">Control de acceso y operación</span>
+                            </div>
+                            <div class="badge-row">
+                                <span class="badge-label">Estado actual</span>
+                                <span class="badge-val" style="color:var(--success);">● Piloto activo en local</span>
+                            </div>
+                            <div class="badge-row">
+                                <span class="badge-label">Modelo</span>
+                                <span class="badge-val">Servicio de software (B2B)</span>
+                            </div>
+                        </div>
+                        <div class="badge-footer">
+                            <span>CREDENTIAL ID</span>
+                            <span class="font-mono" style="color:var(--primary);">ID-ORG-0001</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. El Problema -->
+    <section class="section problem-section">
+        <div class="container">
+            <div class="problem-grid problem-grid-single">
+                <div class="reveal">
+                    <div class="kicker">EL DIAGNÓSTICO</div>
+                    <div class="quote-statement">"La puerta sigue operando como hace veinte años."</div>
+                    <p class="section-desc">Mientras el resto del negocio se digitaliza, la entrada de los locales nocturnos sigue dependiendo del papel, la memoria y la confianza a ciegas.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Cómo funciona -->
+    <section class="section section-alt" id="como-funciona">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 3.5rem;" class="reveal">
+                <div class="kicker" style="justify-content: center;">FLUJO OPERATIVO</div>
+                <h2 class="section-title">De la administración a la puerta en 6 pasos.</h2>
+            </div>
+
+            <div class="steps-list">
+                <div class="step-card reveal">
+                    <div class="step-num">01</div>
+                    <div class="step-content">
+                        <h3>El admin crea el evento</h3>
+                        <p>Define fecha, nombre del evento, aforo máximo permitido y precios de entradas o consumos mínimos.</p>
+                    </div>
+                </div>
+
+                <div class="step-card reveal">
+                    <div class="step-num">02</div>
+                    <div class="step-content">
+                        <h3>Configura mesas y zonas</h3>
+                        <p>Asigna zonas (VIP, Lounge, General) con sus correspondientes límites y montos de consumo requeridos.</p>
+                    </div>
+                </div>
+
+                <div class="step-card reveal">
+                    <div class="step-num">03</div>
+                    <div class="step-content">
+                        <h3>Registra la reserva o venta</h3>
+                        <p>El sistema asigna la reserva al cliente registrando el estado de pago preliminar (Pagado o Por cobrar).</p>
+                    </div>
+                </div>
+
+                <div class="step-card reveal">
+                    <div class="step-num">04</div>
+                    <div class="step-content">
+                        <h3>El sistema genera el QR único</h3>
+                        <p>El cliente recibe un QR seguro firmado criptográficamente que no puede ser duplicado ni reutilizado.</p>
+                    </div>
+                </div>
+
+                <div class="step-card reveal">
+                    <div class="step-num">05</div>
+                    <div class="step-content">
+                        <h3>Presentación del QR en puerta</h3>
+                        <p>El asistente muestra el código directamente desde su celular al staff de acceso del local.</p>
+                    </div>
+                </div>
+
+                <div class="step-card reveal">
+                    <div class="step-num">06</div>
+                    <div class="step-content">
+                        <h3>Escaneo e iluminación de estado</h3>
+                        <p>El celular o scanner del staff procesa el código e informa el estado de manera inmediata.</p>
+                        <span class="step-note">⚡ &lt; 1 segundo por escaneo · Actualización instantánea en dashboard</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Estados en la puerta -->
+    <section class="section" id="estados">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 3rem;" class="reveal">
+                <div class="kicker" style="justify-content: center;">LENGUAJE VISUAL REAL</div>
+                <h2 class="section-title">Respuesta instantánea en el escáner</h2>
+                <p class="section-desc" style="margin: 0 auto;">El staff no pierde tiempo leyendo detalles complejos. El sistema responde con tres estados inequívocos.</p>
+            </div>
+
+            <div class="states-grid">
+                <div class="state-card verde reveal">
+                    <div class="state-header">
+                        <span class="state-dot v"></span>
+                        <h3 class="state-title" style="color:var(--success);">VERDE</h3>
+                    </div>
+                    <p class="state-desc"><strong>Ingresa directo.</strong> La entrada o reserva está 100% pagada y confirmada. El cliente pasa sin demoras.</p>
+                    <div class="state-tag v">PAGADO / CONFIRMADO</div>
+                </div>
+
+                <div class="state-card amarillo reveal">
+                    <div class="state-header">
+                        <span class="state-dot a"></span>
+                        <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
+                    </div>
+                    <p class="state-desc"><strong>Cobrar en puerta.</strong> Reserva válida pero existe un saldo pendiente de cobro antes de permitir el acceso.</p>
+                    <div class="state-tag a">PAGO PENDIENTE</div>
+                </div>
+
+                <div class="state-card rojo reveal">
+                    <div class="state-header">
+                        <span class="state-dot r"></span>
+                        <h3 class="state-title" style="color:var(--error);">ROJO</h3>
+                    </div>
+                    <p class="state-desc"><strong>No ingresa.</strong> Código QR inválido, previamente utilizado en la misma noche o cancelado por el administrador.</p>
+                    <div class="state-tag r">INVÁLIDO / CANCELADO</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Módulos -->
+    <section class="section section-alt" id="modulos">
+        <div class="container">
+            <div class="reveal">
+                <div class="kicker">CAPACIDADES DEL SISTEMA</div>
+                <h2 class="section-title">Módulos diseñados para la noche.</h2>
+                <p class="section-desc">Herramientas robustas orientadas a acelerar la puerta y dar control al dueño.</p>
+            </div>
+
+            <div class="modules-grid">
+                <!-- 1 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <h3 class="module-title">Gestión de eventos</h3>
+                    <p class="module-desc">Configura fechas, horarios, límites de aforo y parámetros de corte para cada fiesta o noche operativa.</p>
+                </div>
+
+                <!-- 2 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </div>
+                    <h3 class="module-title">Gestión de mesas</h3>
+                    <p class="module-desc">Control por zonas (VIP, Ultra VIP, General) con asignación de consumos mínimos y nombres de titulares.</p>
+                </div>
+
+                <!-- 3 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path></svg>
+                    </div>
+                    <h3 class="module-title">Reservas y tickets</h3>
+                    <p class="module-desc">Emisión inmediata de tokens QR únicos. Envío por enlace directo para el cliente sin descargas obligatorias.</p>
+                </div>
+
+                <!-- 4 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <h3 class="module-title">Check-in de staff</h3>
+                    <p class="module-desc">Asignación de roles específicos para porteros, cajeros y RRPP. Registro de quién valida cada entrada.</p>
+                </div>
+
+                <!-- 5 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    </div>
+                    <h3 class="module-title">Dashboard en vivo</h3>
+                    <p class="module-desc">Métricas de aforo actual, porcentaje de ingresos completados y recaudación de puerta en tiempo real.</p>
+                </div>
+
+                <!-- 6 -->
+                <div class="module-card reveal">
+                    <div class="module-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
+                    <h3 class="module-title">Gestión de staff</h3>
+                    <p class="module-desc">Auditoría completa de actividad por usuario para prevenir accesos no autorizados o cortesías falsas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. Planes -->
+    <section class="section" id="planes">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 3.5rem;" class="reveal">
+                <div class="kicker" style="justify-content: center;">MODELO DE SUSCRIPCIÓN</div>
+                <h2 class="section-title">Planes transparentes para tu local</h2>
+                <p class="section-desc" style="margin: 0 auto;">Sin comisiones ocultas por entrada. Pagas una suscripción fija por el uso de la plataforma.</p>
+            </div>
+
+            <div class="plans-grid">
+                <!-- Starter -->
+                <div class="plan-card reveal">
+                    <h3 class="plan-name">Starter</h3>
+                    <div class="plan-price">
+                        <span class="price-val">Bs. 150</span>
+                        <span class="price-period">/ mes</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li class="plan-feature">Hasta 4 eventos al mes</li>
+                        <li class="plan-feature">1 Administrador</li>
+                        <li class="plan-feature">2 Cuentas de Staff en puerta</li>
+                        <li class="plan-feature">Hasta 200 QR / mes</li>
+                        <li class="plan-feature">Soporte por WhatsApp</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-outline" style="width: 100%;">Seleccionar Starter</a>
+                </div>
+
+                <!-- Pro (Destacado) -->
+                <div class="plan-card featured reveal">
+                    <div class="plan-badge">MÁS ELEGIDO</div>
+                    <h3 class="plan-name">Pro</h3>
+                    <div class="plan-price">
+                        <span class="price-val" style="color:var(--primary);">Bs. 350</span>
+                        <span class="price-period">/ mes</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li class="plan-feature"><strong>Eventos ilimitados</strong></li>
+                        <li class="plan-feature">3 Administradores</li>
+                        <li class="plan-feature"><strong>Staff ilimitado en puerta</strong></li>
+                        <li class="plan-feature"><strong>QR ilimitados</strong></li>
+                        <li class="plan-feature">Reportes de aforo y cierres</li>
+                        <li class="plan-feature">Soporte prioritario en vivo</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-primary" style="width: 100%;">Solicitar Plan Pro</a>
+                </div>
+
+                <!-- Local Premium -->
+                <div class="plan-card reveal">
+                    <h3 class="plan-name">Local Premium</h3>
+                    <div class="plan-price">
+                        <span class="price-val">Bs. 600</span>
+                        <span class="price-period">/ mes</span>
+                    </div>
+                    <ul class="plan-features">
+                        <li class="plan-feature">Eventos ilimitados</li>
+                        <li class="plan-feature">Administradores ilimitados</li>
+                        <li class="plan-feature">Todo lo incluido en Pro</li>
+                        <li class="plan-feature"><strong>Plano de sala interactivo</strong></li>
+                        <li class="plan-feature">Capacitación presencial de staff</li>
+                        <li class="plan-feature">Soporte técnico directo en evento</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-outline" style="width: 100%;">Solicitar Premium</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. Piloto / Testimonio 
+    <section class="section section-alt cta-section">
+        <div class="container">
+            <div class="pilot-grid">
+                <div class="quote-box reveal">
+                    <div class="quote-symbol">“</div>
+                    <p class="quote-text">Antes la puerta era un caos de listas en papel y discusiones por reservas. Con CHECK eliminamos el conteo manual: ahora sé exactamente cuántas personas han entrado, a qué hora e incluso si la mesa pagó en puerta o por adelantado.</p>
+                    <div class="quote-author">ORGANIZADOR · LOCAL PILOTO LA PAZ</div>
+                </div>
+
+                <div class="metrics-column reveal">
+                    <div class="metric-card">
+                        <div class="metric-num">1</div>
+                        <div class="metric-lbl">Local piloto activo validado en La Paz</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-num">+1,200</div>
+                        <div class="metric-lbl">Estados validados en puerta sin errores</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-num">100%</div>
+                        <div class="metric-lbl">Trazabilidad de caja vs. accesos reales</div>
+                    </div>
+                </div>
+            </div>-->
+
+            <!-- 10. Mención breve a CLANDEST -->
+            <div class="clandest-wrapper reveal" style="margin-top: 3.5rem;">
+                <div class="clandest-card">
+                    <div class="clandest-info">
+                        <h4>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            Ecosistema CLANDEST incluido
+                        </h4>
+                        <p>Si utilizas CHECK para la gestión de tu local, puedes vincular tus eventos a la app de descubrimiento <strong>CLANDEST</strong> sin ningún costo adicional. La difusión queda integrada automáticamente.</p>
+                    </div>
+                    <div class="clandest-badge">SIN COSTO EXTRA</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 11. Contacto -->
+    <section class="section" id="contacto">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="reveal">
+                    <div class="kicker">HABLEMOS</div>
+                    <h2 class="section-title">Digitaliza la puerta de tu local.</h2>
+                    <p class="section-desc">Agenda una demostración personalizada en tu propio establecimiento en La Paz o coordinemos una llamada técnica.</p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="https://wa.me/59170000000" target="_blank" rel="noopener" class="btn btn-primary">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            WhatsApp Directo
+                        </a>
+                        <a href="mailto:contacto@check.bo" class="btn btn-outline">Escribir correo</a>
+                    </div>
+                </div>
+
+                <div class="contact-info-list reveal">
+                    <div class="contact-info-item">
+                        <div class="contact-label">CORREO ELECTRÓNICO</div>
+                        <div class="contact-val">contacto@check.bo</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-label">WHATSAPP OPERATIVO</div>
+                        <div class="contact-val">+591 700 00000</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-label">SEDE</div>
+                        <div class="contact-val">La Paz, Bolivia</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <div class="contact-label">TIEMPO DE RESPUESTA</div>
+                        <div class="contact-val">&lt; 24 horas hábiles</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 12. CTA Final -->
+    <section class="section section-alt final-cta">
+        <div class="container">
+            <div class="cta-box reveal">
+                <h2 class="section-title" style="margin-bottom: 1rem;">Tu puerta, bajo control.</h2>
+                <p class="section-desc" style="margin: 0 auto 2rem auto;">Cero planillas de Excel, cero listas traspapeladas, cero sorpresas al cierre de caja.</p>
+                <a href="#contacto" class="btn btn-primary" style="padding: 1rem 2.2rem; font-size: 1.05rem;">Solicitar demo para mi local</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 13. Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <img src="logo.png" alt="CHECK — Control total de tus eventos" class="logo-image logo-footer-image">
+                    </a>
+                    <p>Sistema de control de acceso, reservas y tickets para locales nocturnos y eventos.</p>
+                </div>
+
+                <div>
+                    <div class="footer-title">Producto</div>
+                    <ul class="footer-links">
+                        <li><a href="#como-funciona">Cómo funciona</a></li>
+                        <li><a href="#modulos">Módulos</a></li>
+                        <li><a href="#planes">Planes</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="footer-title">Organización</div>
+                    <ul class="footer-links">
+                        <li><a href="#nosotros">Sobre CHECK</a></li>
+                         <!--<li><a href="#nosotros">Piloto La Paz</a></li>-->
+                        <li><a href="#contacto">Contacto B2B</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="footer-title">Contacto Directo</div>
+                    <ul class="footer-links">
+                        <li><a href="mailto:contacto@check.bo">contacto@check.bo</a></li>
+                        <li><a href="https://wa.me/59170000000" target="_blank" rel="noopener">WhatsApp Soporte</a></li>
+                        <li><span style="color:var(--muted-dim); font-size: 0.85rem;">La Paz — Bolivia</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>© 2026 CHECK. Todos los derechos reservados.</div>
+                <div>Software B2B de operación nocturna · La Paz, Bolivia</div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
 </html>
