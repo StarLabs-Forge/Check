@@ -49,23 +49,16 @@ El **QR es el eje central**: cada reserva de mesa y cada entrada genera un códi
 
 ```
 check/
-  backend/                  # API Node.js + Express
-    src/
-      routes/               # events, reservations, tickets, qr, staff
-      middleware/           # auth (JWT), roles, validación
-      services/             # lógica de negocio
-      utils/                # generador de QR, helpers
-    supabase/
-      schema.sql            # Schema completo con RLS, funciones y triggers
-      migrations/
-  mobile/                   # App Flutter — staff (check-in)
+  app/                      # App Flutter (móvil + Flutter Web)
     lib/
-      screens/              # check_in, scan_result
-      services/             # api_service, qr_scanner
-  web/                      # Dashboard Flutter Web — admin
-    lib/
-      screens/              # events, tables, reservations, dashboard
-      widgets/
+    android/
+    ios/
+    web/                    # Target web de Flutter (no el sitio estático)
+  website/                  # Sitio estático HTML / CSS / JS
+    index.html
+    css/
+    js/
+  backend/                  # API Node.js + Express (pendiente)
   docs/                     # Especificación de producto, wireframes
 ```
 
@@ -233,18 +226,19 @@ npm run dev
 # Pegar el contenido de supabase/schema.sql y ejecutar
 ```
 
-### App móvil (Staff)
+### App Flutter (móvil y Flutter Web)
 ```bash
-cd mobile
+cd app
 flutter pub get
 flutter run
+# Dashboard / web de Flutter:
+flutter run -d chrome
 ```
 
-### Dashboard web (Admin)
+### Sitio web (HTML / CSS / JS)
 ```bash
-cd web
-flutter pub get
-flutter run -d chrome
+cd website
+# Abrir index.html o servir la carpeta con un servidor estático
 ```
 
 ---
