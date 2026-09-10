@@ -58,6 +58,34 @@
             font-family: var(--font-mono);
         }
 
+        /* Fondo de video global */
+        .video-bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .video-bg-wrap iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 56.25vw;      /* proporción 16:9 */
+            min-height: 100vh;
+            min-width: 177.78vh;  /* proporción 16:9 invertida */
+            transform: translate(-50%, -50%);
+        }
+
+        .video-bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: rgba(11, 14, 20, 0.72);
+            pointer-events: none;
+        }
+
         /* Layout & Utilities */
         .container {
             width: 100%;
@@ -72,10 +100,16 @@
             align-items: center;
             padding: clamp(4rem, 7vh, 5.5rem) 0;
             border-bottom: 1px solid var(--line);
+            scroll-margin-top: var(--header-height);
+            background: rgba(11, 14, 20, 0.55);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
         }
 
         .section-alt {
-            background-color: var(--bg-alt);
+            background: rgba(21, 25, 34, 0.72);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
         }
 
         .kicker {
@@ -228,6 +262,9 @@
             overflow: hidden;
             isolation: isolate;
             border-bottom: 1px solid var(--line);
+            background: rgba(11, 14, 20, 0.55);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
         }
 
         .hero::before {
