@@ -224,8 +224,8 @@
 .logo-header-image {
     width: 175px;
     height: 54px;
-    object-fit: cover;
-    object-position: center 52%;
+    object-fit: contain;
+    object-position: center;
 }
 
 .logo-footer-image {

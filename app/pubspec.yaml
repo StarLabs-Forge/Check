@@ -39,6 +39,9 @@ dependencies:
   # pantallas de auth y la pantalla inicial.
   google_fonts: ^6.2.1
 
+  # Para renderizar el ícono de marca (assets/branding/*.svg) en el logo.
+  flutter_svg: ^2.0.10
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -65,6 +68,8 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/branding/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

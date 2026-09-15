@@ -40,7 +40,11 @@ class AuthScaffold extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CheckLogo(fontSize: 32, alignment: CrossAxisAlignment.center, brand: true),
+                  const CheckLogo(
+                    fontSize: 48,
+                    alignment: CrossAxisAlignment.center,
+                    showIcon: true,
+                  ),
                   const SizedBox(height: AppSpacing.s8),
                   Container(
                     width: double.infinity,
