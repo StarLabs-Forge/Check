@@ -1,0 +1,54 @@
+<svg width="200" height="200" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="checkPurple" x1="10" y1="10" x2="45" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B47CFF"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="checkCyan" x1="90" y1="10" x2="55" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DF3FF"/>
+      <stop offset="1" stop-color="#0891B2"/>
+    </linearGradient>
+    <linearGradient id="checkMark" x1="25" y1="70" x2="78" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="100" height="100" fill="#050507"/>
+
+  <g filter="url(#glow)">
+    <!-- Marco tipo "visor de escaneo": 4 esquinas en L, izquierda morado / derecha cian -->
+    <path d="M15,40 L15,22 Q15,15 22,15 L40,15" fill="none" stroke="url(#checkPurple)"
+          stroke-width="7" stroke-linecap="round"/>
+    <path d="M60,15 L78,15 Q85,15 85,22 L85,40" fill="none" stroke="url(#checkCyan)"
+          stroke-width="7" stroke-linecap="round"/>
+    <path d="M15,60 L15,78 Q15,85 22,85 L40,85" fill="none" stroke="url(#checkPurple)"
+          stroke-width="7" stroke-linecap="round"/>
+    <path d="M85,60 L85,78 Q85,85 78,85 L60,85" fill="none" stroke="url(#checkCyan)"
+          stroke-width="7" stroke-linecap="round"/>
+
+    <!-- Patrón QR simplificado -->
+    <g fill="#F5F5FA">
+      <rect x="28" y="28" width="16" height="16" rx="1.5"/>
+      <rect x="32" y="32" width="8" height="8" rx="1" fill="#050507"/>
+      <rect x="35" y="35" width="2" height="2" fill="#F5F5FA"/>
+      <rect x="50" y="28" width="7" height="7" rx="1"/>
+      <rect x="61" y="28" width="4" height="4" rx="0.8"/>
+      <rect x="28" y="50" width="7" height="7" rx="1"/>
+      <rect x="28" y="61" width="4" height="11" rx="1"/>
+      <rect x="38" y="61" width="4" height="4" rx="0.8"/>
+      <rect x="50" y="50" width="4" height="4" rx="0.8"/>
+    </g>
+
+    <!-- Checkmark principal -->
+    <path d="M25,58 L44,73 L78,32" fill="none" stroke="url(#checkMark)"
+          stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

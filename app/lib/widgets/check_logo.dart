@@ -2,34 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
-/// Wordmark "CHECK." tal como aparece en el Figma (Sidebar → Identidad):
-/// texto blanco + punto final en verde acento. Deliberadamente sin logotipo
-/// aparte — así estas pantallas no dependen de un asset todavía sin definir.
+/// Wordmark "CHECK.".
+///
+/// Dos variantes de tipografía, a propósito:
+/// - `brand: false` (default) — Inter Bold, tal como está especificado en el
+///   Figma del dashboard (Sidebar → Identidad). Se usa en el sidebar/UI.
+/// - `brand: true` — Space Grotesk, la tipografía de marca elegida para los
+///   momentos de marca (pantallas de auth, logo horizontal). Más geométrica,
+///   pensada para acompañar el ícono de check_logo_icon.svg.
 class CheckLogo extends StatelessWidget {
   const CheckLogo({
     super.key,
     this.fontSize = 28,
     this.subtitle,
     this.alignment = CrossAxisAlignment.start,
+    this.brand = false,
   });
 
   final double fontSize;
   final String? subtitle;
   final CrossAxisAlignment alignment;
+  final bool brand;
 
   @override
   Widget build(BuildContext context) {
+    final wordmarkStyle = brand
+        ? GoogleFonts.spaceGrotesk(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          )
+        : GoogleFonts.inter(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          );
+
     return Column(
       crossAxisAlignment: alignment,
       mainAxisSize: MainAxisSize.min,
       children: [
         RichText(
           text: TextSpan(
-            style: GoogleFonts.inter(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+            style: wordmarkStyle,
             children: [
               const TextSpan(text: 'CHECK'),
               TextSpan(
