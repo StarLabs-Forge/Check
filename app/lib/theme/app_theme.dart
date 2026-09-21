@@ -20,6 +20,12 @@ class AppColors {
 
   static const Color success = Color(0xFF00C853);
   static const Color error = Color(0xFFFF3B3B);
+
+  // Tokens agregados al construir Eventos / Tickets (Figma Foundations):
+  // usados por los Badge de estado "Borrador" y "Cerrado/Cancelado".
+  static const Color textDisabled = Color(0xFF444444);
+  static const Color bgDraft = Color(0xFF1E1E1E);
+  static const Color bgDanger = Color(0xFF2B0D0D);
 }
 
 class AppRadius {
@@ -32,6 +38,7 @@ class AppRadius {
   static const double input = 10;
   static const double metric = 14;
   static const double full = 9999;
+  static const double modal = 20;
 }
 
 class AppSpacing {
@@ -42,6 +49,7 @@ class AppSpacing {
   static const double s2 = 8;
   static const double s3 = 12;
   static const double s4 = 16;
+  static const double s5 = 20;
   static const double s6 = 24;
   static const double s8 = 32;
 }
@@ -51,7 +59,9 @@ class AppTextSize {
 
   static const double caption = 12;
   static const double body = 14;
+  static const double bodyLg = 16;
   static const double h3 = 18;
+  static const double h2 = 24;
   static const double h1 = 32;
 }
 
