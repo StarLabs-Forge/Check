@@ -119,17 +119,13 @@ class _SidebarContent extends StatelessWidget {
 
   void _go(BuildContext context, AdminRoute route) {
     if (route == current) return;
-    if (route == AdminRoute.configuracion) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Configuración: pantalla pendiente de diseño en Figma')),
-      );
-      return;
-    }
     final routeName = switch (route) {
       AdminRoute.dashboard => '/home',
       AdminRoute.eventos => '/eventos',
       AdminRoute.tickets => '/tickets',
-      AdminRoute.configuracion => '/home',
+      // "Configuración" ya tiene pantalla propia (frame "Estado — Próximamente"
+      // en Figma) — un estado vacío reusable en vez del aviso temporal.
+      AdminRoute.configuracion => '/configuracion',
     };
     Navigator.of(context).pushReplacementNamed(routeName);
   }
@@ -331,18 +327,24 @@ class StatusBadge extends StatelessWidget {
       BadgeStatus.cerrado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cerrado'),
       BadgeStatus.cancelado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cancelado'),
     };
+    // Sin `alignment` acá a propósito: un Container con `alignment` seteado
+    // se expande para llenar el espacio disponible (aunque sea "loose") y
+    // centra su hijo adentro — eso es lo que causaba que el badge se
+    // estirara dentro de un Expanded/Align en vez de ajustarse a su texto.
     return Container(
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
         border: Border.all(color: border),
         borderRadius: BorderRadius.circular(AppRadius.full),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: text, fontSize: AppTextSize.caption, fontWeight: FontWeight.w500),
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: TextStyle(color: text, fontSize: AppTextSize.caption, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }
