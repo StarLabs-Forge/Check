@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/auth_service.dart';
+import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
 import 'register_screen.dart';
@@ -18,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -42,28 +46,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
 
-    // Placeholder: sin integración de backend todavía. Simula el tiempo de
-    // respuesta de un login real antes de pasar a la verificación en 2 pasos.
-    await Future.delayed(const Duration(milliseconds: 600));
+    final email = _emailController.text.trim();
+    try {
+      // Si sale bien, el listener de auth (main.dart) carga el perfil y
+      // navega al panel; acá no hay que hacer nada más.
+      await AuthService.signIn(email: email, password: _passwordController.text);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      if (e.code == 'email_not_confirmed') {
+        // Cuenta creada pero sin confirmar: reenvía el código y pide verificarlo.
+        try {
+          await AuthService.resendSignupCode(email);
+        } catch (_) {}
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => VerificationScreen(email: email)),
+        );
+        return;
+      }
+      setState(() => _error = friendlyError(e));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    }
 
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VerificationScreen(email: _emailController.text.trim()),
-      ),
-    );
+    if (mounted) setState(() => _isSubmitting = false);
   }
 
-  void _continueWithGoogle() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const VerificationScreen(email: 'tu cuenta de Google'),
-      ),
-    );
+  Future<void> _continueWithGoogle() async {
+    setState(() => _error = null);
+    try {
+      await AuthService.signInWithGoogle();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    }
   }
 
   @override
@@ -118,6 +141,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text('¿Olvidaste tu contraseña?'),
               ),
             ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.s2),
+              Text(
+                _error!,
+                style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
+              ),
+            ],
             const SizedBox(height: AppSpacing.s4),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submit,

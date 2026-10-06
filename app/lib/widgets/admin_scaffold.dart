@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/app_session.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import 'check_logo.dart';
 
@@ -72,7 +74,7 @@ class AdminScaffold extends StatelessWidget {
                   ),
                 ],
               ),
-              if (overlay != null) overlay!,
+              ?overlay,
             ],
           );
         },
@@ -113,8 +115,17 @@ class _SidebarContent extends StatelessWidget {
 
   final AdminRoute current;
 
-  void _logout(BuildContext context) {
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  Future<void> _logout(BuildContext context) async {
+    // El listener de auth en main.dart navega a /login al detectar signedOut.
+    try {
+      await AuthService.signOut();
+    } catch (_) {
+      // Aunque falle la red, se limpia la sesión local y se vuelve al login.
+      AppSession.clear();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    }
   }
 
   void _go(BuildContext context, AdminRoute route) {
@@ -135,9 +146,12 @@ class _SidebarContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, 0),
-          child: CheckLogo(subtitle: 'Dharma Club'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, 0),
+          child: ValueListenableBuilder<Profile?>(
+            valueListenable: AppSession.profile,
+            builder: (_, profile, _) => CheckLogo(subtitle: profile?.venueName),
+          ),
         ),
         const SizedBox(height: AppSpacing.s8),
         Padding(
@@ -180,20 +194,30 @@ class _SidebarContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Avatar(initials: 'NF'),
-              const SizedBox(height: AppSpacing.s3),
-              const Text(
-                'Napoleón Flores',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: AppTextSize.body,
-                  fontWeight: FontWeight.w600,
+              ValueListenableBuilder<Profile?>(
+                valueListenable: AppSession.profile,
+                builder: (_, profile, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Avatar(initials: profile?.initials ?? '?'),
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(
+                      profile?.fullName ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: AppTextSize.body,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s1),
+                    Text(
+                      profile?.roleLabel ?? '',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.s1),
-              const Text(
-                'Administrador',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
               ),
               const SizedBox(height: AppSpacing.s3),
               SizedBox(
@@ -310,7 +334,10 @@ class Avatar extends StatelessWidget {
 /// Estados semánticos del Badge (Figma "Badge", 6 variantes: Activo,
 /// Borrador, Cerrado, Ingresó, Pendiente, Cancelado). Activo e Ingresó
 /// comparten estilo (verde), igual que Cerrado y Cancelado (rojo).
-enum BadgeStatus { activo, borrador, cerrado, ingreso, pendiente, cancelado }
+///
+/// `porCobrar` = ticket emitido pero con el pago pendiente (evento de pago);
+/// `pendiente` = ticket listo (pagado) que todavía no ingresó.
+enum BadgeStatus { activo, borrador, cerrado, ingreso, pendiente, porCobrar, cancelado }
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge(this.status, {super.key});
@@ -324,6 +351,7 @@ class StatusBadge extends StatelessWidget {
       BadgeStatus.ingreso => (AppColors.accentSubtle, AppColors.accentPrimary, AppColors.accentPrimary, 'Ingresó'),
       BadgeStatus.borrador => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Borrador'),
       BadgeStatus.pendiente => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Pendiente'),
+      BadgeStatus.porCobrar => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Por cobrar'),
       BadgeStatus.cerrado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cerrado'),
       BadgeStatus.cancelado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cancelado'),
     };

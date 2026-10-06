@@ -42,6 +42,12 @@ dependencies:
   # Para renderizar el ícono de marca (assets/branding/*.svg) en el logo.
   flutter_svg: ^2.0.10
 
+  # Backend: Supabase (Auth + PostgREST + Realtime)
+  supabase_flutter: ^2.18.0
+
+  # Render del QR de cada ticket
+  qr_flutter: ^4.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
