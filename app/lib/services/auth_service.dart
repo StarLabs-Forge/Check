@@ -57,5 +57,18 @@ class AuthService {
     );
   }
 
+  /// Completa los datos que el registro con correo ya pide y Google no entrega:
+  /// el local queda en `user_metadata.venue_name` y el nombre en `profiles`.
+  static Future<void> completeProfile({required String fullName, required String venueName}) async {
+    final res = await _auth.updateUser(
+      UserAttributes(data: {'full_name': fullName.trim(), 'venue_name': venueName.trim()}),
+    );
+    final id = res.user?.id ?? _auth.currentUser!.id;
+    await Supabase.instance.client
+        .from('profiles')
+        .update({'full_name': fullName.trim()})
+        .eq('id', id);
+  }
+
   static Future<void> signOut() => _auth.signOut();
 }

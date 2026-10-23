@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'screens/admin_tickets_screen.dart';
 import 'screens/coming_soon_screen.dart';
+import 'screens/complete_profile_screen.dart';
 import 'screens/events_list_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/loading_screen.dart';
@@ -68,7 +69,7 @@ class _CheckAppState extends State<CheckApp> {
           _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(error)));
           return; // load() ya cerró la sesión → llegará signedOut.
         }
-        nav.pushNamedAndRemoveUntil('/home', (route) => false);
+        nav.pushNamedAndRemoveUntil(AppSession.entryRoute, (route) => false);
       case AuthChangeEvent.signedOut:
         AppSession.clear();
         nav.pushNamedAndRemoveUntil('/login', (route) => false);
@@ -93,6 +94,7 @@ class _CheckAppState extends State<CheckApp> {
       // se siguen navegando con Navigator.push directo.
       routes: {
         '/login': (_) => const LoginScreen(),
+        '/completar-perfil': (_) => const CompleteProfileScreen(),
         '/home': (_) => const HomeScreen(),
         '/eventos': (_) => const EventsListScreen(),
         '/tickets': (_) => const AdminTicketsScreen(),
@@ -138,7 +140,7 @@ class _BootstrapState extends State<_Bootstrap> {
     if (!mounted) return;
 
     if (hasSession && error == null) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacementNamed(AppSession.entryRoute);
     } else {
       Navigator.of(context).pushReplacementNamed('/login');
       if (error != null) {

@@ -92,5 +92,16 @@ class AppSession {
     }
   }
 
+  /// `true` si falta el nombre del local, que el registro con correo siempre
+  /// guarda y el de Google no (ver `CompleteProfileScreen`).
+  static bool get needsProfileCompletion {
+    final meta = _db.auth.currentUser?.userMetadata ?? const <String, dynamic>{};
+    final venue = (meta['venue_name'] as String?)?.trim();
+    return venue == null || venue.isEmpty;
+  }
+
+  /// Ruta de entrada tras autenticarse.
+  static String get entryRoute => needsProfileCompletion ? '/completar-perfil' : '/home';
+
   static void clear() => profile.value = null;
 }
