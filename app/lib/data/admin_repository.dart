@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/demo_mode.dart';
+import 'demo_admin_data.dart';
 import 'models.dart';
 
 /// Acceso a datos del panel Admin. Todo pasa por PostgREST/RPC con la sesión
@@ -18,11 +20,13 @@ class AdminRepository {
 
   /// Todos los eventos del admin (más recientes primero) con sus contadores.
   Future<List<EventItem>> listEvents() async {
+    if (kDemo) return DemoAdminData.instance.listEvents();
     final rows = await _db.from('events_with_stats').select().order('starts_at', ascending: false);
     return rows.map<EventItem>((r) => EventItem.fromMap(r)).toList();
   }
 
   Future<EventItem?> getEvent(String id) async {
+    if (kDemo) return DemoAdminData.instance.getEvent(id);
     final row = await _db.from('events_with_stats').select().eq('id', id).maybeSingle();
     return row == null ? null : EventItem.fromMap(row);
   }
@@ -38,6 +42,17 @@ class AdminRepository {
     required bool paid,
     double price = 0,
   }) async {
+    if (kDemo) {
+      return DemoAdminData.instance.createEvent(
+        name: name,
+        description: description,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        capacity: capacity,
+        paid: paid,
+        price: price,
+      );
+    }
     final uid = _db.auth.currentUser?.id;
     if (uid == null) throw AuthException('No hay sesión activa');
     await _db.from('events').insert({
@@ -55,6 +70,7 @@ class AdminRepository {
   /// Cambia el estado (`active`, `live`, `finished`...). Las transiciones
   /// inválidas las rechaza el trigger `guard_event`.
   Future<void> setEventStatus(String eventId, String status) async {
+    if (kDemo) return DemoAdminData.instance.setEventStatus(eventId, status);
     await _db.from('events').update({'status': status}).eq('id', eventId);
   }
 
@@ -62,6 +78,7 @@ class AdminRepository {
 
   /// Tickets (opcionalmente de un evento, opcionalmente filtrados por nombre).
   Future<List<GuestItem>> listTickets({String? eventId, String query = '', int limit = 500}) async {
+    if (kDemo) return DemoAdminData.instance.listTickets(eventId: eventId, query: query, limit: limit);
     var filter = _db.from('tickets').select(_ticketColumns);
     if (eventId != null) filter = filter.eq('event_id', eventId);
     final q = query.trim();
@@ -76,6 +93,7 @@ class AdminRepository {
 
   /// Últimos ingresos de un evento (feed del dashboard).
   Future<List<GuestItem>> recentCheckins(String eventId, {int limit = 4}) async {
+    if (kDemo) return DemoAdminData.instance.recentCheckins(eventId, limit: limit);
     final rows = await _db
         .from('tickets')
         .select(_ticketColumns)
@@ -95,6 +113,9 @@ class AdminRepository {
     String? guestPhone,
     bool paid = false,
   }) async {
+    if (kDemo) {
+      return DemoAdminData.instance.createTicket(eventId: eventId, guestName: guestName, guestPhone: guestPhone, paid: paid);
+    }
     final res = await _db.rpc('create_ticket', params: {
       'p_event_id': eventId,
       'p_guest_name': guestName.trim(),

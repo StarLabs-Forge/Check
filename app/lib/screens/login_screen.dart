@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/demo_mode.dart';
 import '../services/auth_service.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
@@ -193,6 +196,15 @@ class _LoginScreenState extends State<LoginScreen> {
               icon: const Icon(Icons.confirmation_number_outlined, size: 18),
               label: const Text('Quiero comprar entradas'),
             ),
+            if (kDemo)
+              const Padding(
+                padding: EdgeInsets.only(top: AppSpacing.s3),
+                child: Text(
+                  'Modo demo · admin@demo.com o super@demo.com (cualquier contraseña)',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+                ),
+              ),
           ],
         ),
       ),

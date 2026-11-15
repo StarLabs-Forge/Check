@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/demo_mode.dart';
 import '../utils/format.dart';
 
 /// Perfil del usuario logueado (tabla `profiles` + metadata de Auth).
@@ -95,6 +96,7 @@ class AppSession {
   /// `true` si falta el nombre del local, que el registro con correo siempre
   /// guarda y el de Google no (ver `CompleteProfileScreen`).
   static bool get needsProfileCompletion {
+    if (kDemo) return false;
     final meta = _db.auth.currentUser?.userMetadata ?? const <String, dynamic>{};
     final venue = (meta['venue_name'] as String?)?.trim();
     return venue == null || venue.isEmpty;
@@ -104,6 +106,19 @@ class AppSession {
   static String get entryRoute {
     if (needsProfileCompletion) return '/completar-perfil';
     return profile.value?.role == 'super_admin' ? '/superadmin' : '/home';
+  }
+
+  /// Modo demo: perfil simulado según el correo (`super…` = superadmin).
+  static void signInDemo(String email) {
+    final isSuper = email.trim().toLowerCase().startsWith('super');
+    profile.value = Profile(
+      id: isSuper ? 'demo-super' : 'demo-admin',
+      fullName: isSuper ? 'Equipo CHECK' : 'Carla Mendoza',
+      role: isSuper ? 'super_admin' : 'admin',
+      plan: 'pro',
+      status: 'active',
+      venueName: isSuper ? 'Plataforma CHECK' : 'Dharma Club',
+    );
   }
 
   static void clear() => profile.value = null;

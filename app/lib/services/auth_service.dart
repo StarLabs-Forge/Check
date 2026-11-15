@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/demo_mode.dart';
+import 'app_session.dart';
 
 /// Wrapper fino de Supabase Auth. La navegación posterior al login/logout la
 /// decide el listener de `main.dart` (una sola fuente de verdad), no estas
@@ -9,7 +14,18 @@ class AuthService {
 
   static GoTrueClient get _auth => Supabase.instance.client.auth;
 
+  /// Modo demo: avisa a `main.dart` cuando se "inicia" o "cierra" sesión.
+  static final StreamController<bool> demoSession = StreamController<bool>.broadcast();
+
+  static const _demoOnly = 'Modo demo: entra con admin@demo.com o super@demo.com (cualquier contraseña).';
+
   static Future<void> signIn({required String email, required String password}) async {
+    if (kDemo) {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      AppSession.signInDemo(email);
+      demoSession.add(true);
+      return;
+    }
     await _auth.signInWithPassword(email: email.trim(), password: password);
   }
 
@@ -25,6 +41,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    if (kDemo) throw AuthException(_demoOnly);
     final res = await _auth.signUp(
       email: email.trim(),
       password: password,
@@ -51,6 +68,7 @@ class AuthService {
   /// OAuth con Google. Requiere habilitar el proveedor en Supabase
   /// (Authentication → Providers → Google) y registrar la URL de redirección.
   static Future<void> signInWithGoogle() async {
+    if (kDemo) throw AuthException(_demoOnly);
     await _auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: kIsWeb ? null : 'io.supabase.check://login-callback/',
@@ -70,5 +88,12 @@ class AuthService {
         .eq('id', id);
   }
 
-  static Future<void> signOut() => _auth.signOut();
+  static Future<void> signOut() {
+    if (kDemo) {
+      AppSession.clear();
+      demoSession.add(false);
+      return Future<void>.value();
+    }
+    return _auth.signOut();
+  }
 }

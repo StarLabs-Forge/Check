@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/demo_mode.dart';
 import 'config/supabase_config.dart';
 import 'screens/admin_tickets_screen.dart';
 import 'screens/coming_soon_screen.dart';
@@ -21,10 +22,12 @@ import 'widgets/admin_scaffold.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    publishableKey: SupabaseConfig.anonKey,
-  );
+  if (!kDemo) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      publishableKey: SupabaseConfig.anonKey,
+    );
+  }
   runApp(const CheckApp());
 }
 
@@ -40,6 +43,7 @@ class CheckApp extends StatefulWidget {
 
 class _CheckAppState extends State<CheckApp> {
   StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<bool>? _demoSub;
 
   @override
   void initState() {
@@ -47,13 +51,24 @@ class _CheckAppState extends State<CheckApp> {
     // Única fuente de verdad de la navegación post-auth: cualquier pantalla
     // (login, registro, verificación, OAuth, cierre de sesión) solo
     // autentica; acá se decide a dónde ir.
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthChange);
+    if (kDemo) {
+      _demoSub = AuthService.demoSession.stream.listen(_onDemoChange);
+    } else {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthChange);
+    }
   }
 
   @override
   void dispose() {
     _authSub?.cancel();
+    _demoSub?.cancel();
     super.dispose();
+  }
+
+  void _onDemoChange(bool signedIn) {
+    final nav = _navigatorKey.currentState;
+    if (nav == null) return;
+    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/login', (route) => false);
   }
 
   Future<void> _onAuthChange(AuthState state) async {
@@ -142,7 +157,7 @@ class _BootstrapState extends State<_Bootstrap> {
     final minSplash = Future<void>.delayed(const Duration(milliseconds: 1200));
 
     String? error;
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
+    final hasSession = !kDemo && Supabase.instance.client.auth.currentSession != null;
     if (hasSession) {
       error = await AppSession.load();
     }
