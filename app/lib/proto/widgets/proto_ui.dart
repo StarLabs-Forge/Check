@@ -375,6 +375,7 @@ class AdaptiveShell extends StatelessWidget {
             child: NavigationRail(
               backgroundColor: AppColors.bgSurface,
               extended: extended,
+              labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
               minExtendedWidth: 220,
               selectedIndex: index,
               onDestinationSelected: onSelect,
