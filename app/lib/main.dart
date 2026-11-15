@@ -6,6 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/demo_mode.dart';
 import 'config/supabase_config.dart';
 import 'screens/admin_tickets_screen.dart';
+import 'screens/platform_select_screen.dart';
+import 'screens/welcome_screen.dart';
+import 'staff/staff_panel.dart';
+import 'widgets/role_guard.dart';
 import 'screens/coming_soon_screen.dart';
 import 'screens/complete_profile_screen.dart';
 import 'screens/events_list_screen.dart';
@@ -68,7 +72,7 @@ class _CheckAppState extends State<CheckApp> {
   void _onDemoChange(bool signedIn) {
     final nav = _navigatorKey.currentState;
     if (nav == null) return;
-    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/login', (route) => false);
+    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/bienvenida', (route) => false);
   }
 
   Future<void> _onAuthChange(AuthState state) async {
@@ -91,7 +95,7 @@ class _CheckAppState extends State<CheckApp> {
         nav.pushNamedAndRemoveUntil(AppSession.entryRoute, (route) => false);
       case AuthChangeEvent.signedOut:
         AppSession.clear();
-        nav.pushNamedAndRemoveUntil('/login', (route) => false);
+        nav.pushNamedAndRemoveUntil('/bienvenida', (route) => false);
       default:
         break;
     }
@@ -112,18 +116,28 @@ class _CheckAppState extends State<CheckApp> {
       // (AdminScaffold) y por el listener de auth. Login/Registro/Verificación
       // se siguen navegando con Navigator.push directo.
       routes: {
+        // Públicas: bienvenida, selección de plataforma, login único y compra.
+        '/bienvenida': (_) => const WelcomeScreen(),
+        '/acceso-locales': (_) => const PlatformSelectScreen(),
         '/login': (_) => const LoginScreen(),
-        '/completar-perfil': (_) => const CompleteProfileScreen(),
-        '/home': (_) => const HomeScreen(),
-        '/eventos': (_) => const EventsListScreen(),
-        '/tickets': (_) => const AdminTicketsScreen(),
-        '/pagos': (_) => const AdminPaymentsScreen(),
-        '/verificadores': (_) => const AdminVerifiersScreen(),
-        '/auditoria': (_) => const AdminAuditScreen(),
-        '/superadmin': (_) => SuperadminExperience(onExit: AuthService.signOut),
-        // Compra pública sin cuenta (comprador).
         '/comprar': (_) => const BuyerHome(),
-        '/configuracion': (_) => const ComingSoonScreen(current: AdminRoute.configuracion),
+        // Privadas: cada una exige el rol correspondiente (RoleGuard).
+        '/completar-perfil': (_) => const RoleGuard(roles: {'admin'}, child: CompleteProfileScreen()),
+        '/home': (_) => const RoleGuard(roles: {'admin'}, child: HomeScreen()),
+        '/eventos': (_) => const RoleGuard(roles: {'admin'}, child: EventsListScreen()),
+        '/tickets': (_) => const RoleGuard(roles: {'admin'}, child: AdminTicketsScreen()),
+        '/pagos': (_) => const RoleGuard(roles: {'admin'}, child: AdminPaymentsScreen()),
+        '/verificadores': (_) => const RoleGuard(roles: {'admin'}, child: AdminVerifiersScreen()),
+        '/auditoria': (_) => const RoleGuard(roles: {'admin'}, child: AdminAuditScreen()),
+        '/configuracion': (_) => const RoleGuard(
+              roles: {'admin'},
+              child: ComingSoonScreen(current: AdminRoute.configuracion),
+            ),
+        '/superadmin': (_) => RoleGuard(
+              roles: const {'super_admin'},
+              child: SuperadminExperience(onExit: AuthService.signOut),
+            ),
+        '/staff': (_) => const RoleGuard(roles: {'staff'}, child: StaffPanel()),
       },
       // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
       onUnknownRoute: (settings) => MaterialPageRoute(
@@ -167,7 +181,7 @@ class _BootstrapState extends State<_Bootstrap> {
     if (hasSession && error == null) {
       Navigator.of(context).pushReplacementNamed(AppSession.entryRoute);
     } else {
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed('/bienvenida');
       if (error != null) {
         _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(error)));
       }

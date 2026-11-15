@@ -192,15 +192,15 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: AppSpacing.s2),
             TextButton.icon(
-              onPressed: () => Navigator.of(context).pushNamed('/comprar'),
-              icon: const Icon(Icons.confirmation_number_outlined, size: 18),
-              label: const Text('Quiero comprar entradas'),
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Volver'),
             ),
             if (kDemo)
               const Padding(
                 padding: EdgeInsets.only(top: AppSpacing.s3),
                 child: Text(
-                  'Modo demo · admin@demo.com o super@demo.com (cualquier contraseña)',
+                  'Modo demo · admin@demo.com, staff@demo.com o super@demo.com (cualquier contraseña)',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
                 ),

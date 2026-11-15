@@ -17,7 +17,7 @@ class AuthService {
   /// Modo demo: avisa a `main.dart` cuando se "inicia" o "cierra" sesión.
   static final StreamController<bool> demoSession = StreamController<bool>.broadcast();
 
-  static const _demoOnly = 'Modo demo: entra con admin@demo.com o super@demo.com (cualquier contraseña).';
+  static const _demoOnly = 'Modo demo: entra con admin@demo.com, staff@demo.com o super@demo.com (cualquier contraseña).';
 
   static Future<void> signIn({required String email, required String password}) async {
     if (kDemo) {

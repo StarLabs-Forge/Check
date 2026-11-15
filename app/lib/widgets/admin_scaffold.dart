@@ -124,7 +124,7 @@ class _SidebarContent extends StatelessWidget {
       // Aunque falle la red, se limpia la sesión local y se vuelve al login.
       AppSession.clear();
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(context).pushNamedAndRemoveUntil('/bienvenida', (route) => false);
       }
     }
   }

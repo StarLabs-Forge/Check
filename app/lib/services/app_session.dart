@@ -70,10 +70,6 @@ class AppSession {
         await _db.auth.signOut();
         return 'Tu cuenta está suspendida.';
       }
-      if (role == 'staff') {
-        await _db.auth.signOut();
-        return 'Esta cuenta es de Staff. El staff ingresa desde la app móvil con su código.';
-      }
 
       final meta = user.userMetadata ?? const <String, dynamic>{};
       final venue = (meta['venue_name'] as String?)?.trim();
@@ -103,18 +99,27 @@ class AppSession {
   }
 
   /// Ruta de entrada tras autenticarse.
+  /// Panel de destino según el rol autenticado (el rol sale de `profiles`).
   static String get entryRoute {
-    if (needsProfileCompletion) return '/completar-perfil';
-    return profile.value?.role == 'super_admin' ? '/superadmin' : '/home';
+    switch (profile.value?.role) {
+      case 'super_admin':
+        return '/superadmin';
+      case 'staff':
+        return '/staff';
+      default:
+        return needsProfileCompletion ? '/completar-perfil' : '/home';
+    }
   }
 
   /// Modo demo: perfil simulado según el correo (`super…` = superadmin).
   static void signInDemo(String email) {
-    final isSuper = email.trim().toLowerCase().startsWith('super');
+    final e = email.trim().toLowerCase();
+    final isSuper = e.startsWith('super');
+    final isStaff = e.startsWith('staff');
     profile.value = Profile(
-      id: isSuper ? 'demo-super' : 'demo-admin',
-      fullName: isSuper ? 'Equipo CHECK' : 'Carla Mendoza',
-      role: isSuper ? 'super_admin' : 'admin',
+      id: isSuper ? 'demo-super' : (isStaff ? 'demo-staff' : 'demo-admin'),
+      fullName: isSuper ? 'Equipo CHECK' : (isStaff ? 'Marco Limachi' : 'Carla Mendoza'),
+      role: isSuper ? 'super_admin' : (isStaff ? 'staff' : 'admin'),
       plan: 'pro',
       status: 'active',
       venueName: isSuper ? 'Plataforma CHECK' : 'Dharma Club',
