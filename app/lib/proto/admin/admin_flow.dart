@@ -130,7 +130,7 @@ class _PaymentsInboxState extends State<PaymentsInbox> {
         else if (_error)
           StateView(ViewState.error, message: 'No pudimos cargar las solicitudes.', onRetry: _load)
         else
-          ListenableBuilder(listenable: _store, builder: (_, __) => _content()),
+          ListenableBuilder(listenable: _store, builder: (_, _) => _content()),
       ]),
     );
   }
@@ -270,6 +270,9 @@ class PaymentDetailScreen extends StatefulWidget {
 class _PaymentDetailState extends State<PaymentDetailScreen> {
   bool _busy = false;
   bool _conflict = false;
+  // Estado que esta pantalla «conoce»: si otro usuario decide mientras tanto,
+  // los botones siguen visibles hasta actualizar y el intento queda bloqueado.
+  late OrderStatus _seen = _store.orderById(widget.orderId)!.status;
 
   bool get _allowed => widget.actor.id == ProtoStore.admin.id || _store.verifierEnabled(widget.actor.id);
 
@@ -314,6 +317,7 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
     setState(() {
       _busy = false;
       _conflict = r == DecisionResult.conflict;
+      if (r == DecisionResult.ok) _seen = _store.orderById(widget.orderId)!.status;
     });
     if (r == DecisionResult.ok) toast(context, okMsg);
   }
@@ -325,17 +329,17 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
       builder: (context, _) {
         final o = _store.orderById(widget.orderId)!;
         final e = _store.eventById(o.eventId);
-        final pending = o.status == OrderStatus.verifying;
+        final pending = _seen == OrderStatus.verifying;
         final history = _store.audit.where((a) => a.orderNumber == o.number).toList();
 
         final left = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(o.number, style: ts(AppTextSize.h2, w: FontWeight.w800))),
-            Chip2(statusLabel(o.status), statusColor(o.status)),
+            Chip2(statusLabel(_seen), statusColor(_seen)),
           ]),
           const SizedBox(height: 12),
           if (pending) const Notice('El cliente informó que pagó. Comprueba el depósito en la cuenta bancaria del local antes de confirmar.'),
-          if (_conflict || (!pending && o.decidedBy != null && _conflict)) ...[
+          if (_conflict) ...[
             const SizedBox(height: 8),
             Notice('Conflicto: ${o.decidedBy ?? 'otro usuario'} ya resolvió esta orden. Solo una decisión puede quedar confirmada; tu acción no se aplicó. Actualiza el estado.', color: AppColors.error, icon: Icons.sync_problem),
           ],
@@ -412,9 +416,14 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
                 PButton('Rechazar pago', kind: BtnKind.danger, icon: Icons.block, onPressed: _busy ? null : _reject),
                 const SizedBox(height: 10),
                 TextButton.icon(
-                  onPressed: _busy ? null : () => _store.simulateOtherVerifier(o.id),
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          _store.simulateOtherVerifier(o.id);
+                          toast(context, 'Otro verificador aprobó esta orden. Tu pantalla aún no lo sabe: intenta decidir.');
+                        },
                   icon: const Icon(Icons.groups_outlined, size: 18),
-                  label: const Text('Demo: otro verificador resuelve esta orden primero'),
+                  label: const Text('Demo: otro verificador resuelve primero'),
                 ),
               ] else if (!pending) ...[
                 Notice(
@@ -422,7 +431,10 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
                   color: statusColor(o.status),
                   icon: o.status == OrderStatus.approved ? Icons.check_circle_outline : Icons.block,
                 ),
-                if (_conflict) ...[const SizedBox(height: 10), PButton('Actualizar estado', kind: BtnKind.secondary, icon: Icons.refresh, onPressed: () => setState(() => _conflict = false))],
+                if (_conflict) ...[const SizedBox(height: 10), PButton('Actualizar estado', kind: BtnKind.secondary, icon: Icons.refresh, onPressed: () => setState(() {
+                  _conflict = false;
+                  _seen = o.status;
+                }))],
               ] else
                 const Notice('Tu permiso fue revocado: ya no puedes decidir esta orden.', color: AppColors.error, icon: Icons.lock_outline),
             ]),
@@ -513,7 +525,7 @@ class NotificationsPage extends StatelessWidget {
     final e = _store.events[r.nextInt(2)];
     final t = e.types.first;
     final q = 1 + r.nextInt(3);
-    final o = _store.createOrder(eventId: e.id, qty: {t.id: q}, name: names[r.nextInt(names.length)], ci: '${6000000 + r.nextInt(3000000)} LP', phone: '7${10000000 + r.nextInt(8999999)}');
+    final o = _store.createOrder(eventId: e.id, qty: {t.id: q}, name: names[r.nextInt(names.length)], ci: '${6000000 + r.nextInt(3000000)} LP', phone: '7${1000000 + r.nextInt(8999999)}');
     _store.declarePaid(o.id);
     toast(context, 'Pago declarado por ${o.buyerName} (simulado)');
   }
@@ -618,7 +630,6 @@ class DelegationPage extends StatelessWidget {
               _perm(true, 'Ver su propio historial de verificaciones'),
               _perm(false, 'Modificar precios o eventos'),
               _perm(false, 'Administrar personal o permisos'),
-              _perm(false, 'Cerrar caja'),
               _perm(false, 'Acceder al panel del superadministrador'),
             ]),
           ),

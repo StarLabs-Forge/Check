@@ -31,7 +31,7 @@ String waitText(DateTime since) {
   if (m < 1) return 'ahora';
   if (m < 60) return '$m min';
   final h = m ~/ 60;
-  return h < 24 ? '${h} h ${m % 60} min' : '${h ~/ 24} d';
+  return h < 24 ? '$h h ${m % 60} min' : '${h ~/ 24} d';
 }
 
 /// Antigüedad: <15 min normal, <60 atención, resto urgente.

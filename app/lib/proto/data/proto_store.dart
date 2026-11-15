@@ -107,8 +107,11 @@ class Order {
 
   int get ticketCount => lines.fold(0, (s, l) => s + l.qty);
   DateTime get expiresAt => createdAt.add(const Duration(minutes: 15));
+  /// Una orden sin pagar deja de retener cupos al vencer su plazo, aunque nadie la haya cerrado.
   bool get holdsSeats =>
-      status == OrderStatus.awaitingPayment || status == OrderStatus.verifying || status == OrderStatus.approved;
+      (status == OrderStatus.awaitingPayment && DateTime.now().isBefore(expiresAt)) ||
+      status == OrderStatus.verifying ||
+      status == OrderStatus.approved;
 }
 
 class Actor {
@@ -468,9 +471,9 @@ class ProtoStore extends ChangeNotifier {
     if (o == null || o.status != OrderStatus.verifying) return;
     o.status = OrderStatus.approved;
     o.decidedAt = now;
-    o.decidedBy = 'Otro verificador (Diego Ramos)';
+    o.decidedBy = 'Otro verificador';
     o.ticketCodes = List.generate(o.ticketCount, (i) => 'DEMO-${o.number.substring(4)}-${i + 1}');
-    audit.insert(0, AuditEntry(at: now, actor: 'Diego Ramos', permission: 'Verificador delegado de pagos', action: 'Aprobó pago', result: 'Aprobado · ${o.ticketCount} QR generados', orderNumber: o.number));
+    audit.insert(0, AuditEntry(at: now, actor: 'Otro verificador', permission: 'Verificador delegado de pagos', action: 'Aprobó pago', result: 'Aprobado · ${o.ticketCount} QR generados', orderNumber: o.number));
     notifyListeners();
   }
 

@@ -41,7 +41,7 @@ class _SuperadminExperienceState extends State<SuperadminExperience> {
       index: _i,
       onSelect: (v) => setState(() => _i = v),
       onExit: widget.onExit,
-      body: ListenableBuilder(listenable: _store, builder: (_, __) => body),
+      body: ListenableBuilder(listenable: _store, builder: (_, _) => body),
     );
   }
 }

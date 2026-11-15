@@ -164,7 +164,7 @@ class EventDetailScreen extends StatelessWidget {
         for (final t in e.types)
           ListenableBuilder(
             listenable: _store,
-            builder: (_, __) {
+            builder: (_, _) {
               final r = _store.remaining(t);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -644,7 +644,7 @@ class _TicketCard extends StatelessWidget {
       child: Column(children: [
         Row(children: [
           Expanded(child: Text('Entrada ${i + 1} de ${o.ticketCount}', style: ts(AppTextSize.body, w: FontWeight.w700))),
-          const Chip2('Válida · demo', AppColors.success),
+          const Chip2('Demo · no válida', PColors.warning),
         ]),
         const SizedBox(height: 12),
         Container(
@@ -656,7 +656,7 @@ class _TicketCard extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(code, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-        Text('DEMO · NO VÁLIDA', style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
+        Text('QR de demostración · no válido en ningún evento', style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
         const SizedBox(height: 10),
         PButton('Descargar QR', kind: BtnKind.secondary, icon: Icons.download, onPressed: () => toast(context, 'Descarga simulada de $code')),
       ]),
