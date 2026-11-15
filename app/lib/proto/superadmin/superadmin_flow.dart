@@ -325,7 +325,33 @@ class _ActivityPage extends StatelessWidget {
   }
 }
 
-// C5
+// C5 · Auditoría global: primero una vista general por local; al entrar a uno se
+// ve su actividad SIN datos de empleados ni de compradores (son privados del local).
+String _venueOf(AuditEntry a) {
+  if (a.venue != null) return a.venue!;
+  if (a.orderNumber != null) {
+    for (final o in _store.orders) {
+      if (o.number == a.orderNumber) return _store.venueById(_store.eventById(o.eventId).venueId).name;
+    }
+  }
+  return 'Dharma Club';
+}
+
+String _roleOf(AuditEntry a) {
+  if (a.permission.contains('Verificador')) return 'Verificador delegado';
+  if (a.permission.contains('Administrador')) return 'Administrador del local';
+  return a.permission;
+}
+
+String _kindOf(AuditEntry a) {
+  if (a.action.contains('Aprobó')) return 'Pago aprobado';
+  if (a.action.contains('Rechazó')) return 'Pago rechazado';
+  if (a.action.contains('bloqueado')) return 'Decisión duplicada bloqueada';
+  if (a.action.contains('Revocó')) return 'Permiso de verificación revocado';
+  if (a.action.contains('permiso')) return 'Permiso de verificación concedido';
+  return a.action;
+}
+
 class _GlobalAudit extends StatefulWidget {
   const _GlobalAudit();
   @override
@@ -333,22 +359,105 @@ class _GlobalAudit extends StatefulWidget {
 }
 
 class _GlobalAuditState extends State<_GlobalAudit> {
-  String _f = 'all';
+  bool _platform = false;
+
+  List<AuditEntry> _of(String venue) =>
+      [..._store.audit, ..._store.platformLog].where((a) => _venueOf(a) == venue).toList()..sort((a, b) => b.at.compareTo(a.at));
+
   @override
   Widget build(BuildContext context) {
-    final all = [..._store.audit, ..._store.platformLog]..sort((a, b) => b.at.compareTo(a.at));
-    final list = all.where((a) => switch (_f) { 'pay' => a.orderNumber != null, 'perm' => a.action.contains('permiso'), 'plat' => a.venue != null, _ => true }).toList();
     return ResponsiveBody(
-      maxWidth: 800,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const H('Auditoría global', sub: 'Solo lectura. No se puede editar ni eliminar.'),
-        const Chip2('Solo lectura', AppColors.textSecondary),
-        const SizedBox(height: 12),
-        Wrap(spacing: 8, children: [for (final (k, l) in const [('all', 'Todo'), ('pay', 'Pagos'), ('perm', 'Permisos'), ('plat', 'Plataforma')]) ChoiceChip(label: Text(l), selected: _f == k, onSelected: (_) => setState(() => _f = k))]),
+        const H('Auditoría global', sub: 'Vista general por local. Solo lectura.'),
+        Wrap(spacing: 8, children: [
+          ChoiceChip(label: const Text('Por local'), selected: !_platform, onSelected: (_) => setState(() => _platform = false)),
+          ChoiceChip(label: const Text('Plataforma'), selected: _platform, onSelected: (_) => setState(() => _platform = true)),
+        ]),
         const SizedBox(height: 14),
-        if (list.isEmpty) const StateView(ViewState.empty, message: 'Sin registros.'),
-        for (final a in list) AuditTile(a),
+        if (_platform) ...[
+          const Notice('Acciones del equipo CHECK sobre la plataforma: altas, planes, suspensiones y publicaciones.', icon: Icons.public, color: PColors.info),
+          const SizedBox(height: 12),
+          for (final a in _store.platformLog) AuditTile(a),
+        ] else ...[
+          const Notice('Los datos de empleados y de compradores son privados de cada local y no se muestran aquí.', icon: Icons.lock_outline, color: PColors.info),
+          const SizedBox(height: 12),
+          _grid([
+            for (final v in _store.venues)
+              Builder(builder: (context) {
+                final list = _of(v.name);
+                int c(bool Function(AuditEntry) t) => list.where(t).length;
+                final last = list.isEmpty ? null : list.first.at;
+                return PCard(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => _VenueAudit(v.name))),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text(v.name, style: ts(AppTextSize.bodyLg, w: FontWeight.w700))),
+                      Chip2(v.active ? 'Activo' : 'Inactivo', v.active ? AppColors.success : AppColors.textSecondary),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text('${v.zone} · Plan ${v.plan}', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    KV('Acciones registradas', '${list.length}'),
+                    KV('Pagos aprobados / rechazados', '${c((a) => a.action.contains('Aprobó'))} / ${c((a) => a.action.contains('Rechazó'))}'),
+                    KV('Bloqueos por doble decisión', '${c((a) => a.action.contains('bloqueado'))}'),
+                    KV('Última actividad', last == null ? 'Sin actividad' : fmtDateTime(last)),
+                  ]),
+                );
+              }),
+          ], minW: 320),
+        ],
       ]),
+    );
+  }
+}
+
+class _VenueAudit extends StatelessWidget {
+  const _VenueAudit(this.venue);
+  final String venue;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _store,
+      builder: (context, _) {
+        final list = [..._store.audit, ..._store.platformLog].where((a) => _venueOf(a) == venue).toList()
+          ..sort((a, b) => b.at.compareTo(a.at));
+        int c(bool Function(AuditEntry) t) => list.where(t).length;
+        return Scaffold(
+          appBar: AppBar(title: Text('Auditoría · $venue', style: ts(AppTextSize.bodyLg, w: FontWeight.w700))),
+          body: ResponsiveBody(
+            maxWidth: 800,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Notice('Actividad del local sin identidad de empleados, motivos ni datos de compradores. Solo lectura.', icon: Icons.lock_outline, color: PColors.info),
+              const SizedBox(height: 12),
+              _grid([
+                _Stat('Aprobados', '${c((a) => a.action.contains('Aprobó'))}', Icons.check_circle_outline, color: AppColors.success),
+                _Stat('Rechazados', '${c((a) => a.action.contains('Rechazó'))}', Icons.block, color: AppColors.error),
+                _Stat('Bloqueos', '${c((a) => a.action.contains('bloqueado'))}', Icons.sync_problem, color: PColors.warning),
+                _Stat('Cambios de permiso', '${c((a) => a.action.contains('permiso'))}', Icons.verified_user_outlined, color: PColors.info),
+              ], minW: 170),
+              const SizedBox(height: 16),
+              if (list.isEmpty) const StateView(ViewState.empty, message: 'Este local aún no tiene actividad.'),
+              for (final a in list)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: PCard(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(child: Text(_kindOf(a), style: ts(AppTextSize.body, w: FontWeight.w700))),
+                        Text(fmtDateTime(a.at), style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                      ]),
+                      const SizedBox(height: 6),
+                      KV('Rol', _roleOf(a)),
+                      if (a.orderNumber != null) KV('Orden', a.orderNumber!),
+                      KV('Resultado', a.result),
+                    ]),
+                  ),
+                ),
+            ]),
+          ),
+        );
+      },
     );
   }
 }
