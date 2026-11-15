@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../services/app_session.dart';
+
 /// Datos 100 % simulados del prototipo. No hay backend, pagos ni envíos reales.
 
 enum OrderStatus { awaitingPayment, verifying, approved, rejected, expired, cancelled }
@@ -166,7 +168,12 @@ class ProtoStore extends ChangeNotifier {
   static final ProtoStore instance = ProtoStore();
 
   static const bankBeneficiary = 'Dharma Club S.R.L.';
-  static const admin = Actor(id: 'carla', name: 'Carla Mendoza', permission: 'Administradora del local');
+  /// Administrador del local: usa el perfil real de la sesión si existe.
+  static Actor get admin => Actor(
+        id: 'admin',
+        name: AppSession.profile.value?.fullName ?? 'Carla Mendoza',
+        permission: 'Administrador del local',
+      );
   static const verifierActor = Actor(id: 'diego', name: 'Diego Ramos', permission: 'Verificador delegado de pagos');
 
   late final List<Venue> venues;

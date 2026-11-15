@@ -8,6 +8,8 @@ import '../widgets/staff_badge.dart';
 import '../widgets/staff_button.dart';
 import '../widgets/staff_icon.dart';
 import '../widgets/staff_progress_bar.dart';
+import '../../proto/admin/verifier_screen.dart';
+import '../../proto/data/proto_store.dart';
 import 'scanner_screen.dart';
 
 /// Figma → 📱 App Móvil → "Eventos activos" (30:2), 390×844.
@@ -101,6 +103,22 @@ class _StaffEventsScreenState extends State<StaffEventsScreen> {
                         label: 'Iniciar Scanner',
                         height: 56,
                         onPressed: selected == null ? null : () => _startScanner(selected),
+                      ),
+                      ListenableBuilder(
+                        listenable: ProtoStore.instance,
+                        builder: (context, _) => !ProtoStore.instance.verifierEnabled(ProtoStore.verifierActor.id)
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(top: AppSpacing.s3),
+                                child: StaffButton(
+                                  label: 'Verificar pagos (${ProtoStore.instance.pending.length})',
+                                  height: 56,
+                                  variant: StaffButtonVariant.outline,
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const VerifierPaymentsScreen()),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: AppSpacing.s8),
                       _Connectivity(online: _online),

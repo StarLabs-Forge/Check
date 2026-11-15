@@ -101,7 +101,10 @@ class AppSession {
   }
 
   /// Ruta de entrada tras autenticarse.
-  static String get entryRoute => needsProfileCompletion ? '/completar-perfil' : '/home';
+  static String get entryRoute {
+    if (needsProfileCompletion) return '/completar-perfil';
+    return profile.value?.role == 'super_admin' ? '/superadmin' : '/home';
+  }
 
   static void clear() => profile.value = null;
 }

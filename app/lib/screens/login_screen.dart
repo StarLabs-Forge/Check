@@ -187,6 +187,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.s2),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).pushNamed('/comprar'),
+              icon: const Icon(Icons.confirmation_number_outlined, size: 18),
+              label: const Text('Quiero comprar entradas'),
+            ),
           ],
         ),
       ),

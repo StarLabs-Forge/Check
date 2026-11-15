@@ -9,9 +9,13 @@ import 'screens/coming_soon_screen.dart';
 import 'screens/complete_profile_screen.dart';
 import 'screens/events_list_screen.dart';
 import 'screens/home_screen.dart';
+import 'proto/buyer/buyer_flow.dart';
+import 'proto/superadmin/superadmin_flow.dart';
 import 'screens/loading_screen.dart';
+import 'screens/payments_screens.dart';
 import 'screens/login_screen.dart';
 import 'services/app_session.dart';
+import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/admin_scaffold.dart';
 
@@ -98,6 +102,12 @@ class _CheckAppState extends State<CheckApp> {
         '/home': (_) => const HomeScreen(),
         '/eventos': (_) => const EventsListScreen(),
         '/tickets': (_) => const AdminTicketsScreen(),
+        '/pagos': (_) => const AdminPaymentsScreen(),
+        '/verificadores': (_) => const AdminVerifiersScreen(),
+        '/auditoria': (_) => const AdminAuditScreen(),
+        '/superadmin': (_) => SuperadminExperience(onExit: AuthService.signOut),
+        // Compra pública sin cuenta (comprador).
+        '/comprar': (_) => const BuyerHome(),
         '/configuracion': (_) => const ComingSoonScreen(current: AdminRoute.configuracion),
       },
       // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
