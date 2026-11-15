@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../widgets/admin_scaffold.dart';
 
-/// Pantalla inicial del Admin — implementa el frame "Dashboard Principal"
-/// del archivo de Figma (🖥️ Dashboard Web, node 25:2), adaptado a Flutter:
-/// misma paleta, tipografía Inter, espaciados y componentes (Metric Card,
-/// Badge, Progress Bar, Toast, Avatar) definidos ahí.
+import '../data/admin_repository.dart';
+import '../data/models.dart';
+import '../services/app_session.dart';
+import '../services/errors.dart';
+import '../services/table_watcher.dart';
+import '../theme/app_theme.dart';
+import '../utils/format.dart';
+import '../widgets/admin_scaffold.dart';
+import '../widgets/async_states.dart';
+
+/// Pantalla inicial del Admin — frame "Dashboard Principal" del Figma.
+/// Datos reales de Supabase y actualización en vivo vía Realtime: cada
+/// check-in (tabla `tickets`) refresca contadores, progreso y actividad.
 ///
-/// El layout de sidebar/navegación compartido con Eventos y Tickets vive en
-/// `AdminScaffold` (lib/widgets/admin_scaffold.dart).
+/// El layout de sidebar/navegación compartido vive en `AdminScaffold`.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,29 +23,124 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _showToast = true;
+  final _repo = AdminRepository.instance;
+  late final TableWatcher _watcher;
+
+  bool _loading = true;
+  String? _error;
+
+  List<EventItem> _events = const [];
+  EventItem? _featured;
+  List<GuestItem> _recent = const [];
+
+  /// Último check-in conocido; sirve para disparar el toast solo con ingresos
+  /// nuevos (no en la carga inicial).
+  String? _lastCheckinId;
+  GuestItem? _toastGuest;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(initial: true);
+    _watcher = TableWatcher(tables: const ['tickets', 'events'], onChange: () => _load())..start();
+  }
+
+  @override
+  void dispose() {
+    _watcher.dispose();
+    super.dispose();
+  }
+
+  /// Evento "destacado" del dashboard: el que está en vivo; si no, el activo
+  /// más próximo (o el último activo); si no hay, el más reciente.
+  static EventItem? pickFeatured(List<EventItem> events) {
+    if (events.isEmpty) return null;
+    for (final e in events) {
+      if (e.isLive) return e;
+    }
+    final active = events.where((e) => e.isActive).toList()..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    if (active.isNotEmpty) {
+      final now = DateTime.now().toUtc();
+      return active.firstWhere((e) => e.endsAt.isAfter(now), orElse: () => active.last);
+    }
+    return events.first; // vienen ordenados del más reciente al más antiguo
+  }
+
+  Future<void> _load({bool initial = false}) async {
+    try {
+      final events = await _repo.listEvents();
+      final featured = pickFeatured(events);
+      final recent = featured == null ? <GuestItem>[] : await _repo.recentCheckins(featured.id);
+      if (!mounted) return;
+
+      final newest = recent.isEmpty ? null : recent.first;
+      final isNewCheckin = !initial && newest != null && newest.id != _lastCheckinId;
+
+      setState(() {
+        _events = events;
+        _featured = featured;
+        _recent = recent;
+        _loading = false;
+        _error = null;
+        if (isNewCheckin) _toastGuest = newest;
+        _lastCheckinId = newest?.id ?? _lastCheckinId;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        // Si ya había datos, un fallo de refresco en vivo no los reemplaza.
+        if (_events.isEmpty) _error = friendlyError(e);
+      });
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    _load(initial: true);
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
       current: AdminRoute.dashboard,
-      body: const _DashboardContent(),
-      overlay: _showToast
-          ? Positioned(
+      body: _loading
+          ? const LoadingBlock()
+          : _error != null
+              ? ErrorBlock(message: _error!, onRetry: _retry)
+              : _DashboardContent(events: _events, featured: _featured, recent: _recent),
+      overlay: _toastGuest == null
+          ? null
+          : Positioned(
               top: 24,
               right: 24,
-              child: _ToastNotification(onDismiss: () => setState(() => _showToast = false)),
-            )
-          : null,
+              child: _ToastNotification(
+                guest: _toastGuest!,
+                onDismiss: () => setState(() => _toastGuest = null),
+              ),
+            ),
     );
   }
 }
 
 class _DashboardContent extends StatelessWidget {
-  const _DashboardContent();
+  const _DashboardContent({required this.events, required this.featured, required this.recent});
+
+  final List<EventItem> events;
+  final EventItem? featured;
+  final List<GuestItem> recent;
 
   @override
   Widget build(BuildContext context) {
+    final f = featured;
+    final activeEvents = events.where((e) => e.isOpen).length;
+    final checkins = f?.checkins ?? 0;
+    final lastHour = f?.checkinsLastHour ?? 0;
+    final occupancyPct = f == null ? 0.0 : f.occupancy * 100;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.s6),
       child: Column(
@@ -50,22 +151,40 @@ class _DashboardContent extends StatelessWidget {
           Wrap(
             spacing: AppSpacing.s6,
             runSpacing: AppSpacing.s6,
-            children: const [
-              MetricCard(label: 'Eventos activos', value: '1', trendLabel: 'Sin cambios'),
-              MetricCard(label: 'Check-ins', value: '143', trendLabel: '↑ 12 en la última hora', trendColor: AppColors.accentPrimary),
-              MetricCard(label: 'Ocupación', value: '71.5%', trendLabel: '143 de 200 plazas', trendColor: AppColors.accentPrimary),
-              MetricCard(label: 'Cancelados', value: '1', trendLabel: '↓ 1 cancelación', trendColor: AppColors.error),
+            children: [
+              MetricCard(label: 'Eventos activos', value: '$activeEvents', trendLabel: 'Sin cambios'),
+              MetricCard(
+                label: 'Check-ins',
+                value: '$checkins',
+                trendLabel: lastHour > 0 ? '↑ $lastHour en la última hora' : 'Sin cambios',
+                trendColor: lastHour > 0 ? AppColors.accentPrimary : null,
+              ),
+              MetricCard(
+                label: 'Ocupación',
+                value: '${occupancyPct.toStringAsFixed(1)}%',
+                trendLabel: f == null ? 'Sin evento' : '$checkins de ${f.capacity} plazas',
+                trendColor: f == null ? null : AppColors.accentPrimary,
+              ),
+              MetricCard(
+                label: 'Cancelados',
+                value: '${f?.ticketsCancelled ?? 0}',
+                trendLabel: (f?.ticketsCancelled ?? 0) > 0 ? '↓ ${f!.ticketsCancelled} cancelación(es)' : 'Sin cambios',
+                trendColor: (f?.ticketsCancelled ?? 0) > 0 ? AppColors.error : null,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.s8),
-          Wrap(
-            spacing: AppSpacing.s6,
-            runSpacing: AppSpacing.s6,
-            children: const [
-              _EventProgressCard(),
-              _RecentActivityCard(),
-            ],
-          ),
+          if (f == null)
+            const _EmptyState()
+          else
+            Wrap(
+              spacing: AppSpacing.s6,
+              runSpacing: AppSpacing.s6,
+              children: [
+                _EventProgressCard(event: f),
+                _RecentActivityCard(entries: recent),
+              ],
+            ),
         ],
       ),
     );
@@ -77,45 +196,86 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: AppSpacing.s6,
-      runSpacing: AppSpacing.s4,
-      children: const [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+    return ValueListenableBuilder<Profile?>(
+      valueListenable: AppSession.profile,
+      builder: (context, profile, _) {
+        return Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.s6,
+          runSpacing: AppSpacing.s4,
           children: [
-            Text(
-              'Bienvenido, Napoleón Flores',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: AppTextSize.h1,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: AppSpacing.s2),
-            Text(
-              'Viernes, 12 de septiembre de 2025 · Dharma Club',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Bienvenido, ${profile?.fullName ?? ''}',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: AppTextSize.h1,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s2),
+                Text(
+                  '${Fmt.longToday()} · ${profile?.venueName ?? ''}',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+                ),
+              ],
             ),
           ],
-        ),
-        SizedBox(
-          width: 340,
-          child: SearchField(hint: 'Buscar eventos'),
-        ),
-      ],
+        );
+      },
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.s8),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        border: Border.all(color: AppColors.bgBorder),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Todavía no tienes eventos',
+            style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.h3, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: AppSpacing.s2),
+          const Text(
+            'Crea tu primer evento para empezar a emitir tickets y controlar el acceso.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+          ),
+          const SizedBox(height: AppSpacing.s6),
+          SizedBox(
+            width: 200,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pushReplacementNamed('/eventos'),
+              child: const Text('Ir a Eventos'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _EventProgressCard extends StatelessWidget {
-  const _EventProgressCard();
+  const _EventProgressCard({required this.event});
+
+  final EventItem event;
 
   @override
   Widget build(BuildContext context) {
-    const progress = 0.715;
     return Container(
       width: 680,
       padding: const EdgeInsets.all(AppSpacing.s8),
@@ -127,42 +287,48 @@ class _EventProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Text(
+              const Text(
                 'Progreso del Evento',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.h3, fontWeight: FontWeight.w600),
               ),
-              SizedBox(width: AppSpacing.s3),
-              StatusBadge(BadgeStatus.activo),
+              const SizedBox(width: AppSpacing.s3),
+              StatusBadge(event.status),
             ],
           ),
           const SizedBox(height: AppSpacing.s6),
-          const Text(
-            'Eclipse Party',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.h1, fontWeight: FontWeight.w700),
+          Text(
+            event.name,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.h1, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.s2),
-          const Text(
-            '12 Sep 2025 · 22:00',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+          Text(
+            '${event.date} · ${event.time}',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
           ),
           const SizedBox(height: AppSpacing.s4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
-            children: const [
-              Text('143', style: TextStyle(color: AppColors.accentPrimary, fontSize: 64, fontWeight: FontWeight.w700)),
-              SizedBox(width: AppSpacing.s3),
-              Text('/ 200', style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.h1)),
+            children: [
+              Text(
+                '${event.checkins}',
+                style: const TextStyle(color: AppColors.accentPrimary, fontSize: 64, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              Text(
+                '/ ${event.capacity}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.h1),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
-          const AppProgressBar(progress: progress, height: 8),
+          AppProgressBar(progress: event.occupancy, height: 8),
           const SizedBox(height: AppSpacing.s3),
-          const Text(
-            '71.5% Ingresados · 57 Pendientes',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+          Text(
+            '${(event.occupancy * 100).toStringAsFixed(1)}% Ingresados · ${event.pending} Pendientes',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
           ),
           const SizedBox(height: AppSpacing.s6),
           SizedBox(
@@ -179,14 +345,9 @@ class _EventProgressCard extends StatelessWidget {
 }
 
 class _RecentActivityCard extends StatelessWidget {
-  const _RecentActivityCard();
+  const _RecentActivityCard({required this.entries});
 
-  static const _entries = [
-    ('AC', 'Andrés Condori', '22:18'),
-    ('DA', 'Diego Alvarado', '22:05'),
-    ('RM', 'Rodrigo Mamani', '21:41'),
-    ('VQ', 'Valentina Quispe', '21:34'),
-  ];
+  final List<GuestItem> entries;
 
   @override
   Widget build(BuildContext context) {
@@ -211,10 +372,16 @@ class _RecentActivityCard extends StatelessWidget {
             style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
           ),
           const SizedBox(height: AppSpacing.s6),
-          for (final entry in _entries) ...[
-            _ActivityRow(initials: entry.$1, name: entry.$2, time: entry.$3),
-            if (entry != _entries.last) const SizedBox(height: AppSpacing.s4),
-          ],
+          if (entries.isEmpty)
+            const Text(
+              'Aún no hay ingresos registrados.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+            )
+          else
+            for (var i = 0; i < entries.length; i++) ...[
+              _ActivityRow(guest: entries[i]),
+              if (i != entries.length - 1) const SizedBox(height: AppSpacing.s4),
+            ],
         ],
       ),
     );
@@ -222,38 +389,47 @@ class _RecentActivityCard extends StatelessWidget {
 }
 
 class _ActivityRow extends StatelessWidget {
-  const _ActivityRow({required this.initials, required this.name, required this.time});
+  const _ActivityRow({required this.guest});
 
-  final String initials;
-  final String name;
-  final String time;
+  final GuestItem guest;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Avatar(initials: initials),
+        Avatar(initials: Fmt.initials(guest.name)),
         const SizedBox(width: AppSpacing.s3),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: const TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.body, fontWeight: FontWeight.w500)),
+              Text(
+                guest.name,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: AppTextSize.body,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: AppSpacing.s1),
-              const Text('Acceso permitido', style: TextStyle(color: AppColors.accentPrimary, fontSize: AppTextSize.caption)),
+              const Text(
+                'Acceso permitido',
+                style: TextStyle(color: AppColors.accentPrimary, fontSize: AppTextSize.caption),
+              ),
             ],
           ),
         ),
-        Text(time, style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption)),
+        Text(guest.time, style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption)),
       ],
     );
   }
 }
 
 class _ToastNotification extends StatelessWidget {
-  const _ToastNotification({required this.onDismiss});
+  const _ToastNotification({required this.guest, required this.onDismiss});
 
+  final GuestItem guest;
   final VoidCallback onDismiss;
 
   @override
@@ -293,19 +469,24 @@ class _ToastNotification extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
-                      'Andrés Condori',
+                      guest.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.body, fontWeight: FontWeight.w600, height: 1.2),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: AppTextSize.body,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Acaba de ingresar · 22:18',
+                      'Acaba de ingresar · ${guest.time}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption, height: 1.2),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption, height: 1.2),
                     ),
                   ],
                 ),
