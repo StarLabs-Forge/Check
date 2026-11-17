@@ -1,18 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
+import 'home_screen.dart';
 
-/// Confirmación de correo con código de 6 dígitos (Supabase Auth OTP, tipo
-/// `signup`). Se muestra al registrarse —o al intentar entrar con una cuenta
-/// sin confirmar— cuando el proyecto tiene la confirmación de correo activa.
-/// Al verificar bien, Supabase crea la sesión y el listener de `main.dart`
-/// lleva al panel.
-///
-/// Nota: esto NO es un 2FA en cada login (el login es solo correo +
-/// contraseña). Un 2FA real requeriría Supabase MFA (TOTP).
+/// Código de verificación (2FA) — se pide en cada inicio de sesión del
+/// Admin. Puramente visual por ahora: cualquier código de 6 dígitos navega
+/// a la pantalla inicial; la generación/envío/validación real del código
+/// queda para cuando se conecte el backend.
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key, required this.email});
 
@@ -87,47 +82,33 @@ class _VerificationScreenState extends State<VerificationScreen> {
       return;
     }
 
-    setState(() {
-      _isVerifying = true;
-      _error = null;
-    });
-    try {
-      await AuthService.verifySignupCode(email: widget.email, code: _code);
-      // Éxito: el listener de auth navega al panel.
-    } catch (e) {
-      if (!mounted) return;
-      for (final c in _controllers) {
-        c.clear();
-      }
-      _focusNodes.first.requestFocus();
-      setState(() => _error = friendlyError(e));
-    }
-    if (mounted) setState(() => _isVerifying = false);
+    setState(() => _isVerifying = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() => _isVerifying = false);
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
   }
 
-  Future<void> _resend() async {
+  void _resend() {
     if (_secondsLeft > 0) return;
-    try {
-      await AuthService.resendSignupCode(widget.email);
-      if (!mounted) return;
-      for (final c in _controllers) {
-        c.clear();
-      }
-      _focusNodes.first.requestFocus();
-      _startTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Código reenviado')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    for (final c in _controllers) {
+      c.clear();
     }
+    _focusNodes.first.requestFocus();
+    _startTimer();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Código reenviado')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: 'Verifica tu correo',
+      title: 'Verifica tu identidad',
       subtitle: 'Enviamos un código de 6 dígitos a ${widget.email}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,76 +1,16 @@
 import 'package:flutter/material.dart';
-
-import '../data/admin_repository.dart';
-import '../data/models.dart';
-import '../services/app_session.dart';
-import '../services/errors.dart';
-import '../services/table_watcher.dart';
+import '../data/mock_admin_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/admin_modals.dart';
 import '../widgets/admin_scaffold.dart';
-import '../widgets/async_states.dart';
 import 'event_detail_screen.dart';
 
-/// "Mis Eventos" — frame "Lista de Eventos" del Figma: tabla de eventos con
-/// fecha, capacidad, check-ins con barra de progreso, estado y "Ver detalle".
-/// Datos reales (vista `events_with_stats`) con refresco en vivo.
-class EventsListScreen extends StatefulWidget {
+/// "Mis Eventos" — implementa el frame "Lista de Eventos" (node 26:74) del
+/// Figma: tabla de eventos con fecha, capacidad, check-ins con barra de
+/// progreso, estado (Badge) y acción "Ver detalle". Datos mock — sin
+/// Supabase todavía.
+class EventsListScreen extends StatelessWidget {
   const EventsListScreen({super.key});
-
-  @override
-  State<EventsListScreen> createState() => _EventsListScreenState();
-}
-
-class _EventsListScreenState extends State<EventsListScreen> {
-  late final TableWatcher _watcher;
-
-  bool _loading = true;
-  String? _error;
-  List<EventItem> _events = const [];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-    _watcher = TableWatcher(tables: const ['tickets', 'events'], onChange: _load)..start();
-  }
-
-  @override
-  void dispose() {
-    _watcher.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final events = await AdminRepository.instance.listEvents();
-      if (!mounted) return;
-      setState(() {
-        _events = events;
-        _loading = false;
-        _error = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        if (_events.isEmpty) _error = friendlyError(e);
-      });
-    }
-  }
-
-  void _retry() {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    _load();
-  }
-
-  Future<void> _create() async {
-    final created = await showCreateEventModal(context);
-    if (created == true) _load();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,73 +30,56 @@ class _EventsListScreenState extends State<EventsListScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
+                  children: const [
+                    Text(
                       'Mis Eventos',
                       style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.h1, fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: AppSpacing.s2),
-                    ValueListenableBuilder<Profile?>(
-                      valueListenable: AppSession.profile,
-                      builder: (_, profile, _) => Text(
-                        'Gestiona fechas, capacidad y accesos de ${profile?.venueName ?? ''}',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
-                      ),
+                    SizedBox(height: AppSpacing.s2),
+                    Text(
+                      'Gestiona fechas, capacidad y accesos de Dharma Club',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
                     ),
                   ],
                 ),
                 SizedBox(
                   width: 220,
                   child: ElevatedButton(
-                    onPressed: _create,
+                    onPressed: () => showCreateEventModal(context),
                     child: const Text('+ Crear evento'),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.s8),
-            if (_loading)
-              const LoadingBlock()
-            else if (_error != null)
-              ErrorBlock(message: _error!, onRetry: _retry)
-            else ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.s6),
-                decoration: BoxDecoration(
-                  color: AppColors.bgSurface,
-                  border: Border.all(color: AppColors.bgBorder),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-                child: Column(
-                  children: [
-                    const _TableHeader(),
-                    const TableDivider(),
-                    if (_events.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.s6),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Aún no tienes eventos. Crea el primero con "+ Crear evento".',
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
-                          ),
-                        ),
-                      )
-                    else
-                      for (final event in _events) ...[
-                        _EventRow(event: event, onReturn: _load),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.s6),
+              decoration: BoxDecoration(
+                color: AppColors.bgSurface,
+                border: Border.all(color: AppColors.bgBorder),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Column(
+                    children: [
+                      const _TableHeader(),
+                      const TableDivider(),
+                      for (final event in mockEvents) ...[
+                        _EventRow(event: event),
                         const TableDivider(),
                       ],
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                '${_events.length} ${_events.length == 1 ? 'evento' : 'eventos'} · Los datos de check-in se actualizan en tiempo real',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
-              ),
-            ],
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '${mockEvents.length} eventos · Los datos de check-in se actualizan en tiempo real',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+            ),
           ],
         ),
       ),
@@ -187,10 +110,9 @@ class _TableHeader extends StatelessWidget {
 }
 
 class _EventRow extends StatelessWidget {
-  const _EventRow({required this.event, required this.onReturn});
+  const _EventRow({required this.event});
 
   final EventItem event;
-  final VoidCallback onReturn;
 
   @override
   Widget build(BuildContext context) {
@@ -202,8 +124,6 @@ class _EventRow extends StatelessWidget {
             width: 220,
             child: Text(
               event.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.bodyLg, fontWeight: FontWeight.w600),
             ),
           ),
@@ -236,12 +156,9 @@ class _EventRow extends StatelessWidget {
           SizedBox(
             width: 110,
             child: TextButton(
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => EventDetailScreen(eventId: event.id)),
-                );
-                onReturn();
-              },
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => EventDetailScreen(eventId: event.id)),
+              ),
               child: const Text('Ver detalle →'),
             ),
           ),
