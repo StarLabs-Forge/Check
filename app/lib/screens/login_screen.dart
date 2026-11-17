@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/demo_mode.dart';
 import '../services/auth_service.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
@@ -187,6 +190,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.s2),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Volver'),
+            ),
+            if (kDemo)
+              const Padding(
+                padding: EdgeInsets.only(top: AppSpacing.s3),
+                child: Text(
+                  'Modo demo · admin@demo.com, staff@demo.com o super@demo.com (cualquier contraseña)',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+                ),
+              ),
           ],
         ),
       ),

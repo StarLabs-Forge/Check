@@ -3,24 +3,35 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/demo_mode.dart';
 import 'config/supabase_config.dart';
 import 'screens/admin_tickets_screen.dart';
+import 'screens/platform_select_screen.dart';
+import 'screens/welcome_screen.dart';
+import 'staff/staff_panel.dart';
+import 'widgets/role_guard.dart';
 import 'screens/coming_soon_screen.dart';
 import 'screens/complete_profile_screen.dart';
 import 'screens/events_list_screen.dart';
 import 'screens/home_screen.dart';
+import 'proto/buyer/buyer_flow.dart';
+import 'proto/superadmin/superadmin_flow.dart';
 import 'screens/loading_screen.dart';
+import 'screens/payments_screens.dart';
 import 'screens/login_screen.dart';
 import 'services/app_session.dart';
+import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/admin_scaffold.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    publishableKey: SupabaseConfig.anonKey,
-  );
+  if (!kDemo) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      publishableKey: SupabaseConfig.anonKey,
+    );
+  }
   runApp(const CheckApp());
 }
 
@@ -36,6 +47,7 @@ class CheckApp extends StatefulWidget {
 
 class _CheckAppState extends State<CheckApp> {
   StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<bool>? _demoSub;
 
   @override
   void initState() {
@@ -43,13 +55,24 @@ class _CheckAppState extends State<CheckApp> {
     // Única fuente de verdad de la navegación post-auth: cualquier pantalla
     // (login, registro, verificación, OAuth, cierre de sesión) solo
     // autentica; acá se decide a dónde ir.
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthChange);
+    if (kDemo) {
+      _demoSub = AuthService.demoSession.stream.listen(_onDemoChange);
+    } else {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthChange);
+    }
   }
 
   @override
   void dispose() {
     _authSub?.cancel();
+    _demoSub?.cancel();
     super.dispose();
+  }
+
+  void _onDemoChange(bool signedIn) {
+    final nav = _navigatorKey.currentState;
+    if (nav == null) return;
+    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/bienvenida', (route) => false);
   }
 
   Future<void> _onAuthChange(AuthState state) async {
@@ -72,7 +95,7 @@ class _CheckAppState extends State<CheckApp> {
         nav.pushNamedAndRemoveUntil(AppSession.entryRoute, (route) => false);
       case AuthChangeEvent.signedOut:
         AppSession.clear();
-        nav.pushNamedAndRemoveUntil('/login', (route) => false);
+        nav.pushNamedAndRemoveUntil('/bienvenida', (route) => false);
       default:
         break;
     }
@@ -93,12 +116,28 @@ class _CheckAppState extends State<CheckApp> {
       // (AdminScaffold) y por el listener de auth. Login/Registro/Verificación
       // se siguen navegando con Navigator.push directo.
       routes: {
+        // Públicas: bienvenida, selección de plataforma, login único y compra.
+        '/bienvenida': (_) => const WelcomeScreen(),
+        '/acceso-locales': (_) => const PlatformSelectScreen(),
         '/login': (_) => const LoginScreen(),
-        '/completar-perfil': (_) => const CompleteProfileScreen(),
-        '/home': (_) => const HomeScreen(),
-        '/eventos': (_) => const EventsListScreen(),
-        '/tickets': (_) => const AdminTicketsScreen(),
-        '/configuracion': (_) => const ComingSoonScreen(current: AdminRoute.configuracion),
+        '/comprar': (_) => const BuyerHome(),
+        // Privadas: cada una exige el rol correspondiente (RoleGuard).
+        '/completar-perfil': (_) => const RoleGuard(roles: {'admin'}, child: CompleteProfileScreen()),
+        '/home': (_) => const RoleGuard(roles: {'admin'}, child: HomeScreen()),
+        '/eventos': (_) => const RoleGuard(roles: {'admin'}, child: EventsListScreen()),
+        '/tickets': (_) => const RoleGuard(roles: {'admin'}, child: AdminTicketsScreen()),
+        '/pagos': (_) => const RoleGuard(roles: {'admin'}, child: AdminPaymentsScreen()),
+        '/verificadores': (_) => const RoleGuard(roles: {'admin'}, child: AdminVerifiersScreen()),
+        '/auditoria': (_) => const RoleGuard(roles: {'admin'}, child: AdminAuditScreen()),
+        '/configuracion': (_) => const RoleGuard(
+              roles: {'admin'},
+              child: ComingSoonScreen(current: AdminRoute.configuracion),
+            ),
+        '/superadmin': (_) => RoleGuard(
+              roles: const {'super_admin'},
+              child: SuperadminExperience(onExit: AuthService.signOut),
+            ),
+        '/staff': (_) => const RoleGuard(roles: {'staff'}, child: StaffPanel()),
       },
       // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
       onUnknownRoute: (settings) => MaterialPageRoute(
@@ -132,7 +171,7 @@ class _BootstrapState extends State<_Bootstrap> {
     final minSplash = Future<void>.delayed(const Duration(milliseconds: 1200));
 
     String? error;
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
+    final hasSession = !kDemo && Supabase.instance.client.auth.currentSession != null;
     if (hasSession) {
       error = await AppSession.load();
     }
@@ -142,7 +181,7 @@ class _BootstrapState extends State<_Bootstrap> {
     if (hasSession && error == null) {
       Navigator.of(context).pushReplacementNamed(AppSession.entryRoute);
     } else {
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed('/bienvenida');
       if (error != null) {
         _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(error)));
       }

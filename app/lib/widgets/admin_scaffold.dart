@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import '../services/app_session.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../proto/data/proto_store.dart';
 import 'check_logo.dart';
 
 /// Rutas de la navegación lateral del panel Admin. `configuracion` todavía
 /// no tiene diseño en Figma (solo aparece como ítem de sidebar) — al
 /// seleccionarla se muestra un aviso en vez de navegar a una pantalla vacía.
-enum AdminRoute { dashboard, eventos, tickets, configuracion }
+enum AdminRoute { dashboard, eventos, tickets, pagos, verificadores, auditoria, configuracion }
 
 /// Layout compartido del panel Admin (Dashboard / Eventos / Tickets):
 /// sidebar fija de 220px en desktop, Drawer en mobile/tablet angosto,
@@ -123,7 +124,7 @@ class _SidebarContent extends StatelessWidget {
       // Aunque falle la red, se limpia la sesión local y se vuelve al login.
       AppSession.clear();
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(context).pushNamedAndRemoveUntil('/bienvenida', (route) => false);
       }
     }
   }
@@ -134,6 +135,9 @@ class _SidebarContent extends StatelessWidget {
       AdminRoute.dashboard => '/home',
       AdminRoute.eventos => '/eventos',
       AdminRoute.tickets => '/tickets',
+      AdminRoute.pagos => '/pagos',
+      AdminRoute.verificadores => '/verificadores',
+      AdminRoute.auditoria => '/auditoria',
       // "Configuración" ya tiene pantalla propia (frame "Estado — Próximamente"
       // en Figma) — un estado vacío reusable en vez del aviso temporal.
       AdminRoute.configuracion => '/configuracion',
@@ -177,6 +181,31 @@ class _SidebarContent extends StatelessWidget {
                 label: 'Tickets',
                 active: current == AdminRoute.tickets,
                 onTap: () => _go(context, AdminRoute.tickets),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              ListenableBuilder(
+                listenable: ProtoStore.instance,
+                builder: (_, _) => _NavItem(
+                  icon: Icons.payments_outlined,
+                  label: 'Pagos',
+                  badge: ProtoStore.instance.pending.length,
+                  active: current == AdminRoute.pagos,
+                  onTap: () => _go(context, AdminRoute.pagos),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              _NavItem(
+                icon: Icons.verified_user_outlined,
+                label: 'Verificadores',
+                active: current == AdminRoute.verificadores,
+                onTap: () => _go(context, AdminRoute.verificadores),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              _NavItem(
+                icon: Icons.fact_check_outlined,
+                label: 'Auditoría',
+                active: current == AdminRoute.auditoria,
+                onTap: () => _go(context, AdminRoute.auditoria),
               ),
               const SizedBox(height: AppSpacing.s2),
               _NavItem(
@@ -245,12 +274,14 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.badge = 0,
   });
 
   final IconData icon;
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final int badge;
 
   @override
   Widget build(BuildContext context) {
@@ -286,10 +317,18 @@ class _NavItem extends StatelessWidget {
                 children: [
                   Icon(icon, size: 22, color: color),
                   const SizedBox(width: AppSpacing.s3),
-                  Text(
+                  Expanded(
+                    child: Text(
                     label,
                     style: TextStyle(color: color, fontSize: AppTextSize.body, fontWeight: FontWeight.w500),
                   ),
+                  ),
+                  if (badge > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(color: AppColors.accentPrimary, borderRadius: BorderRadius.circular(AppRadius.full)),
+                      child: Text('$badge', style: const TextStyle(color: AppColors.bgPrimary, fontSize: AppTextSize.caption, fontWeight: FontWeight.w700)),
+                    ),
                 ],
               ),
             ],

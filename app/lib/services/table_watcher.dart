@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/demo_mode.dart';
+
 /// Suscripción Realtime a cambios de tablas públicas (`events`, `tickets`).
 /// Realtime respeta RLS: el admin solo recibe cambios de sus propios eventos.
 ///
@@ -23,6 +25,7 @@ class TableWatcher {
   bool _disposed = false;
 
   void start() {
+    if (kDemo) return; // sin Realtime en modo demo
     final client = Supabase.instance.client;
     var channel = client.channel('watch-${DateTime.now().microsecondsSinceEpoch}');
     for (final table in tables) {
