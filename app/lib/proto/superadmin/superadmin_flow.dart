@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/motion.dart';
 
 import '../../theme/app_theme.dart';
 import '../admin/admin_flow.dart' show AuditTile;
@@ -59,7 +60,7 @@ class _Stat extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-            Text(value, style: ts(AppTextSize.h2, w: FontWeight.w800)),
+            AnimatedCount(value, style: ts(AppTextSize.h2, w: FontWeight.w800)),
           ])),
         ]),
       );
@@ -86,7 +87,12 @@ class _Bars extends StatelessWidget {
             Expanded(
               child: LayoutBuilder(builder: (context, c) => Stack(children: [
                 Container(height: 10, decoration: BoxDecoration(color: AppColors.bgBorder, borderRadius: BorderRadius.circular(5))),
-                Container(height: 10, width: c.maxWidth * d.$2 / mx, decoration: BoxDecoration(color: AppColors.accentPrimary, borderRadius: BorderRadius.circular(5))),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(end: d.$2 / mx),
+                  duration: Motion.reduced(context) ? Duration.zero : const Duration(milliseconds: 700),
+                  curve: Motion.enter,
+                  builder: (context, v, _) => Container(height: 10, width: c.maxWidth * v, decoration: BoxDecoration(color: AppColors.accentPrimary, borderRadius: BorderRadius.circular(5))),
+                ),
               ])),
             ),
             SizedBox(width: 36, child: Text('${d.$2}', textAlign: TextAlign.right, style: ts(AppTextSize.caption, w: FontWeight.w700))),

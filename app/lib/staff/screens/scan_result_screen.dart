@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../widgets/motion.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -114,17 +115,27 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   excludeSemantics: true,
                   child: Column(
                     children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: const BoxDecoration(color: AppColors.textPrimary, shape: BoxShape.circle),
-                        child: Center(child: StaffIcon(look.icon, size: 64, color: look.iconColor)),
+                      Reveal(
+                        scale: 0.5,
+                        dy: 0,
+                        curve: Motion.pop,
+                        duration: const Duration(milliseconds: 450),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: const BoxDecoration(color: AppColors.textPrimary, shape: BoxShape.circle),
+                          child: Center(child: StaffIcon(look.icon, size: 64, color: look.iconColor)),
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.s6),
-                      Text(
-                        look.title,
-                        textAlign: TextAlign.center,
-                        style: white.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+                      Reveal(
+                        delay: const Duration(milliseconds: 120),
+                        dy: 10,
+                        child: Text(
+                          look.title,
+                          textAlign: TextAlign.center,
+                          style: white.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+                        ),
                       ),
                       if (o.guestName != null) ...[
                         const SizedBox(height: AppSpacing.s6),

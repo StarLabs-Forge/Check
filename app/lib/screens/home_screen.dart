@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/motion.dart';
 
 import '../data/admin_repository.dart';
 import '../data/models.dart';
@@ -154,18 +155,21 @@ class _DashboardContent extends StatelessWidget {
             children: [
               MetricCard(label: 'Eventos activos', value: '$activeEvents', trendLabel: 'Sin cambios'),
               MetricCard(
+                delay: Reveal.stagger(1),
                 label: 'Check-ins',
                 value: '$checkins',
                 trendLabel: lastHour > 0 ? '↑ $lastHour en la última hora' : 'Sin cambios',
                 trendColor: lastHour > 0 ? AppColors.accentPrimary : null,
               ),
               MetricCard(
+                delay: Reveal.stagger(2),
                 label: 'Ocupación',
                 value: '${occupancyPct.toStringAsFixed(1)}%',
                 trendLabel: f == null ? 'Sin evento' : '$checkins de ${f.capacity} plazas',
                 trendColor: f == null ? null : AppColors.accentPrimary,
               ),
               MetricCard(
+                delay: Reveal.stagger(3),
                 label: 'Cancelados',
                 value: '${f?.ticketsCancelled ?? 0}',
                 trendLabel: (f?.ticketsCancelled ?? 0) > 0 ? '↓ ${f!.ticketsCancelled} cancelación(es)' : 'Sin cambios',
@@ -181,8 +185,8 @@ class _DashboardContent extends StatelessWidget {
               spacing: AppSpacing.s6,
               runSpacing: AppSpacing.s6,
               children: [
-                _EventProgressCard(event: f),
-                _RecentActivityCard(entries: recent),
+                Reveal(delay: const Duration(milliseconds: 280), child: _EventProgressCard(event: f)),
+                Reveal(delay: const Duration(milliseconds: 340), child: _RecentActivityCard(entries: recent)),
               ],
             ),
         ],

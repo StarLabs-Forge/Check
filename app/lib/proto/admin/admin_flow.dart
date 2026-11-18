@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import '../../widgets/motion.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../theme/app_theme.dart';
@@ -212,7 +213,7 @@ class _Metric extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-            Text(value, style: ts(AppTextSize.h2, w: FontWeight.w800, c: color)),
+            AnimatedCount(value, style: ts(AppTextSize.h2, w: FontWeight.w800, c: color)),
           ])),
         ]),
       );
