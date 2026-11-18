@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'motion.dart';
 import '../services/app_session.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -291,7 +292,9 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Container(
+        child: AnimatedContainer(
+          duration: Motion.base,
+          curve: Motion.enter,
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
           decoration: BoxDecoration(
@@ -301,12 +304,13 @@ class _NavItem extends StatelessWidget {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              if (active)
-                Positioned(
+              Positioned(
                   left: -12,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: Motion.base,
+                    curve: Motion.enter,
                     width: 3,
-                    height: 28,
+                    height: active ? 28 : 0,
                     decoration: BoxDecoration(
                       color: AppColors.accentPrimary,
                       borderRadius: BorderRadius.circular(AppRadius.full),
@@ -426,6 +430,7 @@ class MetricCard extends StatelessWidget {
     required this.trendLabel,
     this.trendColor,
     this.width = 220,
+    this.delay = Duration.zero,
   });
 
   final String label;
@@ -434,9 +439,14 @@ class MetricCard extends StatelessWidget {
   final Color? trendColor;
   final double width;
 
+  /// Retardo de entrada, para escalonar una fila de métricas.
+  final Duration delay;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Reveal(
+      delay: delay,
+      child: Container(
       width: width,
       constraints: const BoxConstraints(minHeight: 110),
       padding: const EdgeInsets.all(AppSpacing.s4),
@@ -451,7 +461,7 @@ class MetricCard extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption, height: 1.2)),
           const SizedBox(height: AppSpacing.s1),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w700, height: 1.15)),
+          AnimatedCount(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w700, height: 1.15)),
           const SizedBox(height: AppSpacing.s1),
           Text(
             trendLabel,
@@ -459,7 +469,7 @@ class MetricCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -476,11 +486,16 @@ class AppProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.full),
-      child: LinearProgressIndicator(
-        value: progress.clamp(0, 1),
-        minHeight: height,
-        backgroundColor: AppColors.bgInput,
-        valueColor: const AlwaysStoppedAnimation(AppColors.accentPrimary),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: progress.clamp(0, 1).toDouble()),
+        duration: Motion.reduced(context) ? Duration.zero : const Duration(milliseconds: 700),
+        curve: Motion.enter,
+        builder: (context, v, _) => LinearProgressIndicator(
+          value: v,
+          minHeight: height,
+          backgroundColor: AppColors.bgInput,
+          valueColor: const AlwaysStoppedAnimation(AppColors.accentPrimary),
+        ),
       ),
     );
   }

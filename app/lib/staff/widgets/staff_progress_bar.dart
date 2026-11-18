@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/motion.dart';
 
 import '../../theme/app_theme.dart';
 
@@ -32,9 +33,11 @@ class StaffProgressBar extends StatelessWidget {
           children: [
             Positioned.fill(child: ColoredBox(color: trackColor)),
             Positioned.fill(
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: p / 100,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: p / 100),
+                duration: Motion.reduced(context) ? Duration.zero : const Duration(milliseconds: 600),
+                curve: Motion.enter,
+                builder: (context, v, child) => FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: v, child: child),
                 child: ColoredBox(color: fillColor),
               ),
             ),

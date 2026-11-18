@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../widgets/motion.dart';
+
 /// Design tokens de CHECK, extraídos directamente del archivo de Figma
 /// ("🖥️ Dashboard Web" / Foundations) vía las variables del documento.
 /// No inventar valores nuevos acá — si falta un token, se pide al diseño.
@@ -78,6 +80,16 @@ class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: AppColors.bgPrimary,
       textTheme: textTheme,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CheckPageTransitions(),
+          TargetPlatform.iOS: CheckPageTransitions(),
+          TargetPlatform.windows: CheckPageTransitions(),
+          TargetPlatform.macOS: CheckPageTransitions(),
+          TargetPlatform.linux: CheckPageTransitions(),
+          TargetPlatform.fuchsia: CheckPageTransitions(),
+        },
+      ),
       colorScheme: base.colorScheme.copyWith(
         surface: AppColors.bgPrimary,
         primary: AppColors.accentPrimary,

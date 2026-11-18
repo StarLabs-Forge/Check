@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/check_logo.dart';
+import '../widgets/motion.dart';
 
 /// Pantalla de carga / splash — implementa el frame "Splash — Cargando"
 /// del Figma (🔐 Auth Flow): logo CHECK grande centrado, subtítulo
@@ -20,7 +21,7 @@ class LoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CheckLogo(fontSize: 64, subtitle: 'Dharma Club'),
+            const Reveal(scale: 0.9, dy: 8, child: CheckLogo(fontSize: 64, subtitle: 'Dharma Club')),
             const SizedBox(height: AppSpacing.s8),
             const SizedBox(
               width: 40,

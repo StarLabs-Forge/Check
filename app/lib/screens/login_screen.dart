@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: _validateEmail,
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const AuthGap(AppSpacing.s3),
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -132,10 +132,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               validator: _validatePassword,
             ),
-            const SizedBox(height: AppSpacing.s2),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2, vertical: AppSpacing.s1),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Recuperación de contraseña — próximamente')),
@@ -144,35 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text('¿Olvidaste tu contraseña?'),
               ),
             ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.s2),
-              Text(
-                _error!,
-                style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.s4),
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        color: AppColors.bgPrimary,
-                      ),
-                    )
-                  : const Text('Iniciar sesión'),
-            ),
-            const SizedBox(height: AppSpacing.s6),
+            AuthError(_error),
+            const AuthGap(AppSpacing.s3),
+            AuthSubmit(label: 'Iniciar sesión', loading: _isSubmitting, onPressed: _submit),
+            const AuthGap(AppSpacing.s4),
             const OrDivider(),
-            const SizedBox(height: AppSpacing.s6),
+            const AuthGap(AppSpacing.s4),
             GoogleButton(
               label: 'Continuar con Google',
               onPressed: _isSubmitting ? null : _continueWithGoogle,
             ),
-            const SizedBox(height: AppSpacing.s6),
+            const AuthGap(AppSpacing.s2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -190,15 +176,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.s2),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).maybePop(),
-              icon: const Icon(Icons.arrow_back, size: 18),
-              label: const Text('Volver'),
-            ),
             if (kDemo)
               const Padding(
-                padding: EdgeInsets.only(top: AppSpacing.s3),
+                padding: EdgeInsets.only(top: AppSpacing.s1),
                 child: Text(
                   'Modo demo · admin@demo.com, staff@demo.com o super@demo.com (cualquier contraseña)',
                   textAlign: TextAlign.center,

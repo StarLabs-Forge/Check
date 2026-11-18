@@ -95,7 +95,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               decoration: const InputDecoration(labelText: 'Nombre completo'),
               validator: (v) => _required(v, 'Ingresa tu nombre'),
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const AuthGap(AppSpacing.s3),
             TextFormField(
               controller: _venueController,
               textInputAction: TextInputAction.done,
@@ -107,7 +107,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               ),
               validator: (v) => _required(v, 'Ingresa el nombre de tu local'),
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const AuthGap(AppSpacing.s4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -134,28 +134,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ),
               ],
             ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.s3),
-              Text(
-                _error!,
-                style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.s6),
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        color: AppColors.bgPrimary,
-                      ),
-                    )
-                  : const Text('Continuar'),
-            ),
-            const SizedBox(height: AppSpacing.s3),
+            AuthError(_error),
+            const AuthGap(AppSpacing.s4),
+            AuthSubmit(label: 'Continuar', loading: _isSubmitting, onPressed: _submit),
+            const AuthGap(AppSpacing.s3),
             TextButton(
               onPressed: _isSubmitting ? null : AuthService.signOut,
               child: const Text('Cancelar y cerrar sesión'),
