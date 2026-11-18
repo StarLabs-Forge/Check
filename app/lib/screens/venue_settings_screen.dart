@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/app_session.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/admin_scaffold.dart';
@@ -54,6 +55,9 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
         _beneficiary.text = (row['bank_beneficiary'] as String?) ?? '';
         _bank.text = (row['bank_name'] as String?) ?? '';
         _account.text = (row['bank_account'] as String?) ?? '';
+      } else {
+        // Local nuevo: propone el nombre dado al registrarse.
+        _name.text = AppSession.profile.value?.venueName ?? '';
       }
       if (!mounted) return;
       setState(() => _loading = false);

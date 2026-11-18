@@ -766,6 +766,8 @@ class ProtoStore extends ChangeNotifier {
         remote: true,
       );
       orders.add(o);
+      final ev = events.where((e) => e.id == eventId);
+      if (ev.isNotEmpty) _orderEvents[eventId] = ev.first; // sigue resolviéndose aunque salga del catálogo
       notifyListeners();
       await refreshOrder(o.id); // trae los datos bancarios del local
       return o;
@@ -824,14 +826,14 @@ class ProtoStore extends ChangeNotifier {
       var i = 0;
       for (final raw in (res['lines'] as List)) {
         final l = Map<String, dynamic>.from(raw as Map);
-        final tid = 'linea$i';
+        final tid = (l['type_id'] as String?) ?? 'linea$i';
         i++;
         final qty = (l['qty'] as num).toInt();
         lines.add(OrderLine(tid, qty));
         types.add(TicketType(id: tid, name: l['type_name'] as String, price: (l['unit_price'] as num).toDouble(), capacity: qty, maxPerOrder: qty));
       }
       final eventId = ev['id'] as String;
-      if (!events.any((e) => e.id == eventId)) {
+      if (!events.any((e) => e.id == eventId) && !_orderEvents.containsKey(eventId)) {
         _orderEvents[eventId] = EventItem(
           id: eventId,
           name: ev['name'] as String,
@@ -1034,11 +1036,12 @@ class ProtoStore extends ChangeNotifier {
                 actor: mine ? me.fullName : (isAdminPerm ? 'Administrador' : 'Verificador'),
                 permission: isAdminPerm ? 'Administrador del local' : 'Verificador delegado de pagos',
                 action: labels[m['action']] ?? (m['action'] as String),
-                result: switch (m['result']) {
-                  'approved' => 'Aprobado',
-                  'rejected' => 'Rechazado definitivamente',
-                  'conflict' => 'Conflicto: la orden ya tenía una decisión',
-                  'ok' => 'Permiso actualizado',
+                result: switch (m['action']) {
+                  'order_approved' => 'Aprobado · QR generados',
+                  'order_rejected' => 'Rechazado definitivamente · cupos liberados',
+                  'payment_conflict' => 'Conflicto: la orden ya tenía una decisión',
+                  'verifier_granted' => 'Permiso activo',
+                  'verifier_revoked' => 'Permiso revocado',
                   final x => '$x',
                 },
                 orderNumber: m['orders'] is Map ? (m['orders'] as Map)['number'] as String? : null,

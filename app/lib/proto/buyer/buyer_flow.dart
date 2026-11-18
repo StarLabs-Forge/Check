@@ -871,7 +871,7 @@ class _PendingPaymentState extends State<_PendingPayment> {
 
     final qr = PCard(
       child: Column(children: [
-        Text('Paga con el QR bancario del local', style: ts(AppTextSize.body, w: FontWeight.w700), textAlign: TextAlign.center),
+        Text(o.remote ? 'Paga con los datos bancarios del local' : 'Paga con el QR bancario del local', style: ts(AppTextSize.body, w: FontWeight.w700), textAlign: TextAlign.center),
         const SizedBox(height: 10),
         if (!o.remote) ...[
           Container(
@@ -893,7 +893,7 @@ class _PendingPaymentState extends State<_PendingPayment> {
       ]),
     );
 
-    final steps = ['Abre la app de tu banco y escanea el QR.', 'Paga exactamente ${money(o.total)}.', 'Vuelve aquí y pulsa «Ya pagué».'];
+    final steps = [o.remote ? 'Abre la app de tu banco y transfiere a la cuenta del local.' : 'Abre la app de tu banco y escanea el QR.', 'Paga exactamente ${money(o.total)}.', 'Vuelve aquí y pulsa «Ya pagué».'];
 
     if (wide) {
       return _orderScaffold(
@@ -945,7 +945,7 @@ class _PendingPaymentState extends State<_PendingPayment> {
         const SizedBox(height: 10),
         Reveal(delay: const Duration(milliseconds: 90), child: qr),
         const SizedBox(height: 10),
-        Text('1 Escanea el QR en tu banco · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»',
+        Text(o.remote ? '1 Transfiere a la cuenta del local · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»' : '1 Escanea el QR en tu banco · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»',
             textAlign: TextAlign.center, style: ts(AppTextSize.caption, c: AppColors.textSecondary, h: 1.4)),
       ]),
     );

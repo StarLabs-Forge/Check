@@ -129,11 +129,14 @@ class _PaymentsInboxState extends State<PaymentsInbox> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const Expanded(child: H('Pagos por verificar', sub: 'Comprueba cada depósito en la cuenta bancaria del local.')),
-          PopupMenuButton<String>(
-            tooltip: 'Opciones de demo',
-            onSelected: (v) => v == 'err' ? _load(fail: true) : _load(),
-            itemBuilder: (_) => const [PopupMenuItem(value: 'ref', child: Text('Actualizar')), PopupMenuItem(value: 'err', child: Text('Simular error de carga'))],
-          ),
+          if (_store.live)
+            IconButton(tooltip: 'Actualizar', onPressed: _loading ? null : _load, icon: const Icon(Icons.refresh))
+          else
+            PopupMenuButton<String>(
+              tooltip: 'Opciones de demo',
+              onSelected: (v) => v == 'err' ? _load(fail: true) : _load(),
+              itemBuilder: (_) => const [PopupMenuItem(value: 'ref', child: Text('Actualizar')), PopupMenuItem(value: 'err', child: Text('Simular error de carga'))],
+            ),
         ]),
         if (_loading)
           const StateView(ViewState.loading)
@@ -449,7 +452,7 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
                   ),
               ] else if (!pending) ...[
                 Notice(
-                  o.status == OrderStatus.approved ? 'Pago aprobado por ${o.decidedBy}. ${o.ticketCount} QR individuales generados (demo).' : 'Pago rechazado por ${o.decidedBy}. Decisión definitiva: sin reactivación ni devoluciones.',
+                  o.status == OrderStatus.approved ? 'Pago aprobado por ${o.decidedBy}. ${o.ticketCount} QR individuales generados${_store.live ? '' : ' (demo)'}.' : 'Pago rechazado por ${o.decidedBy}. Decisión definitiva: sin reactivación ni devoluciones.',
                   color: statusColor(o.status),
                   icon: o.status == OrderStatus.approved ? Icons.check_circle_outline : Icons.block,
                 ),
@@ -664,6 +667,8 @@ class DelegationPage extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 16),
+          if (_store.live && _store.employees.isEmpty)
+            const Notice('Todavía no hay personal. Cuando una persona de tu equipo canjee su código de acceso en un evento, podrás darle permiso de verificar pagos aquí.', icon: Icons.group_outlined, color: PColors.info),
           LayoutBuilder(builder: (context, c) {
             final cols = c.maxWidth >= 640 ? 2 : 1;
             final w = (c.maxWidth - (cols - 1) * 12) / cols;
