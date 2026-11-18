@@ -182,13 +182,13 @@ void main() {
     });
   }
 
-  test('expiración libera cupos', () {
+  test('expiración libera cupos', () async {
     final s = ProtoStore.instance;
     final t = s.events.first.types.first;
     final before = s.remaining(t);
-    final o = s.createOrder(eventId: s.events.first.id, qty: {t.id: 2}, name: 'X Y', ci: '1234567', phone: '71234567');
+    final o = await s.createOrder(eventId: s.events.first.id, qty: {t.id: 2}, name: 'X Y', ci: '1234567', phone: '71234567');
     expect(s.remaining(t), before - 2);
-    s.cancelOrder(o.id);
+    await s.cancelOrder(o.id);
     expect(s.remaining(t), before);
   });
 }
