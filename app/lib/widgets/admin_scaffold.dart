@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../services/app_session.dart';
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../proto/data/proto_store.dart';
 import 'check_logo.dart';
 
 /// Rutas de la navegación lateral del panel Admin. `configuracion` todavía
 /// no tiene diseño en Figma (solo aparece como ítem de sidebar) — al
 /// seleccionarla se muestra un aviso en vez de navegar a una pantalla vacía.
-enum AdminRoute { dashboard, eventos, tickets, configuracion }
+enum AdminRoute { dashboard, eventos, tickets, pagos, verificadores, auditoria, configuracion }
 
 /// Layout compartido del panel Admin (Dashboard / Eventos / Tickets):
 /// sidebar fija de 220px en desktop, Drawer en mobile/tablet angosto,
@@ -72,7 +75,7 @@ class AdminScaffold extends StatelessWidget {
                   ),
                 ],
               ),
-              if (overlay != null) overlay!,
+              ?overlay,
             ],
           );
         },
@@ -113,8 +116,17 @@ class _SidebarContent extends StatelessWidget {
 
   final AdminRoute current;
 
-  void _logout(BuildContext context) {
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  Future<void> _logout(BuildContext context) async {
+    // El listener de auth en main.dart navega a /login al detectar signedOut.
+    try {
+      await AuthService.signOut();
+    } catch (_) {
+      // Aunque falle la red, se limpia la sesión local y se vuelve al login.
+      AppSession.clear();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/bienvenida', (route) => false);
+      }
+    }
   }
 
   void _go(BuildContext context, AdminRoute route) {
@@ -123,6 +135,9 @@ class _SidebarContent extends StatelessWidget {
       AdminRoute.dashboard => '/home',
       AdminRoute.eventos => '/eventos',
       AdminRoute.tickets => '/tickets',
+      AdminRoute.pagos => '/pagos',
+      AdminRoute.verificadores => '/verificadores',
+      AdminRoute.auditoria => '/auditoria',
       // "Configuración" ya tiene pantalla propia (frame "Estado — Próximamente"
       // en Figma) — un estado vacío reusable en vez del aviso temporal.
       AdminRoute.configuracion => '/configuracion',
@@ -135,9 +150,12 @@ class _SidebarContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, 0),
-          child: CheckLogo(subtitle: 'Dharma Club'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, 0),
+          child: ValueListenableBuilder<Profile?>(
+            valueListenable: AppSession.profile,
+            builder: (_, profile, _) => CheckLogo(subtitle: profile?.venueName),
+          ),
         ),
         const SizedBox(height: AppSpacing.s8),
         Padding(
@@ -165,6 +183,31 @@ class _SidebarContent extends StatelessWidget {
                 onTap: () => _go(context, AdminRoute.tickets),
               ),
               const SizedBox(height: AppSpacing.s2),
+              ListenableBuilder(
+                listenable: ProtoStore.instance,
+                builder: (_, _) => _NavItem(
+                  icon: Icons.payments_outlined,
+                  label: 'Pagos',
+                  badge: ProtoStore.instance.pending.length,
+                  active: current == AdminRoute.pagos,
+                  onTap: () => _go(context, AdminRoute.pagos),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              _NavItem(
+                icon: Icons.verified_user_outlined,
+                label: 'Verificadores',
+                active: current == AdminRoute.verificadores,
+                onTap: () => _go(context, AdminRoute.verificadores),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              _NavItem(
+                icon: Icons.fact_check_outlined,
+                label: 'Auditoría',
+                active: current == AdminRoute.auditoria,
+                onTap: () => _go(context, AdminRoute.auditoria),
+              ),
+              const SizedBox(height: AppSpacing.s2),
               _NavItem(
                 icon: Icons.settings_outlined,
                 label: 'Configuración',
@@ -180,20 +223,30 @@ class _SidebarContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Avatar(initials: 'NF'),
-              const SizedBox(height: AppSpacing.s3),
-              const Text(
-                'Napoleón Flores',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: AppTextSize.body,
-                  fontWeight: FontWeight.w600,
+              ValueListenableBuilder<Profile?>(
+                valueListenable: AppSession.profile,
+                builder: (_, profile, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Avatar(initials: profile?.initials ?? '?'),
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(
+                      profile?.fullName ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: AppTextSize.body,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s1),
+                    Text(
+                      profile?.roleLabel ?? '',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.s1),
-              const Text(
-                'Administrador',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
               ),
               const SizedBox(height: AppSpacing.s3),
               SizedBox(
@@ -221,12 +274,14 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.badge = 0,
   });
 
   final IconData icon;
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final int badge;
 
   @override
   Widget build(BuildContext context) {
@@ -262,10 +317,18 @@ class _NavItem extends StatelessWidget {
                 children: [
                   Icon(icon, size: 22, color: color),
                   const SizedBox(width: AppSpacing.s3),
-                  Text(
+                  Expanded(
+                    child: Text(
                     label,
                     style: TextStyle(color: color, fontSize: AppTextSize.body, fontWeight: FontWeight.w500),
                   ),
+                  ),
+                  if (badge > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(color: AppColors.accentPrimary, borderRadius: BorderRadius.circular(AppRadius.full)),
+                      child: Text('$badge', style: const TextStyle(color: AppColors.bgPrimary, fontSize: AppTextSize.caption, fontWeight: FontWeight.w700)),
+                    ),
                 ],
               ),
             ],
@@ -310,7 +373,10 @@ class Avatar extends StatelessWidget {
 /// Estados semánticos del Badge (Figma "Badge", 6 variantes: Activo,
 /// Borrador, Cerrado, Ingresó, Pendiente, Cancelado). Activo e Ingresó
 /// comparten estilo (verde), igual que Cerrado y Cancelado (rojo).
-enum BadgeStatus { activo, borrador, cerrado, ingreso, pendiente, cancelado }
+///
+/// `porCobrar` = ticket emitido pero con el pago pendiente (evento de pago);
+/// `pendiente` = ticket listo (pagado) que todavía no ingresó.
+enum BadgeStatus { activo, borrador, cerrado, ingreso, pendiente, porCobrar, cancelado }
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge(this.status, {super.key});
@@ -324,6 +390,7 @@ class StatusBadge extends StatelessWidget {
       BadgeStatus.ingreso => (AppColors.accentSubtle, AppColors.accentPrimary, AppColors.accentPrimary, 'Ingresó'),
       BadgeStatus.borrador => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Borrador'),
       BadgeStatus.pendiente => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Pendiente'),
+      BadgeStatus.porCobrar => (AppColors.bgDraft, AppColors.textDisabled, AppColors.textSecondary, 'Por cobrar'),
       BadgeStatus.cerrado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cerrado'),
       BadgeStatus.cancelado => (AppColors.bgDanger, AppColors.error, AppColors.error, 'Cancelado'),
     };

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
 import 'verification_screen.dart';
@@ -25,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
   bool _acceptedTerms = false;
   bool _isSubmitting = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -69,24 +72,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VerificationScreen(email: _emailController.text.trim()),
-      ),
-    );
+    final email = _emailController.text.trim();
+    try {
+      final hasSession = await AuthService.signUp(
+        fullName: _nameController.text,
+        venueName: _venueController.text,
+        email: email,
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      // Con sesión → el listener de auth (main.dart) navega al panel.
+      // Sin sesión → falta confirmar el correo con el código que llegó.
+      if (!hasSession) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => VerificationScreen(email: email)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    }
+
+    if (mounted) setState(() => _isSubmitting = false);
   }
 
-  void _continueWithGoogle() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const VerificationScreen(email: 'tu cuenta de Google'),
-      ),
-    );
+  Future<void> _continueWithGoogle() async {
+    setState(() => _error = null);
+    try {
+      await AuthService.signInWithGoogle();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    }
   }
 
   @override
@@ -191,6 +213,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ],
             ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.s3),
+              Text(
+                _error!,
+                style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
+              ),
+            ],
             const SizedBox(height: AppSpacing.s6),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submit,
