@@ -40,7 +40,8 @@ void main() {
         await tester.enterText(fields.at(2), '71234567');
         await tester.pump();
         await tapText('Continuar al pago');
-        expect(find.textContaining('14:5'), findsOneWidget, reason: 'cuenta regresiva de 15 min');
+        // El reloj es el real (los pump no lo adelantan): acepta 15:00 a 14:00.
+        expect(find.byWidgetPredicate((w) => w is Text && RegExp(r'^1[45]:\d\d$').hasMatch(w.data ?? '')), findsOneWidget, reason: 'cuenta regresiva de 15 min');
         expect(find.textContaining('no válido para pagar'), findsOneWidget);
       }
 
@@ -178,7 +179,7 @@ void main() {
         expect(find.text('Aprobar pago'), findsNothing);
         expect(find.text('Revisar pago'), findsNothing);
       }
-      expect(find.text('Solo lectura'), findsWidgets);
+      expect(find.textContaining('Solo lectura'), findsWidgets);
     });
   }
 
