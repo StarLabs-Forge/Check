@@ -111,36 +111,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required bool obscure,
+    required VoidCallback onToggle,
+    required String? Function(String?) validator,
+    TextInputAction action = TextInputAction.next,
+    ValueChanged<String>? onSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      textInputAction: action,
+      style: const TextStyle(color: AppColors.textPrimary),
+      onFieldSubmitted: onSubmitted,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            color: AppColors.textSecondary,
+          ),
+          onPressed: onToggle,
+        ),
+      ),
+      validator: validator,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
       title: 'Crea tu cuenta',
       subtitle: 'Registra tu local y empieza a gestionar tus eventos',
-      maxWidth: 460,
+      maxWidth: 560,
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextFormField(
-              controller: _nameController,
-              textInputAction: TextInputAction.next,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Nombre completo'),
-              validator: (v) => _required(v, 'Ingresa tu nombre'),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            TextFormField(
-              controller: _venueController,
-              textInputAction: TextInputAction.next,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Nombre del local u organización',
-                hintText: 'Ej. Dharma Club',
+            FieldPair(
+              a: TextFormField(
+                controller: _nameController,
+                textInputAction: TextInputAction.next,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(labelText: 'Nombre completo'),
+                validator: (v) => _required(v, 'Ingresa tu nombre'),
               ),
-              validator: (v) => _required(v, 'Ingresa el nombre de tu local'),
+              b: TextFormField(
+                controller: _venueController,
+                textInputAction: TextInputAction.next,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Local u organización',
+                  hintText: 'Ej. Dharma Club',
+                ),
+                validator: (v) => _required(v, 'Ingresa el nombre de tu local'),
+              ),
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const AuthGap(AppSpacing.s3),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -149,44 +179,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: const InputDecoration(labelText: 'Correo electrónico'),
               validator: _validateEmail,
             ),
-            const SizedBox(height: AppSpacing.s4),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.next,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: AppColors.textSecondary,
-                  ),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
+            const AuthGap(AppSpacing.s3),
+            FieldPair(
+              a: _passwordField(
+                controller: _passwordController,
+                label: 'Contraseña',
+                obscure: _obscurePassword,
+                onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                validator: _validatePassword,
               ),
-              validator: _validatePassword,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            TextFormField(
-              controller: _confirmController,
-              obscureText: _obscureConfirm,
-              textInputAction: TextInputAction.done,
-              style: const TextStyle(color: AppColors.textPrimary),
-              onFieldSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: 'Confirmar contraseña',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: AppColors.textSecondary,
-                  ),
-                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
+              b: _passwordField(
+                controller: _confirmController,
+                label: 'Confirmar contraseña',
+                obscure: _obscureConfirm,
+                onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                validator: _validateConfirm,
+                action: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
               ),
-              validator: _validateConfirm,
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const AuthGap(AppSpacing.s3),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -213,35 +225,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ],
             ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.s3),
-              Text(
-                _error!,
-                style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.s6),
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        color: AppColors.bgPrimary,
-                      ),
-                    )
-                  : const Text('Crear cuenta'),
-            ),
-            const SizedBox(height: AppSpacing.s6),
+            AuthError(_error),
+            const AuthGap(AppSpacing.s4),
+            AuthSubmit(label: 'Crear cuenta', loading: _isSubmitting, onPressed: _submit),
+            const AuthGap(AppSpacing.s3),
             const OrDivider(),
-            const SizedBox(height: AppSpacing.s6),
+            const AuthGap(AppSpacing.s3),
             GoogleButton(
               label: 'Registrarme con Google',
               onPressed: _isSubmitting ? null : _continueWithGoogle,
             ),
-            const SizedBox(height: AppSpacing.s6),
+            const AuthGap(AppSpacing.s1),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

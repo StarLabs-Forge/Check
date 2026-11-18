@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/motion.dart';
 import '../data/proto_store.dart';
 
 /// Colores semánticos del prototipo (sobre los tokens de CHECK).
@@ -85,7 +86,43 @@ class ResponsiveBody extends StatelessWidget {
   }
 }
 
-class PCard extends StatelessWidget {
+/// Barra de acción fija al pie. Se pasa como `Scaffold.bottomNavigationBar`
+/// para que el botón principal de cada paso quede siempre a un toque y los
+/// avisos (SnackBar) floten por encima de ella sin taparla.
+class BottomActionBar extends StatelessWidget {
+  const BottomActionBar({super.key, required this.child, this.maxWidth = 1100});
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = MediaQuery.sizeOf(context).width < Bp.tablet ? AppSpacing.s4 : AppSpacing.s6;
+    return Reveal(
+      dy: 24,
+      duration: Motion.base,
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: AppColors.bgSurface,
+          border: Border(top: BorderSide(color: AppColors.bgBorder)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(padding: EdgeInsets.symmetric(horizontal: pad, vertical: AppSpacing.s3), child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PCard extends StatefulWidget {
   const PCard({super.key, required this.child, this.onTap, this.padding = const EdgeInsets.all(AppSpacing.s4), this.color, this.border});
   final Widget child;
   final VoidCallback? onTap;
@@ -94,21 +131,38 @@ class PCard extends StatelessWidget {
   final Color? border;
 
   @override
+  State<PCard> createState() => _PCardState();
+}
+
+class _PCardState extends State<PCard> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    final box = Container(
+    final interactive = widget.onTap != null;
+    final box = AnimatedContainer(
+      duration: Motion.base,
+      curve: Motion.enter,
       width: double.infinity,
-      padding: padding,
+      padding: widget.padding,
       decoration: BoxDecoration(
-        color: color ?? AppColors.bgSurface,
+        color: widget.color ?? AppColors.bgSurface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: border ?? AppColors.bgBorder),
+        border: Border.all(color: _hover && interactive ? AppColors.accentPrimary.withValues(alpha: 0.7) : (widget.border ?? AppColors.bgBorder)),
       ),
-      child: child,
+      child: widget.child,
     );
-    if (onTap == null) return box;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(borderRadius: BorderRadius.circular(AppRadius.lg), onTap: onTap, child: box),
+    if (!interactive) return box;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Pressable(
+        pressedScale: 0.985,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(borderRadius: BorderRadius.circular(AppRadius.lg), onTap: widget.onTap, child: box),
+        ),
+      ),
     );
   }
 }
@@ -146,24 +200,31 @@ class PButton extends StatelessWidget {
       BtnKind.danger => (AppColors.error, Colors.white, null),
       BtnKind.secondary => (Colors.transparent, AppColors.textPrimary, AppColors.bgBorder),
     };
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: loading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          elevation: 0,
-          side: side == null ? null : BorderSide(color: side),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+    return Pressable(
+      enabled: onPressed != null && !loading,
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: ElevatedButton(
+          onPressed: loading ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: bg,
+            foregroundColor: fg,
+            elevation: 0,
+            side: side == null ? null : BorderSide(color: side),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+          ),
+          child: AnimatedSwitcher(
+            duration: Motion.fast,
+            transitionBuilder: (child, a) => FadeTransition(opacity: a, child: ScaleTransition(scale: a, child: child)),
+            child: loading
+                ? const SizedBox(key: ValueKey('loading'), width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Row(key: const ValueKey('label'), mainAxisSize: MainAxisSize.min, children: [
+                    if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
+                    Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: ts(AppTextSize.body, w: FontWeight.w600, c: fg))),
+                  ]),
+          ),
         ),
-        child: loading
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : Row(mainAxisSize: MainAxisSize.min, children: [
-                if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: 8)],
-                Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: ts(AppTextSize.body, w: FontWeight.w600, c: fg))),
-              ]),
       ),
     );
   }
@@ -222,12 +283,14 @@ class H extends StatelessWidget {
 
 /// Portada generada (no hay imágenes reales en el prototipo).
 class Cover extends StatelessWidget {
-  const Cover(this.hue, {super.key, this.height = 140, this.radius = AppRadius.lg});
+  const Cover(this.hue, {super.key, this.height = 140, this.radius = AppRadius.lg, this.heroTag});
   final int hue;
+  final Object? heroTag;
   final double height;
   final double radius;
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final box = Container(
         height: height,
         width: double.infinity,
         decoration: BoxDecoration(
@@ -240,6 +303,8 @@ class Cover extends StatelessWidget {
         ),
         child: Icon(Icons.nightlife, size: height * 0.38, color: Colors.white.withValues(alpha: 0.18)),
       );
+    return heroTag == null ? box : Hero(tag: heroTag!, child: box);
+  }
 }
 
 enum ViewState { loading, error, empty, denied }
@@ -260,7 +325,9 @@ class StateView extends StatelessWidget {
       ViewState.denied => (Icons.lock_outline, 'Acceso denegado', AppColors.error),
       _ => (Icons.inbox_outlined, 'Nada por aquí', AppColors.textSecondary),
     };
-    return Padding(
+    return Reveal(
+      scale: 0.97,
+      child: Padding(
       padding: const EdgeInsets.all(AppSpacing.s6),
       child: Center(
         child: ConstrainedBox(
@@ -274,7 +341,7 @@ class StateView extends StatelessWidget {
           ]),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -335,6 +402,16 @@ class AdaptiveShell extends StatelessWidget {
       ]),
     );
 
+    final animatedBody = AnimatedSwitcher(
+      duration: Motion.base,
+      switchInCurve: Motion.enter,
+      transitionBuilder: (child, a) => FadeTransition(
+        opacity: a,
+        child: SlideTransition(position: Tween<Offset>(begin: const Offset(0, 0.015), end: Offset.zero).animate(a), child: child),
+      ),
+      child: KeyedSubtree(key: ValueKey(index), child: body),
+    );
+
     final demoBar = Container(
       width: double.infinity,
       color: PColors.warning.withValues(alpha: 0.12),
@@ -352,7 +429,7 @@ class AdaptiveShell extends StatelessWidget {
           ]),
           actions: [if (onExit != null) IconButton(tooltip: 'Cambiar experiencia', onPressed: onExit, icon: const Icon(Icons.swap_horiz))],
         ),
-        body: Column(children: [demoBar, Expanded(child: body)]),
+        body: Column(children: [demoBar, Expanded(child: animatedBody)]),
         bottomNavigationBar: NavigationBar(
           backgroundColor: AppColors.bgSurface,
           indicatorColor: AppColors.accentSubtle,
@@ -400,7 +477,7 @@ class AdaptiveShell extends StatelessWidget {
           ),
         ),
         const VerticalDivider(width: 1),
-        Expanded(child: Column(children: [demoBar, Expanded(child: body)])),
+        Expanded(child: Column(children: [demoBar, Expanded(child: animatedBody)])),
       ]),
     );
   }

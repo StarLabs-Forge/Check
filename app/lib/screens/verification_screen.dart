@@ -155,27 +155,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
               );
             }),
           ),
-          if (_error != null) ...[
-            const SizedBox(height: AppSpacing.s3),
-            Text(
-              _error!,
-              style: const TextStyle(color: AppColors.error, fontSize: AppTextSize.caption),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.s6),
-          ElevatedButton(
-            onPressed: _isVerifying ? null : _verify,
-            child: _isVerifying
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      color: AppColors.bgPrimary,
-                    ),
-                  )
-                : const Text('Verificar'),
-          ),
+          AuthError(_error),
+          const SizedBox(height: AppSpacing.s5),
+          AuthSubmit(label: 'Verificar', loading: _isVerifying, onPressed: _verify),
           const SizedBox(height: AppSpacing.s4),
           Center(
             child: TextButton(

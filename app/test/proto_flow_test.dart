@@ -54,7 +54,8 @@ void main() {
       expect(find.textContaining('Todavía no se ha confirmado'), findsOneWidget);
       final o1 = store.orders.last;
       expect(o1.status, OrderStatus.verifying);
-      await tester.tap(find.byType(BackButton).first);
+      // El pago se muestra como ventana emergente: se cierra con su botón.
+      await tester.tap(find.byTooltip('Cerrar'));
       await tester.pumpAndSettle();
       Navigator.of(tester.element(find.byType(Scaffold).first)).popUntil((r) => r.isFirst);
       await tester.pumpAndSettle();
