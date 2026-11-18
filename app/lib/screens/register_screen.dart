@@ -87,10 +87,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       // Con sesión → el listener de auth (main.dart) navega al panel.
-      // Sin sesión → falta confirmar el correo con el código que llegó.
+      // Sin sesión → falta confirmar el correo con el enlace que llegó.
       if (!hasSession) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => VerificationScreen(email: email)),
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              email: email,
+              password: _passwordController.text,
+            ),
+          ),
         );
       }
     } catch (e) {

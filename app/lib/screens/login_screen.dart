@@ -62,14 +62,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } on AuthException catch (e) {
       if (!mounted) return;
       if (e.code == 'email_not_confirmed') {
-        // Cuenta creada pero sin confirmar: reenvía el código y pide verificarlo.
+        // Cuenta creada pero sin confirmar: reenvía el correo y pide confirmarlo.
         try {
-          await AuthService.resendSignupCode(email);
+          await AuthService.resendSignupLink(email);
         } catch (_) {}
         if (!mounted) return;
         setState(() => _isSubmitting = false);
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => VerificationScreen(email: email)),
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              email: email,
+              password: _passwordController.text,
+            ),
+          ),
         );
         return;
       }
