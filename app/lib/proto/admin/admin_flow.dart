@@ -106,6 +106,15 @@ class _PaymentsInboxState extends State<PaymentsInbox> {
       _loading = true;
       _error = false;
     });
+    if (_store.live) {
+      await _store.loadAdmin();
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = _store.adminError != null;
+      });
+      return;
+    }
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() {
@@ -291,7 +300,7 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
-    await _decide(() => _store.approve(widget.orderId, widget.actor), 'Pago aprobado · QR generados (simulado)');
+    await _decide(() => _store.approve(widget.orderId, widget.actor), _store.live ? 'Pago aprobado · QR generados' : 'Pago aprobado · QR generados (simulado)');
   }
 
   Future<void> _reject() async {
@@ -303,18 +312,27 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
       builder: (_) => const _RejectSheet(),
     );
     if (reason == null || !mounted) return;
-    await _decide(() => _store.reject(widget.orderId, widget.actor, reason), 'Pago rechazado definitivamente · cupos liberados (simulado)');
+    await _decide(() => _store.reject(widget.orderId, widget.actor, reason), _store.live ? 'Pago rechazado definitivamente · cupos liberados' : 'Pago rechazado definitivamente · cupos liberados (simulado)');
   }
 
-  Future<void> _decide(DecisionResult Function() action, String okMsg) async {
+  Future<void> _decide(Future<DecisionResult> Function() action, String okMsg) async {
     if (!_allowed) {
       toast(context, 'Tu permiso fue revocado. No puedes decidir.', error: true);
       return;
     }
     setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!_store.live) await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    final r = action();
+    final DecisionResult r;
+    try {
+      r = await action();
+    } on StoreException catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      toast(context, e.message, error: true);
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _busy = false;
       _conflict = r == DecisionResult.conflict;
@@ -371,18 +389,20 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Datos de referencia', style: ts(AppTextSize.body, w: FontWeight.w700)),
               KV('Referencia', o.number),
-              KV('Beneficiario', ProtoStore.bankBeneficiary),
+              if (!_store.live) KV('Beneficiario', ProtoStore.bankBeneficiary),
               KV('Monto', money(o.total)),
-              const SizedBox(height: 8),
-              Center(
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(8),
-                  child: QrImageView(data: 'DEMO-QR-BANCARIO-NO-VALIDO-${o.number}', size: 120, backgroundColor: Colors.white),
+              if (!_store.live) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(8),
+                    child: QrImageView(data: 'DEMO-QR-BANCARIO-NO-VALIDO-${o.number}', size: 120, backgroundColor: Colors.white),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Center(child: Text('QR bancario del local (demo)', style: ts(AppTextSize.caption, c: AppColors.textSecondary))),
+                const SizedBox(height: 6),
+                Center(child: Text('QR bancario del local (demo)', style: ts(AppTextSize.caption, c: AppColors.textSecondary))),
+              ],
               const SizedBox(height: 8),
               Text('La verificación se hace fuera de CHECK, en el banco. CHECK no consulta movimientos bancarios.', style: ts(AppTextSize.caption, c: AppColors.textSecondary, h: 1.4)),
             ]),
@@ -416,16 +436,17 @@ class _PaymentDetailState extends State<PaymentDetailScreen> {
                 const SizedBox(height: 10),
                 PButton('Rechazar pago', kind: BtnKind.danger, icon: Icons.block, onPressed: _busy ? null : _reject),
                 const SizedBox(height: 10),
-                TextButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () {
-                          _store.simulateOtherVerifier(o.id);
-                          toast(context, 'Otro verificador aprobó esta orden. Tu pantalla aún no lo sabe: intenta decidir.');
-                        },
-                  icon: const Icon(Icons.groups_outlined, size: 18),
-                  label: const Text('Demo: otro verificador resuelve primero'),
-                ),
+                if (!_store.live)
+                  TextButton.icon(
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            _store.simulateOtherVerifier(o.id);
+                            toast(context, 'Otro verificador aprobó esta orden. Tu pantalla aún no lo sabe: intenta decidir.');
+                          },
+                    icon: const Icon(Icons.groups_outlined, size: 18),
+                    label: const Text('Demo: otro verificador resuelve primero'),
+                  ),
               ] else if (!pending) ...[
                 Notice(
                   o.status == OrderStatus.approved ? 'Pago aprobado por ${o.decidedBy}. ${o.ticketCount} QR individuales generados (demo).' : 'Pago rechazado por ${o.decidedBy}. Decisión definitiva: sin reactivación ni devoluciones.',
@@ -520,14 +541,15 @@ class NotificationsPage extends StatelessWidget {
     'CHECK actualiza el estado',
   ];
 
-  void _simulate(BuildContext context) {
+  Future<void> _simulate(BuildContext context) async {
     final r = Random();
     final names = ['Luciana Poma', 'Joaquín Mendoza', 'Daniela Choque', 'Sebastián Torrez'];
     final e = _store.events[r.nextInt(2)];
     final t = e.types.first;
     final q = 1 + r.nextInt(3);
-    final o = _store.createOrder(eventId: e.id, qty: {t.id: q}, name: names[r.nextInt(names.length)], ci: '${6000000 + r.nextInt(3000000)} LP', phone: '7${1000000 + r.nextInt(8999999)}');
-    _store.declarePaid(o.id);
+    final o = await _store.createOrder(eventId: e.id, qty: {t.id: q}, name: names[r.nextInt(names.length)], ci: '${6000000 + r.nextInt(3000000)} LP', phone: '7${1000000 + r.nextInt(8999999)}');
+    await _store.declarePaid(o.id);
+    if (!context.mounted) return;
     toast(context, 'Pago declarado por ${o.buyerName} (simulado)');
   }
 
@@ -539,8 +561,10 @@ class NotificationsPage extends StatelessWidget {
         listenable: _store,
         builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const H('Avisos', sub: 'Pagos informados por compradores. Sin WhatsApp, SMS ni push reales.'),
-          PButton('Simular que un comprador pulsa «Ya pagué»', kind: BtnKind.secondary, icon: Icons.bolt, onPressed: () => _simulate(context)),
-          const SizedBox(height: 16),
+          if (!_store.live) ...[
+            PButton('Simular que un comprador pulsa «Ya pagué»', kind: BtnKind.secondary, icon: Icons.bolt, onPressed: () => _simulate(context)),
+            const SizedBox(height: 16),
+          ],
           for (final n in _store.notifications)
             Builder(builder: (context) {
               final o = _store.orderById(n.orderId)!;
@@ -607,8 +631,13 @@ class DelegationPage extends StatelessWidget {
       ),
     );
     if (ok == true) {
-      _store.setVerifier(e.id, grant);
-      if (context.mounted) toast(context, grant ? 'Permiso concedido (simulado)' : 'Permiso revocado (simulado)');
+      try {
+        await _store.setVerifier(e.id, grant);
+      } catch (err) {
+        if (context.mounted) toast(context, err is StoreException ? err.message : 'No se pudo cambiar el permiso.', error: true);
+        return;
+      }
+      if (context.mounted) toast(context, _store.live ? (grant ? 'Permiso concedido' : 'Permiso revocado') : (grant ? 'Permiso concedido (simulado)' : 'Permiso revocado (simulado)'));
     }
   }
 
@@ -620,7 +649,7 @@ class DelegationPage extends StatelessWidget {
         listenable: _store,
         builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const H('Verificadores de confianza', sub: 'Delega solo la verificación de pagos. No es un rol de administrador.'),
-          const Notice('Propuesta funcional pendiente de aprobación: en este prototipo el permiso está simulado.'),
+          if (!_store.live) const Notice('Propuesta funcional pendiente de aprobación: en este prototipo el permiso está simulado.'),
           const SizedBox(height: 12),
           PCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
