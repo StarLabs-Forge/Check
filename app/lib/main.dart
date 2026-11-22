@@ -128,6 +128,7 @@ class _CheckAppState extends State<CheckApp> {
         '/tickets': (_) => const RoleGuard(roles: {'admin'}, child: AdminTicketsScreen()),
         '/pagos': (_) => const RoleGuard(roles: {'admin'}, child: AdminPaymentsScreen()),
         '/verificadores': (_) => const RoleGuard(roles: {'admin'}, child: AdminVerifiersScreen()),
+        '/personal': (_) => const RoleGuard(roles: {'admin'}, child: AdminStaffScreen()),
         '/auditoria': (_) => const RoleGuard(roles: {'admin'}, child: AdminAuditScreen()),
         '/configuracion': (_) => const RoleGuard(
               roles: {'admin'},

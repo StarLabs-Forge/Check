@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../proto/admin/admin_flow.dart';
 import '../proto/data/proto_store.dart';
+import '../proto/admin/staff_accounts_page.dart';
 import '../widgets/admin_scaffold.dart';
 
 /// Pagos por verificar — dentro del panel Admin real (mismo sidebar/drawer,
@@ -35,5 +36,16 @@ class AdminAuditScreen extends StatelessWidget {
   Widget build(BuildContext context) => AdminScaffold(
         current: AdminRoute.auditoria,
         body: HistoryPage(actor: ProtoStore.admin, onlyMine: false),
+      );
+}
+
+/// Personal: crear cuentas (correo + contraseña) y asignar permisos.
+class AdminStaffScreen extends StatelessWidget {
+  const AdminStaffScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        current: AdminRoute.personal,
+        body: StaffAccountsPage(),
       );
 }

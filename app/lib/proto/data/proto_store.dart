@@ -132,6 +132,39 @@ class Employee {
   DateTime? grantedAt;
 }
 
+/// Permisos que el administrador puede asignar a una cuenta de staff.
+enum StaffPermission {
+  scanQr('Escanear QR en puerta', 'Validar entradas en el acceso del evento.'),
+  verifyPayments('Verificar pagos', 'Aprobar o rechazar pagos declarados.'),
+  viewGuests('Ver lista de invitados', 'Consultar entradas y asistentes.'),
+  createTickets('Emitir entradas', 'Crear entradas manuales para invitados.'),
+  viewEvents('Ver eventos', 'Consultar los eventos del local.');
+
+  const StaffPermission(this.label, this.description);
+  final String label;
+  final String description;
+}
+
+/// Cuenta de acceso del personal creada por el administrador.
+class StaffAccount {
+  StaffAccount({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.job,
+    required this.permissions,
+    this.active = true,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+  final String id;
+  String name;
+  final String email;
+  String job;
+  Set<StaffPermission> permissions;
+  bool active;
+  final DateTime createdAt;
+}
+
 class AuditEntry {
   const AuditEntry({
     required this.at,
@@ -183,6 +216,7 @@ class ProtoStore extends ChangeNotifier {
   final List<AppNotification> notifications = [];
   late final List<Employee> employees;
   final List<AuditEntry> platformLog = [];
+  final List<StaffAccount> staffAccounts = [];
   int _seq = 1046;
 
   DateTime get now => DateTime.now();
@@ -481,6 +515,54 @@ class ProtoStore extends ChangeNotifier {
     o.decidedBy = 'Otro verificador';
     o.ticketCodes = List.generate(o.ticketCount, (i) => 'DEMO-${o.number.substring(4)}-${i + 1}');
     audit.insert(0, AuditEntry(at: now, actor: 'Otro verificador', permission: 'Verificador delegado de pagos', action: 'Aprobó pago', result: 'Aprobado · ${o.ticketCount} QR generados', orderNumber: o.number));
+    notifyListeners();
+  }
+
+  // ---------------- cuentas de staff ----------------
+  void _logStaff(String action, StaffAccount a, String result) {
+    audit.insert(0, AuditEntry(at: now, actor: admin.name, permission: admin.permission, action: action, result: result, reason: 'Cuenta: ${a.email}'));
+  }
+
+  bool staffEmailTaken(String email) =>
+      staffAccounts.any((a) => a.email.toLowerCase() == email.trim().toLowerCase());
+
+  StaffAccount createStaffAccount({
+    required String name,
+    required String email,
+    required String job,
+    required Set<StaffPermission> permissions,
+  }) {
+    final a = StaffAccount(
+      id: 'st${staffAccounts.length + 1}-${now.millisecondsSinceEpoch}',
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      job: job.trim(),
+      permissions: {...permissions},
+    );
+    staffAccounts.insert(0, a);
+    _logStaff('Creó cuenta de staff', a, '${a.permissions.length} permisos asignados');
+    notifyListeners();
+    return a;
+  }
+
+  void updateStaffPermissions(String id, Set<StaffPermission> permissions) {
+    final a = staffAccounts.firstWhere((x) => x.id == id);
+    a.permissions = {...permissions};
+    _logStaff('Cambió permisos de staff', a, '${a.permissions.length} permisos activos');
+    notifyListeners();
+  }
+
+  void setStaffActive(String id, bool active) {
+    final a = staffAccounts.firstWhere((x) => x.id == id);
+    a.active = active;
+    _logStaff(active ? 'Reactivó cuenta de staff' : 'Desactivó cuenta de staff', a, active ? 'Cuenta activa' : 'Acceso bloqueado');
+    notifyListeners();
+  }
+
+  void deleteStaffAccount(String id) {
+    final a = staffAccounts.firstWhere((x) => x.id == id);
+    staffAccounts.remove(a);
+    _logStaff('Eliminó cuenta de staff', a, 'Cuenta eliminada');
     notifyListeners();
   }
 

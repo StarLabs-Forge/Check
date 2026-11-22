@@ -43,9 +43,8 @@
                 <img src="./assets/check_logo_horizontal.svg" alt="CHECK — Control total de tus eventos" class="logo-image logo-header-image">
             </a>
             <ul class="nav-links">
-                <li><a href="#nosotros" class="nav-link">Nosotros</a></li>
                 <li><a href="#como-funciona" class="nav-link">Cómo funciona</a></li>
-                <li><a href="#modulos" class="nav-link">Módulos</a></li>
+                <li><a href="#modulos" class="nav-link">Qué incluye</a></li>
                 <li><a href="#planes" class="nav-link">Planes</a></li>
                 <li><a href="#contacto" class="nav-link">Contacto</a></li>
             </ul>
@@ -58,8 +57,10 @@
         <div class="container">
             <div class="hero-grid">
                 <div class="reveal">
-                    <div class="kicker">PILOTO ACTIVO EN LA PAZ</div>
-                    <h1 class="hero-title">La puerta digital de <span>tu local.</span></h1>
+                    <div class="hero-brand">
+                        <img src="./assets/check_logo_horizontal.svg" alt="CHECK" class="hero-brand-logo" id="heroLogo">
+                    </div>
+                    <h1 class="hero-title" aria-label="La puerta digital de tu local."><span class="w" aria-hidden="true" style="--i:0">La</span> <span class="w" aria-hidden="true" style="--i:1">puerta</span> <span class="w" aria-hidden="true" style="--i:2">digital</span> <span class="w" aria-hidden="true" style="--i:3">de</span> <span class="w accent" aria-hidden="true" style="--i:4">tu</span> <span class="w accent" aria-hidden="true" style="--i:5">local.</span></h1>
                     <p class="hero-subtitle">Reemplaza lista de papel y conteo a mano por QR escaneado en segundos, con estado en tiempo real desde la puerta hasta el dashboard.</p>
                     <div class="hero-actions">
                         <a href="https://check-starlabs3.vercel.app/" class="btn btn-primary">Solicitar demo</a>
@@ -141,53 +142,6 @@
         </div>
     </section>
 
-    <!-- 3. Nosotros -->
-    <section class="section section-alt" id="nosotros">
-        <div class="container">
-            <div class="about-grid">
-                <div class="reveal">
-                    <div class="kicker">QUIÉNES SOMOS</div>
-                    <h2 class="section-title">Nosotros</h2>
-                    <div class="prose">
-                        <p><strong>Nacido en la noche paceña, no en un pizarrón.</strong><br>CHECK nació en la operación real de la noche paceña.<br>Resolvemos filas, poca señal y reservas sin respaldo.<br>No somos software genérico: damos control de accesos, mesas y caja.<br><strong>Operación probada en puerta antes de prometer nada.</strong></p>
-                    </div>
-                </div>
-
-                <div class="reveal">
-                    <!-- Credencial de organización -->
-                    <div class="badge-card">
-                        <div class="badge-header">
-                            <div class="badge-brand">CHECK</div>
-                            <div class="badge-chip">SISTEMA ACTIVO</div>
-                        </div>
-                        <div class="badge-table">
-                            <div class="badge-row">
-                                <span class="badge-label">Sede principal</span>
-                                <span class="badge-val">La Paz, Bolivia</span>
-                            </div>
-                            <div class="badge-row">
-                                <span class="badge-label">Enfoque</span>
-                                <span class="badge-val">Control de acceso y operación</span>
-                            </div>
-                            <div class="badge-row">
-                                <span class="badge-label">Estado actual</span>
-                                <span class="badge-val" style="color:var(--success);">● Piloto activo en local</span>
-                            </div>
-                            <div class="badge-row">
-                                <span class="badge-label">Modelo</span>
-                                <span class="badge-val">Servicio de software (B2B)</span>
-                            </div>
-                        </div>
-                        <div class="badge-footer">
-                            <span>CREDENTIAL ID</span>
-                            <span class="font-mono" style="color:var(--primary);">ID-ORG-0001</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- 4. El Problema -->
     <section class="section problem-section">
         <div class="container">
@@ -211,7 +165,8 @@
                 <p class="section-desc" style="margin: 0 auto;">De la administración a la puerta en 6 pasos.</p>
             </div>
 
-            <div class="steps-list">
+            <div class="steps-list" id="stepsList">
+                <div class="steps-progress" aria-hidden="true"><span class="steps-progress-fill"></span></div>
                 <div class="step-card reveal">
                     <div class="step-num">01</div>
                     <div class="step-content">
@@ -267,7 +222,7 @@
     <!-- 6. Estados en la puerta -->
     <section class="section" id="estados">
         <div class="container">
-            <div style="text-align: center; margin-bottom: 3rem;" class="reveal">
+            <div class="reveal section-head">
                 <div class="kicker" style="justify-content: center;">LENGUAJE VISUAL REAL</div>
                 <h2 class="section-title">Respuesta instantánea en el escáner</h2>
                 <p class="section-desc" style="margin: 0 auto;">El staff no pierde tiempo leyendo detalles complejos. El sistema responde con tres estados inequívocos.</p>
@@ -308,8 +263,8 @@
     <section class="section section-alt" id="modulos">
         <div class="container">
             <div class="reveal">
-                <div class="kicker">CAPACIDADES DEL SISTEMA</div>
-                <h2 class="section-title">Módulos</h2>
+                <div class="kicker">TODO LO QUE NECESITAS</div>
+                <h2 class="section-title">Qué incluye CHECK</h2>
                 <p class="section-desc">Diseñados para la noche: herramientas robustas orientadas a acelerar la puerta y dar control al dueño.</p>
             </div>
 
@@ -374,7 +329,7 @@
     <!-- 8. Planes -->
     <section class="section" id="planes">
         <div class="container">
-            <div style="text-align: center; margin-bottom: 3.5rem;" class="reveal">
+            <div class="reveal section-head">
                 <div class="kicker" style="justify-content: center;">MODELO DE SUSCRIPCIÓN</div>
                 <h2 class="section-title">Planes</h2>
                 <p class="section-desc" style="margin: 0 auto;">Transparentes para tu local. Sin comisiones ocultas por entrada. Pagas una suscripción fija por el uso de la plataforma.</p>
@@ -435,6 +390,7 @@
                     <a href="#contacto" class="btn btn-outline" style="width: 100%;">Solicitar Premium</a>
                 </div>
             </div>
+
         </div>
     </section>
 
@@ -463,22 +419,6 @@
                     </div>
                 </div>
             </div>-->
-
-            <!-- 10. Mención breve a CLANDEST -->
-            <div class="clandest-wrapper reveal" style="margin-top: 3.5rem;">
-                <div class="clandest-card">
-                    <div class="clandest-info">
-                        <h4>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            Ecosistema CLANDEST incluido
-                        </h4>
-                        <p>Si utilizas CHECK para la gestión de tu local, puedes vincular tus eventos a la app de descubrimiento <strong>CLANDEST</strong> sin ningún costo adicional. La difusión queda integrada automáticamente.</p>
-                    </div>
-                    <div class="clandest-badge">SIN COSTO EXTRA</div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- 11. Contacto -->
     <section class="section" id="contacto">
@@ -545,7 +485,7 @@
                     <div class="footer-title">Producto</div>
                     <ul class="footer-links">
                         <li><a href="#como-funciona">Cómo funciona</a></li>
-                        <li><a href="#modulos">Módulos</a></li>
+                        <li><a href="#modulos">Qué incluye</a></li>
                         <li><a href="#planes">Planes</a></li>
                     </ul>
                 </div>
@@ -553,8 +493,6 @@
                 <div>
                     <div class="footer-title">Organización</div>
                     <ul class="footer-links">
-                        <li><a href="#nosotros">Sobre CHECK</a></li>
-                         <!--<li><a href="#nosotros">Piloto La Paz</a></li>-->
                         <li><a href="#contacto">Contacto B2B</a></li>
                     </ul>
                 </div>
