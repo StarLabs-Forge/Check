@@ -98,7 +98,7 @@ void main() {
       tester.view.physicalSize = entry.value;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      final o = ProtoStore.instance.createOrder(eventId: 'e1', qty: {'e1g': 2}, name: 'Ana Pruebas', ci: '1234567', phone: '71234567');
+      final o = await ProtoStore.instance.createOrder(eventId: 'e1', qty: {'e1g': 2}, name: 'Ana Pruebas', ci: '1234567', phone: '71234567');
       await tester.pumpWidget(MaterialApp(theme: AppTheme.dark, home: OrderScreen(o.id)));
       await tester.pump(const Duration(milliseconds: 1200));
       var extra = 0.0;

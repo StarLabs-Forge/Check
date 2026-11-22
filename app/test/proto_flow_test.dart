@@ -40,7 +40,8 @@ void main() {
         await tester.enterText(fields.at(2), '71234567');
         await tester.pump();
         await tapText('Continuar al pago');
-        expect(find.textContaining('14:5'), findsOneWidget, reason: 'cuenta regresiva de 15 min');
+        // El reloj es el real (los pump no lo adelantan): acepta 15:00 a 14:00.
+        expect(find.byWidgetPredicate((w) => w is Text && RegExp(r'^1[45]:\d\d$').hasMatch(w.data ?? '')), findsOneWidget, reason: 'cuenta regresiva de 15 min');
         expect(find.textContaining('no válido para pagar'), findsOneWidget);
       }
 
@@ -178,17 +179,17 @@ void main() {
         expect(find.text('Aprobar pago'), findsNothing);
         expect(find.text('Revisar pago'), findsNothing);
       }
-      expect(find.text('Solo lectura'), findsWidgets);
+      expect(find.textContaining('Solo lectura'), findsWidgets);
     });
   }
 
-  test('expiración libera cupos', () {
+  test('expiración libera cupos', () async {
     final s = ProtoStore.instance;
     final t = s.events.first.types.first;
     final before = s.remaining(t);
-    final o = s.createOrder(eventId: s.events.first.id, qty: {t.id: 2}, name: 'X Y', ci: '1234567', phone: '71234567');
+    final o = await s.createOrder(eventId: s.events.first.id, qty: {t.id: 2}, name: 'X Y', ci: '1234567', phone: '71234567');
     expect(s.remaining(t), before - 2);
-    s.cancelOrder(o.id);
+    await s.cancelOrder(o.id);
     expect(s.remaining(t), before);
   });
 }

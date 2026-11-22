@@ -5,118 +5,113 @@ import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
 
-/// Confirmación de correo con código de 6 dígitos (Supabase Auth OTP, tipo
-/// `signup`). Se muestra al registrarse —o al intentar entrar con una cuenta
-/// sin confirmar— cuando el proyecto tiene la confirmación de correo activa.
-/// Al verificar bien, Supabase crea la sesión y el listener de `main.dart`
-/// lleva al panel.
+/// Confirmación de correo por enlace (flujo por defecto de Supabase Auth).
 ///
-/// Nota: esto NO es un 2FA en cada login (el login es solo correo +
-/// contraseña). Un 2FA real requeriría Supabase MFA (TOTP).
+/// Supabase manda un correo con un enlace; al abrirlo el correo queda
+/// confirmado. Esta pantalla avisa que hay que revisar el correo y, mientras
+/// está abierta, consulta cada pocos segundos si ya se confirmó (intentando
+/// iniciar sesión con las mismas credenciales). Al confirmarse, Supabase crea
+/// la sesión y el listener de `main.dart` lleva al panel.
+///
+/// Si no se recibe la contraseña (`password == null`) no se puede consultar
+/// solo: queda el botón para volver a iniciar sesión.
+///
+/// Nota: esto es verificación de correo, NO un 2FA en cada login. Un 2FA real
+/// requeriría Supabase MFA (TOTP).
 class VerificationScreen extends StatefulWidget {
-  const VerificationScreen({super.key, required this.email});
+  const VerificationScreen({super.key, required this.email, this.password});
 
   final String email;
+  final String? password;
 
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  static const _codeLength = 6;
   static const _resendSeconds = 60;
+  // Supabase limita los inicios de sesión por IP: 15 s deja margen de sobra.
+  static const _pollEvery = Duration(seconds: 15);
+  static const _pollMax = Duration(minutes: 10);
 
-  final List<TextEditingController> _controllers =
-      List.generate(_codeLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(_codeLength, (_) => FocusNode());
-
-  Timer? _timer;
+  Timer? _resendTimer;
+  Timer? _pollTimer;
   int _secondsLeft = _resendSeconds;
-  bool _isVerifying = false;
+  bool _checking = false;
+  bool _gaveUp = false;
   String? _error;
+  final Stopwatch _watch = Stopwatch()..start();
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _startResendTimer();
+    if (widget.password != null) {
+      _pollTimer = Timer.periodic(_pollEvery, (_) => _check(silent: true));
+    }
   }
 
-  void _startTimer() {
-    _timer?.cancel();
+  void _startResendTimer() {
+    _resendTimer?.cancel();
     setState(() => _secondsLeft = _resendSeconds);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsLeft <= 1) {
         timer.cancel();
-        setState(() => _secondsLeft = 0);
+        if (mounted) setState(() => _secondsLeft = 0);
       } else {
-        setState(() => _secondsLeft -= 1);
+        if (mounted) setState(() => _secondsLeft -= 1);
       }
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    for (final f in _focusNodes) {
-      f.dispose();
-    }
+    _resendTimer?.cancel();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
-  String get _code => _controllers.map((c) => c.text).join();
+  /// Revisa si el correo ya fue confirmado. Si lo está, el inicio de sesión
+  /// crea la sesión y el listener de auth navega al panel.
+  Future<void> _check({bool silent = false}) async {
+    final password = widget.password;
+    if (password == null || _checking) return;
 
-  void _onDigitChanged(int index, String value) {
-    setState(() => _error = null);
-    if (value.isNotEmpty && index < _codeLength - 1) {
-      _focusNodes[index + 1].requestFocus();
-    }
-    if (value.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-    if (_code.length == _codeLength) {
-      _verify();
-    }
-  }
-
-  Future<void> _verify() async {
-    if (_code.length < _codeLength) {
-      setState(() => _error = 'Ingresa los $_codeLength dígitos del código');
-      return;
+    if (_watch.elapsed > _pollMax) {
+      _pollTimer?.cancel();
+      if (mounted) setState(() => _gaveUp = true);
+      if (silent) return;
     }
 
     setState(() {
-      _isVerifying = true;
-      _error = null;
+      _checking = true;
+      if (!silent) _error = null;
     });
     try {
-      await AuthService.verifySignupCode(email: widget.email, code: _code);
-      // Éxito: el listener de auth navega al panel.
+      final confirmed = await AuthService.tryConfirmedSignIn(
+        email: widget.email,
+        password: password,
+      );
+      if (!mounted) return;
+      if (!confirmed && !silent) {
+        setState(() => _error = 'Todavía no vemos la confirmación. Abre el enlace del correo y vuelve aquí.');
+      }
     } catch (e) {
       if (!mounted) return;
-      for (final c in _controllers) {
-        c.clear();
-      }
-      _focusNodes.first.requestFocus();
+      _pollTimer?.cancel();
       setState(() => _error = friendlyError(e));
     }
-    if (mounted) setState(() => _isVerifying = false);
+    if (mounted) setState(() => _checking = false);
   }
 
   Future<void> _resend() async {
     if (_secondsLeft > 0) return;
     try {
-      await AuthService.resendSignupCode(widget.email);
+      await AuthService.resendSignupLink(widget.email);
       if (!mounted) return;
-      for (final c in _controllers) {
-        c.clear();
-      }
-      _focusNodes.first.requestFocus();
-      _startTimer();
+      _startResendTimer();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Código reenviado')),
+        const SnackBar(content: Text('Correo reenviado')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -126,46 +121,62 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canPoll = widget.password != null;
     return AuthScaffold(
-      title: 'Verifica tu correo',
-      subtitle: 'Enviamos un código de 6 dígitos a ${widget.email}',
+      title: 'Revisa tu correo',
+      subtitle: 'Enviamos un enlace de confirmación a ${widget.email}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_codeLength, (index) {
-              return SizedBox(
-                width: 44,
-                height: 56,
-                child: TextField(
-                  controller: _controllers[index],
-                  focusNode: _focusNodes[index],
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  maxLength: 1,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  decoration: const InputDecoration(counterText: ''),
-                  onChanged: (value) => _onDigitChanged(index, value),
-                ),
-              );
-            }),
+          const Icon(Icons.mark_email_unread_outlined, size: 56, color: AppColors.accentPrimary),
+          const SizedBox(height: AppSpacing.s4),
+          const Text(
+            'Abre el correo y toca el enlace para activar tu cuenta. '
+            'Si no lo ves, revisa la carpeta de spam.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
           ),
+          const SizedBox(height: AppSpacing.s4),
+          if (canPoll && !_gaveUp)
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentPrimary),
+                ),
+                SizedBox(width: AppSpacing.s2),
+                Text(
+                  'Esperando tu confirmación…',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+                ),
+              ],
+            ),
+          if (_gaveUp)
+            const Text(
+              'Dejamos de esperar. Cuando confirmes el correo, inicia sesión.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+            ),
           AuthError(_error),
           const SizedBox(height: AppSpacing.s5),
-          AuthSubmit(label: 'Verificar', loading: _isVerifying, onPressed: _verify),
+          if (canPoll)
+            AuthSubmit(label: 'Ya confirmé mi correo', loading: _checking, onPressed: () => _check()),
+          if (!canPoll)
+            AuthSubmit(
+              label: 'Ir a iniciar sesión',
+              loading: false,
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
           const SizedBox(height: AppSpacing.s4),
           Center(
             child: TextButton(
               onPressed: _secondsLeft == 0 ? _resend : null,
               child: Text(
                 _secondsLeft == 0
-                    ? 'Reenviar código'
-                    : 'Reenviar código en ${_secondsLeft}s',
+                    ? 'Reenviar correo'
+                    : 'Reenviar correo en ${_secondsLeft}s',
               ),
             ),
           ),

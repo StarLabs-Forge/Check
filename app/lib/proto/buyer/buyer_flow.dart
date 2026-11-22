@@ -34,6 +34,12 @@ class _BuyerHomeState extends State<BuyerHome> {
   bool _onlyAvailable = false;
 
   @override
+  void initState() {
+    super.initState();
+    _store.loadCatalog();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pad = Bp.isMobile(context) ? AppSpacing.s4 : AppSpacing.s6;
     return Scaffold(
@@ -50,6 +56,10 @@ class _BuyerHomeState extends State<BuyerHome> {
       body: ListenableBuilder(
         listenable: _store,
         builder: (context, _) {
+          if (_store.live && !_store.catalogLoaded) return const StateView(ViewState.loading);
+          if (_store.live && _store.catalogError != null && _store.events.isEmpty) {
+            return StateView(ViewState.error, message: _store.catalogError, onRetry: _store.loadCatalog);
+          }
           var list = _store.events.where((e) => e.state != EventState.finished).toList();
           if (_q.isNotEmpty) list = list.where((e) => e.name.toLowerCase().contains(_q.toLowerCase())).toList();
           if (_venue != null) list = list.where((e) => e.venueId == _venue).toList();
@@ -132,7 +142,7 @@ class _BuyerHomeState extends State<BuyerHome> {
                   Text(filtering ? 'Resultados' : 'Todos los eventos', style: ts(AppTextSize.h3, w: FontWeight.w700)),
                   const SizedBox(height: 10),
                   if (list.isEmpty)
-                    const StateView(ViewState.empty, message: 'No hay eventos con esos filtros.')
+                    StateView(ViewState.empty, message: _store.live && _store.events.isEmpty ? 'Todavía no hay eventos a la venta. Vuelve pronto.' : 'No hay eventos con esos filtros.')
                   else
                     LayoutBuilder(builder: (context, c) {
                       final cols = c.maxWidth >= 900 ? 3 : (c.maxWidth >= 560 ? 2 : 1);
@@ -463,16 +473,25 @@ class _BuyerDataState extends State<BuyerDataScreen> {
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!_store.live) await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    final o = _store.createOrder(
-      eventId: widget.eventId,
-      qty: widget.qty,
-      name: _name.text.trim(),
-      ci: _ci.text.trim(),
-      phone: _phone.text.trim(),
-      email: _email.text,
-    );
+    final Order o;
+    try {
+      o = await _store.createOrder(
+        eventId: widget.eventId,
+        qty: widget.qty,
+        name: _name.text.trim(),
+        ci: _ci.text.trim(),
+        phone: _phone.text.trim(),
+        email: _email.text,
+      );
+    } on StoreException catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      toast(context, e.message, error: true);
+      return;
+    }
+    if (!mounted) return;
     // Cierra el flujo de compra y abre el pago como ventana emergente sobre
     // el listado de eventos.
     final nav = Navigator.of(context);
@@ -598,9 +617,35 @@ class _BuyerDataState extends State<BuyerDataScreen> {
 }
 
 // ───────────────────────── B · Pedido (según estado) ─────────────────────────
-class OrderScreen extends StatelessWidget {
+class OrderScreen extends StatefulWidget {
   const OrderScreen(this.orderId, {super.key});
   final String orderId;
+  @override
+  State<OrderScreen> createState() => _OrderScreenState();
+}
+
+class _OrderScreenState extends State<OrderScreen> {
+  Timer? _poll;
+
+  String get orderId => widget.orderId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pedido real: pregunta al servidor mientras el estado pueda cambiar.
+    _poll = Timer.periodic(const Duration(seconds: 5), (_) {
+      final o = _store.orderById(orderId);
+      if (o != null && o.remote && (o.status == OrderStatus.awaitingPayment || o.status == OrderStatus.verifying)) {
+        _store.refreshOrder(orderId);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -738,13 +783,13 @@ Widget _summary(Order o) {
 
 /// Enlace privado en una fila, con botón para copiarlo.
 Widget _privateLink(BuildContext context, Order o) {
-  final link = 'check.app/pedido/${o.token}';
+  final link = o.code;
   return PCard(
     padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s3, AppSpacing.s2, AppSpacing.s3),
     child: Row(children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Tu enlace privado', style: ts(AppTextSize.caption, c: AppColors.textSecondary, w: FontWeight.w600)),
+          Text('Tu código privado', style: ts(AppTextSize.caption, c: AppColors.textSecondary, w: FontWeight.w600)),
           const SizedBox(height: 2),
           Text(link, maxLines: 1, overflow: TextOverflow.ellipsis, style: ts(AppTextSize.body, c: AppColors.accentPrimary)),
           const SizedBox(height: 2),
@@ -752,11 +797,11 @@ Widget _privateLink(BuildContext context, Order o) {
         ]),
       ),
       IconButton(
-        tooltip: 'Copiar enlace',
+        tooltip: 'Copiar código',
         icon: const Icon(Icons.copy_rounded, size: 20),
         onPressed: () {
           Clipboard.setData(ClipboardData(text: link));
-          toast(context, 'Enlace copiado');
+          toast(context, 'Código copiado');
         },
       ),
     ]),
@@ -826,22 +871,29 @@ class _PendingPaymentState extends State<_PendingPayment> {
 
     final qr = PCard(
       child: Column(children: [
-        Text('Paga con el QR bancario del local', style: ts(AppTextSize.body, w: FontWeight.w700), textAlign: TextAlign.center),
+        Text(o.remote ? 'Paga con los datos bancarios del local' : 'Paga con el QR bancario del local', style: ts(AppTextSize.body, w: FontWeight.w700), textAlign: TextAlign.center),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.sm)),
-          child: QrImageView(data: 'DEMO-QR-BANCARIO-NO-VALIDO-${o.number}', size: wide ? 190 : 160, backgroundColor: Colors.white),
-        ),
-        const SizedBox(height: 8),
-        const Chip2('QR de demostración · no válido para pagar', PColors.warning),
-        const SizedBox(height: 8),
-        KV('Beneficiario', ProtoStore.bankBeneficiary),
+        if (!o.remote) ...[
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.sm)),
+            child: QrImageView(data: 'DEMO-QR-BANCARIO-NO-VALIDO-${o.number}', size: wide ? 190 : 160, backgroundColor: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          const Chip2('QR de demostración · no válido para pagar', PColors.warning),
+          const SizedBox(height: 8),
+          KV('Beneficiario', ProtoStore.bankBeneficiary),
+        ] else ...[
+          KV('Beneficiario', (o.bank?['beneficiary'] as String?) ?? '—'),
+          KV('Banco', (o.bank?['bank_name'] as String?) ?? '—'),
+          KV('Cuenta', (o.bank?['account'] as String?) ?? '—'),
+          KV('Referencia', o.number),
+        ],
         KV('Monto a pagar', money(o.total)),
       ]),
     );
 
-    final steps = ['Abre la app de tu banco y escanea el QR.', 'Paga exactamente ${money(o.total)}.', 'Vuelve aquí y pulsa «Ya pagué».'];
+    final steps = [o.remote ? 'Abre la app de tu banco y transfiere a la cuenta del local.' : 'Abre la app de tu banco y escanea el QR.', 'Paga exactamente ${money(o.total)}.', 'Vuelve aquí y pulsa «Ya pagué».'];
 
     if (wide) {
       return _orderScaffold(
@@ -893,7 +945,7 @@ class _PendingPaymentState extends State<_PendingPayment> {
         const SizedBox(height: 10),
         Reveal(delay: const Duration(milliseconds: 90), child: qr),
         const SizedBox(height: 10),
-        Text('1 Escanea el QR en tu banco · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»',
+        Text(o.remote ? '1 Transfiere a la cuenta del local · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»' : '1 Escanea el QR en tu banco · 2 Paga el monto exacto · 3 Pulsa «Ya pagué»',
             textAlign: TextAlign.center, style: ts(AppTextSize.caption, c: AppColors.textSecondary, h: 1.4)),
       ]),
     );
@@ -987,7 +1039,7 @@ class _Approved extends StatelessWidget {
         icon: Icons.warning_amber_rounded,
       ),
     );
-    final mail = o.email == null ? null : Notice('También enviaremos tus entradas a ${o.email} (simulado).', color: AppColors.success, icon: Icons.mail_outline);
+    final mail = o.email == null ? null : Notice(o.remote ? 'Guarda tu código privado: es la única forma de volver a ver tus entradas.' : 'También enviaremos tus entradas a ${o.email} (simulado).', color: AppColors.success, icon: Icons.mail_outline);
     final link = Reveal(delay: const Duration(milliseconds: 320), child: _privateLink(context, o));
     final tickets = Reveal(delay: const Duration(milliseconds: 260), child: _TicketCarousel(o));
 
@@ -1119,25 +1171,25 @@ class _TicketCard extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           Expanded(child: Text('Entrada ${i + 1} de ${o.ticketCount}', style: ts(AppTextSize.body, w: FontWeight.w700))),
-          const Chip2('Demo · no válida', PColors.warning),
+          if (!o.remote) const Chip2('Demo · no válida', PColors.warning),
         ]),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.sm)),
-          child: QrImageView(data: 'INVALID-DEMO-$code', size: 140, backgroundColor: Colors.white),
+          child: QrImageView(data: o.remote ? code : 'INVALID-DEMO-$code', size: 140, backgroundColor: Colors.white),
         ),
         const SizedBox(height: 4),
         Row(children: [
-          Expanded(child: Text(code, style: ts(AppTextSize.caption, c: AppColors.textSecondary))),
-          TextButton.icon(
+          Expanded(child: Text(o.remote ? '${o.number} · ${i + 1}/${o.ticketCount}' : code, style: ts(AppTextSize.caption, c: AppColors.textSecondary))),
+          if (!o.remote) TextButton.icon(
             style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2), minimumSize: const Size(0, 32), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             onPressed: () => toast(context, 'Descarga simulada de $code'),
             icon: const Icon(Icons.download, size: 18),
             label: const Text('Descargar QR'),
           ),
         ]),
-        Text('QR de demostración · no válido en ningún evento', textAlign: TextAlign.center, style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
+        if (!o.remote) Text('QR de demostración · no válido en ningún evento', textAlign: TextAlign.center, style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
       ]),
     );
   }
@@ -1193,10 +1245,11 @@ class _OrderLookupState extends State<OrderLookupScreen> {
   final _c = TextEditingController();
   String? _err;
 
-  void _go() {
-    final o = _store.orderByToken(_c.text);
+  Future<void> _go() async {
+    final o = _store.live ? await _store.loadOrderByCode(_c.text) : _store.orderByToken(_c.text);
+    if (!mounted) return;
     if (o == null) {
-      setState(() => _err = 'No encontramos un pedido con ese enlace o número.');
+      setState(() => _err = 'No encontramos un pedido con ese código.');
       return;
     }
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => OrderScreen(o.id)));
@@ -1219,11 +1272,13 @@ class _OrderLookupState extends State<OrderLookupScreen> {
               const H('Abre tu enlace privado', sub: 'Pega el código de tu enlace (o el número de pedido). No necesitas iniciar sesión.'),
               TextField(controller: _c, onSubmitted: (_) => _go(), decoration: InputDecoration(labelText: 'Código o número de pedido', errorText: _err)),
               const SizedBox(height: 16),
-              Text('Para probar, usa un pedido de ejemplo:', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-              const SizedBox(height: 8),
-              Wrap(spacing: 8, children: [
-                for (final o in _store.orders.take(5)) ActionChip(label: Text(o.number), onPressed: () => setState(() => _c.text = o.number)),
-              ]),
+              if (!_store.live) ...[
+                Text('Para probar, usa un pedido de ejemplo:', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                const SizedBox(height: 8),
+                Wrap(spacing: 8, children: [
+                  for (final o in _store.orders.take(5)) ActionChip(label: Text(o.number), onPressed: () => setState(() => _c.text = o.number)),
+                ]),
+              ],
             ]),
           ),
         ),

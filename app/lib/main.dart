@@ -18,6 +18,7 @@ import 'proto/buyer/buyer_flow.dart';
 import 'proto/superadmin/superadmin_flow.dart';
 import 'screens/loading_screen.dart';
 import 'screens/payments_screens.dart';
+import 'screens/venue_settings_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
@@ -130,9 +131,9 @@ class _CheckAppState extends State<CheckApp> {
         '/verificadores': (_) => const RoleGuard(roles: {'admin'}, child: AdminVerifiersScreen()),
         '/personal': (_) => const RoleGuard(roles: {'admin'}, child: AdminStaffScreen()),
         '/auditoria': (_) => const RoleGuard(roles: {'admin'}, child: AdminAuditScreen()),
-        '/configuracion': (_) => const RoleGuard(
-              roles: {'admin'},
-              child: ComingSoonScreen(current: AdminRoute.configuracion),
+        '/configuracion': (_) => RoleGuard(
+              roles: const {'admin'},
+              child: kDemo ? const ComingSoonScreen(current: AdminRoute.configuracion) : const VenueSettingsScreen(),
             ),
         '/superadmin': (_) => RoleGuard(
               roles: const {'super_admin'},
