@@ -1116,6 +1116,13 @@ class ProtoStore extends ChangeNotifier {
         'payment_conflict': 'Intento de decisión bloqueado',
         'verifier_granted': 'Concedió permiso de verificación bancaria',
         'verifier_revoked': 'Revocó permiso de verificación bancaria',
+        'staff_created': 'Creó cuenta de staff',
+        'staff_updated': 'Cambió permisos de staff',
+        'staff_activated': 'Reactivó cuenta de staff',
+        'staff_deactivated': 'Desactivó cuenta de staff',
+        'staff_deleted': 'Eliminó cuenta de staff',
+        'staff_password_reset': 'Restableció contraseña de staff',
+        'staff_events_changed': 'Cambió eventos de staff',
       };
       audit
         ..clear()
@@ -1136,6 +1143,9 @@ class ProtoStore extends ChangeNotifier {
                   'payment_conflict' => 'Conflicto: la orden ya tenía una decisión',
                   'verifier_granted' => 'Permiso activo',
                   'verifier_revoked' => 'Permiso revocado',
+                  'staff_activated' => 'Cuenta activa',
+                  'staff_deactivated' => 'Acceso bloqueado',
+                  'staff_created' || 'staff_updated' || 'staff_deleted' || 'staff_password_reset' || 'staff_events_changed' => 'Registrado',
                   final x => '$x',
                 },
                 orderNumber: m['orders'] is Map ? (m['orders'] as Map)['number'] as String? : null,

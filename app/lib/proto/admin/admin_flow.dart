@@ -784,13 +784,14 @@ class _HistoryPageState extends State<HistoryPage> {
                 'ok' => a.action.contains('Aprobó'),
                 'ko' => a.action.contains('Rechazó') || a.action.contains('bloqueado'),
                 'perm' => a.action.contains('permiso'),
+                'staff' => a.action.contains('staff'),
                 _ => true,
               }).toList();
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             H(widget.onlyMine ? 'Mis verificaciones' : 'Historial y auditoría', sub: 'Cada acción queda registrada con empleado, permiso, orden, resultado y hora.'),
             Wrap(spacing: 8, children: [
-              for (final (k, l) in const [('all', 'Todo'), ('ok', 'Aprobaciones'), ('ko', 'Rechazos / bloqueos'), ('perm', 'Permisos')])
-                if (!(widget.onlyMine && k == 'perm')) ChoiceChip(label: Text(l), selected: _f == k, onSelected: (_) => setState(() => _f = k)),
+              for (final (k, l) in const [('all', 'Todo'), ('ok', 'Aprobaciones'), ('ko', 'Rechazos / bloqueos'), ('perm', 'Permisos'), ('staff', 'Personal')])
+                if (!(widget.onlyMine && (k == 'perm' || k == 'staff'))) ChoiceChip(label: Text(l), selected: _f == k, onSelected: (_) => setState(() => _f = k)),
             ]),
             const SizedBox(height: 14),
             if (list.isEmpty) const StateView(ViewState.empty, message: 'Sin registros.'),
