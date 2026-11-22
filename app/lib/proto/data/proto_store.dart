@@ -178,14 +178,17 @@ class StaffAccount {
     required this.job,
     required this.permissions,
     this.active = true,
+    Set<String>? eventIds,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+  })  : eventIds = eventIds ?? <String>{},
+        createdAt = createdAt ?? DateTime.now();
   final String id;
   String name;
   final String email;
   String job;
   Set<StaffPermission> permissions;
   bool active;
+  Set<String> eventIds;
   final DateTime createdAt;
 }
 
@@ -644,8 +647,10 @@ class ProtoStore extends ChangeNotifier {
     required String email,
     required String job,
     required Set<StaffPermission> permissions,
+    Set<String>? eventIds,
   }) {
     final a = StaffAccount(
+      eventIds: eventIds,
       id: 'st${staffAccounts.length + 1}-${now.millisecondsSinceEpoch}',
       name: name.trim(),
       email: email.trim().toLowerCase(),
@@ -662,6 +667,13 @@ class ProtoStore extends ChangeNotifier {
     final a = staffAccounts.firstWhere((x) => x.id == id);
     a.permissions = {...permissions};
     _logStaff('Cambió permisos de staff', a, '${a.permissions.length} permisos activos');
+    notifyListeners();
+  }
+
+  void setStaffEvents(String id, Set<String> eventIds) {
+    final a = staffAccounts.firstWhere((x) => x.id == id);
+    a.eventIds = {...eventIds};
+    _logStaff('Cambió eventos de staff', a, '${a.eventIds.length} eventos asignados');
     notifyListeners();
   }
 

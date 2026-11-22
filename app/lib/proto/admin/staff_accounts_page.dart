@@ -2,36 +2,16 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../config/demo_mode.dart';
+import '../../data/admin_repository.dart';
+import '../../data/models.dart' as m;
+import '../../services/errors.dart';
+import '../../services/staff_admin_service.dart';
 import '../../theme/app_theme.dart';
 import '../data/proto_store.dart';
 import '../widgets/proto_ui.dart';
 
-final _store = ProtoStore.instance;
-
-/// Crea la cuenta en Supabase Auth mediante la Edge Function `create-staff`
-/// (requiere la service role, que nunca viaja en la app). En modo demo solo
-/// se guarda en memoria.
-Future<void> _createRemote({
-  required String name,
-  required String email,
-  required String password,
-  required Set<StaffPermission> permissions,
-}) async {
-  if (kDemo) return;
-  final res = await Supabase.instance.client.functions.invoke('create-staff', body: {
-    'full_name': name,
-    'email': email,
-    'password': password,
-    'permissions': [for (final p in permissions) p.name],
-  });
-  final data = res.data;
-  if (res.status >= 400 || (data is Map && data['error'] != null)) {
-    throw Exception(data is Map ? data['error'] : 'No se pudo crear la cuenta');
-  }
-}
+const _svc = StaffAdminService.instance;
 
 String _genPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -39,91 +19,174 @@ String _genPassword() {
   return List.generate(12, (_) => chars[r.nextInt(chars.length)]).join();
 }
 
-/// Personal del local: alta de cuentas (correo + contraseña) y permisos.
-class StaffAccountsPage extends StatelessWidget {
-  const StaffAccountsPage({super.key});
+String _msg(Object e) => e is Exception && e.toString().startsWith('Exception: ')
+    ? e.toString().substring(11)
+    : friendlyError(e);
 
-  Future<void> _create(BuildContext context) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => const _CreateStaffDialog());
-    if (ok == true && context.mounted) toast(context, 'Cuenta de staff creada');
+/// Personal del local: alta de cuentas (correo + contraseña), permisos,
+/// eventos asignados, activar/desactivar y reseteo de contraseña.
+class StaffAccountsPage extends StatefulWidget {
+  const StaffAccountsPage({super.key});
+  @override
+  State<StaffAccountsPage> createState() => _StaffAccountsPageState();
+}
+
+class _StaffAccountsPageState extends State<StaffAccountsPage> {
+  List<StaffAccount> _list = [];
+  List<m.EventItem> _events = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  Future<void> _editPerms(BuildContext context, StaffAccount a) async {
+  Future<void> _load() async {
+    try {
+      final r = await Future.wait([_svc.list(), AdminRepository.instance.listEvents()]);
+      if (!mounted) return;
+      setState(() {
+        _list = r[0] as List<StaffAccount>;
+        _events = r[1] as List<m.EventItem>;
+        _loading = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = _msg(e);
+      });
+    }
+  }
+
+  Future<void> _run(Future<void> Function() action, String ok) async {
+    try {
+      await action();
+      await _load();
+      if (mounted) toast(context, ok);
+    } catch (e) {
+      if (mounted) toast(context, _msg(e), error: true);
+    }
+  }
+
+  Future<void> _create() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => _CreateStaffDialog(existing: _list, events: _events),
+    );
+    if (ok == true) {
+      await _load();
+      if (mounted) toast(context, 'Cuenta de staff creada');
+    }
+  }
+
+  Future<void> _editPerms(StaffAccount a) async {
     final res = await showDialog<Set<StaffPermission>>(
       context: context,
       builder: (_) => _PermsDialog(title: 'Permisos de ${a.name}', initial: a.permissions),
     );
-    if (res != null) {
-      _store.updateStaffPermissions(a.id, res);
-      if (context.mounted) toast(context, 'Permisos actualizados');
+    if (res != null) await _run(() => _svc.updatePermissions(a, res), 'Permisos actualizados');
+  }
+
+  Future<void> _editEvents(StaffAccount a) async {
+    final res = await showDialog<Set<String>>(
+      context: context,
+      builder: (_) => _EventsDialog(title: 'Eventos de ${a.name}', events: _events, initial: a.eventIds),
+    );
+    if (res != null) await _run(() => _svc.setEvents(a, res), 'Eventos actualizados');
+  }
+
+  Future<void> _reset(StaffAccount a) async {
+    final pass = await showDialog<String>(context: context, builder: (_) => _ResetDialog(name: a.name));
+    if (pass == null) return;
+    try {
+      await _svc.resetPassword(a, pass);
+      if (mounted) toast(context, 'Contraseña actualizada');
+    } catch (e) {
+      if (mounted) toast(context, _msg(e), error: true);
     }
   }
 
-  Future<void> _delete(BuildContext context, StaffAccount a) async {
+  Future<void> _delete(StaffAccount a) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         backgroundColor: AppColors.bgSurface,
         title: Text('Eliminar a ${a.name}'),
-        content: const Text('La cuenta dejará de existir en el panel. Para bloquear el acceso temporalmente usa «Desactivar».'),
+        content: const Text('La cuenta se elimina de forma definitiva. Si ya tiene historial en eventos, desactívala en su lugar.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
           TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Eliminar', style: TextStyle(color: AppColors.error))),
         ],
       ),
     );
-    if (ok == true) _store.deleteStaffAccount(a.id);
+    if (ok == true) await _run(() => _svc.delete(a), 'Cuenta eliminada');
   }
 
   @override
   Widget build(BuildContext context) {
     return ResponsiveBody(
       maxWidth: 900,
-      child: ListenableBuilder(
-        listenable: _store,
-        builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const H('Personal del local', sub: 'Crea el acceso de tu staff con correo y contraseña, y define qué puede hacer cada persona.'),
-          PButton('Crear cuenta de staff', icon: Icons.person_add_alt_1, onPressed: () => _create(context)),
-          const SizedBox(height: 16),
-          if (_store.staffAccounts.isEmpty)
-            const StateView(ViewState.empty, message: 'Aún no creaste cuentas de staff.')
-          else
-            for (final a in _store.staffAccounts)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: PCard(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      CircleAvatar(backgroundColor: AppColors.bgBorder, child: Text(a.name.isEmpty ? '?' : a.name[0].toUpperCase())),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(a.name, style: ts(AppTextSize.bodyLg, w: FontWeight.w600)),
-                          Text(a.email, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-                          if (a.job.isNotEmpty) Text(a.job, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-                        ]),
-                      ),
-                      Chip2(a.active ? 'Activa' : 'Desactivada', a.active ? AppColors.success : AppColors.textSecondary),
-                    ]),
-                    const SizedBox(height: 10),
-                    Wrap(spacing: 6, runSpacing: 6, children: [
-                      if (a.permissions.isEmpty) Text('Sin permisos', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
-                      for (final p in a.permissions) Chip2(p.label, AppColors.accentPrimary),
-                    ]),
-                    const SizedBox(height: 12),
-                    Wrap(spacing: 8, runSpacing: 8, children: [
-                      SizedBox(width: 160, child: PButton('Permisos', kind: BtnKind.secondary, icon: Icons.tune, onPressed: () => _editPerms(context, a))),
-                      SizedBox(
-                        width: 160,
-                        child: PButton(a.active ? 'Desactivar' : 'Reactivar', kind: BtnKind.secondary, onPressed: () => _store.setStaffActive(a.id, !a.active)),
-                      ),
-                      SizedBox(width: 160, child: PButton('Eliminar', kind: BtnKind.danger, onPressed: () => _delete(context, a))),
-                    ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const H('Personal del local', sub: 'Crea el acceso de tu staff con correo y contraseña, y define qué puede hacer cada persona.'),
+        PButton('Crear cuenta de staff', icon: Icons.person_add_alt_1, onPressed: _loading ? null : _create),
+        const SizedBox(height: 16),
+        if (_loading)
+          const StateView(ViewState.loading)
+        else if (_error != null)
+          StateView(ViewState.error, message: _error, onRetry: () {
+            setState(() => _loading = true);
+            _load();
+          })
+        else if (_list.isEmpty)
+          const StateView(ViewState.empty, message: 'Aún no creaste cuentas de staff.')
+        else
+          for (final a in _list)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PCard(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    CircleAvatar(backgroundColor: AppColors.bgBorder, child: Text(a.name.isEmpty ? '?' : a.name[0].toUpperCase())),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(a.name, style: ts(AppTextSize.bodyLg, w: FontWeight.w600)),
+                        Text(a.email, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                        if (a.job.isNotEmpty) Text(a.job, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                      ]),
+                    ),
+                    Chip2(a.active ? 'Activa' : 'Desactivada', a.active ? AppColors.success : AppColors.textSecondary),
                   ]),
-                ),
+                  const SizedBox(height: 10),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    if (a.permissions.isEmpty) Text('Sin permisos', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+                    for (final p in a.permissions) Chip2(p.label, AppColors.accentPrimary),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(
+                    a.eventIds.isEmpty ? 'Sin eventos asignados' : '${a.eventIds.length} evento(s) asignado(s)',
+                    style: ts(AppTextSize.caption, c: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    SizedBox(width: 150, child: PButton('Permisos', kind: BtnKind.secondary, icon: Icons.tune, onPressed: () => _editPerms(a))),
+                    SizedBox(width: 150, child: PButton('Eventos', kind: BtnKind.secondary, icon: Icons.event_outlined, onPressed: () => _editEvents(a))),
+                    SizedBox(width: 150, child: PButton('Contraseña', kind: BtnKind.secondary, icon: Icons.key, onPressed: () => _reset(a))),
+                    SizedBox(
+                      width: 150,
+                      child: PButton(a.active ? 'Desactivar' : 'Reactivar', kind: BtnKind.secondary,
+                          onPressed: () => _run(() => _svc.setActive(a, !a.active), a.active ? 'Cuenta desactivada' : 'Cuenta reactivada')),
+                    ),
+                    SizedBox(width: 150, child: PButton('Eliminar', kind: BtnKind.danger, onPressed: () => _delete(a))),
+                  ]),
+                ]),
               ),
-        ]),
-      ),
+            ),
+      ]),
     );
   }
 }
@@ -144,6 +207,28 @@ class _PermChecks extends StatelessWidget {
             subtitle: Text(p.description, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
           ),
       ]);
+}
+
+class _EventChecks extends StatelessWidget {
+  const _EventChecks({required this.events, required this.selected, required this.onChanged});
+  final List<m.EventItem> events;
+  final Set<String> selected;
+  final void Function(String, bool) onChanged;
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) return Text('Aún no hay eventos.', style: ts(AppTextSize.caption, c: AppColors.textSecondary));
+    return Column(children: [
+      for (final e in events)
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          value: selected.contains(e.id),
+          onChanged: (v) => onChanged(e.id, v ?? false),
+          title: Text(e.name, style: ts(AppTextSize.body, w: FontWeight.w600)),
+          subtitle: Text('${e.date} · ${e.time}', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+        ),
+    ]);
+  }
 }
 
 class _PermsDialog extends StatefulWidget {
@@ -173,8 +258,84 @@ class _PermsDialogState extends State<_PermsDialog> {
       );
 }
 
+class _EventsDialog extends StatefulWidget {
+  const _EventsDialog({required this.title, required this.events, required this.initial});
+  final String title;
+  final List<m.EventItem> events;
+  final Set<String> initial;
+  @override
+  State<_EventsDialog> createState() => _EventsDialogState();
+}
+
+class _EventsDialogState extends State<_EventsDialog> {
+  late final Set<String> _sel = {...widget.initial};
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: Text(widget.title),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: _EventChecks(events: widget.events, selected: _sel, onChanged: (id, v) => setState(() => v ? _sel.add(id) : _sel.remove(id))),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, _sel), child: const Text('Guardar')),
+        ],
+      );
+}
+
+class _ResetDialog extends StatefulWidget {
+  const _ResetDialog({required this.name});
+  final String name;
+  @override
+  State<_ResetDialog> createState() => _ResetDialogState();
+}
+
+class _ResetDialogState extends State<_ResetDialog> {
+  final _pass = TextEditingController(text: _genPassword());
+  bool _show = false;
+  @override
+  void dispose() {
+    _pass.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: Text('Nueva contraseña para ${widget.name}'),
+        content: SizedBox(
+          width: 420,
+          child: TextField(
+            controller: _pass,
+            obscureText: !_show,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: 'Contraseña (8 a 72 caracteres)',
+              suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(tooltip: 'Mostrar', icon: Icon(_show ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => _show = !_show)),
+                IconButton(tooltip: 'Generar', icon: const Icon(Icons.autorenew), onPressed: () => setState(() => _pass.text = _genPassword())),
+                IconButton(tooltip: 'Copiar', icon: const Icon(Icons.copy), onPressed: () => Clipboard.setData(ClipboardData(text: _pass.text))),
+              ]),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: _pass.text.length >= 8 && _pass.text.length <= 72 ? () => Navigator.pop(context, _pass.text) : null,
+            child: const Text('Cambiar'),
+          ),
+        ],
+      );
+}
+
 class _CreateStaffDialog extends StatefulWidget {
-  const _CreateStaffDialog();
+  const _CreateStaffDialog({required this.existing, required this.events});
+  final List<StaffAccount> existing;
+  final List<m.EventItem> events;
   @override
   State<_CreateStaffDialog> createState() => _CreateStaffDialogState();
 }
@@ -185,6 +346,7 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
   final _job = TextEditingController();
   final _pass = TextEditingController();
   final Set<StaffPermission> _sel = {StaffPermission.scanQr};
+  final Set<String> _evSel = {};
   bool _show = false;
   bool _busy = false;
   String? _error;
@@ -207,8 +369,8 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
     if (_name.text.trim().length < 2) return 'Escribe el nombre completo.';
     final mail = _email.text.trim();
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(mail)) return 'Correo no válido.';
-    if (_store.staffEmailTaken(mail)) return 'Ya existe una cuenta con ese correo.';
-    if (_pass.text.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (_svc.emailTaken(widget.existing, mail)) return 'Ya existe una cuenta con ese correo.';
+    if (_pass.text.length < 8 || _pass.text.length > 72) return 'La contraseña debe tener entre 8 y 72 caracteres.';
     if (_sel.isEmpty) return 'Asigna al menos un permiso.';
     return null;
   }
@@ -224,14 +386,20 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
       _error = null;
     });
     try {
-      await _createRemote(name: _name.text.trim(), email: _email.text.trim(), password: _pass.text, permissions: _sel);
-      _store.createStaffAccount(name: _name.text, email: _email.text, job: _job.text, permissions: _sel);
+      await _svc.create(
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+        job: _job.text.trim(),
+        password: _pass.text,
+        permissions: _sel,
+        eventIds: _evSel,
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = _msg(e);
         });
       }
     }
@@ -266,6 +434,9 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
               const SizedBox(height: 14),
               Text('Permisos', style: ts(AppTextSize.body, w: FontWeight.w700)),
               _PermChecks(selected: _sel, onChanged: (p, v) => setState(() => v ? _sel.add(p) : _sel.remove(p))),
+              const SizedBox(height: 10),
+              Text('Eventos asignados', style: ts(AppTextSize.body, w: FontWeight.w700)),
+              _EventChecks(events: widget.events, selected: _evSel, onChanged: (id, v) => setState(() => v ? _evSel.add(id) : _evSel.remove(id))),
               if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: ts(AppTextSize.caption, c: AppColors.error))),
             ]),
           ),
