@@ -3,13 +3,13 @@ import 'models.dart';
 class _Ev {
   _Ev(this.id, this.name, this.description, this.startsAt, this.endsAt, this.capacity, this.paid, this.price, this.status);
   final String id;
-  final String name;
-  final String? description;
-  final DateTime startsAt;
-  final DateTime endsAt;
-  final int capacity;
-  final bool paid;
-  final double price;
+  String name;
+  String? description;
+  DateTime startsAt;
+  DateTime endsAt;
+  int capacity;
+  bool paid;
+  double price;
   String status;
 }
 
@@ -120,6 +120,33 @@ class DemoAdminData {
   }) async {
     await _lag();
     _events.add(_Ev('ev-${_seq++}', name.trim(), description, startsAt, endsAt, capacity, paid, paid ? price : 0, 'draft'));
+  }
+
+  Future<void> updateEvent({
+    required String id,
+    required String name,
+    String? description,
+    required DateTime startsAt,
+    required DateTime endsAt,
+    required int capacity,
+    required bool paid,
+    double price = 0,
+  }) async {
+    await _lag();
+    final e = _events.firstWhere((x) => x.id == id);
+    if (e.status == 'finished' || e.status == 'suspended') throw Exception('event_locked');
+    final sold = _tickets.where((t) => t.eventId == id && t.status != 'cancelled').length;
+    if (capacity < sold) throw Exception('capacity_below_sold');
+    if (sold > 0 && (paid != e.paid || (paid ? price : 0) != e.price)) throw Exception('price_locked_with_sales');
+    if (!endsAt.isAfter(startsAt)) throw Exception('invalid_dates');
+    e
+      ..name = name.trim()
+      ..description = (description == null || description.trim().isEmpty) ? null : description.trim()
+      ..startsAt = startsAt
+      ..endsAt = endsAt
+      ..capacity = capacity
+      ..paid = paid
+      ..price = paid ? price : 0;
   }
 
   Future<void> setEventStatus(String id, String status) async {

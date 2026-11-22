@@ -22,6 +22,15 @@ Future<bool?> showCreateEventModal(BuildContext context) {
   );
 }
 
+/// Edita un evento existente. Devuelve `true` si se guardaron cambios.
+Future<bool?> showEditEventModal(BuildContext context, {required EventItem event}) {
+  return showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.8),
+    builder: (_) => _ModalShell(title: 'Editar evento', child: _CreateEventForm(initial: event)),
+  );
+}
+
 /// Devuelve `true` si se emitió al menos un ticket.
 Future<bool?> showGenerateTicketsModal(BuildContext context, {required EventItem event}) {
   return showDialog<bool>(
@@ -138,7 +147,7 @@ class _ModeButton extends StatelessWidget {
 
   final String label;
   final bool selected;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +165,10 @@ class _ModeButton extends StatelessWidget {
 // ───────────────────────── Crear evento ─────────────────────────
 
 class _CreateEventForm extends StatefulWidget {
-  const _CreateEventForm();
+  const _CreateEventForm({this.initial});
+
+  /// Si viene, el formulario edita ese evento en lugar de crear uno.
+  final EventItem? initial;
 
   @override
   State<_CreateEventForm> createState() => _CreateEventFormState();
@@ -176,6 +188,31 @@ class _CreateEventFormState extends State<_CreateEventForm> {
   bool _submitting = false;
   String? _error;
 
+  EventItem? get _edit => widget.initial;
+
+  /// Con entradas vendidas la base no permite cambiar precio ni tipo de acceso.
+  bool get _priceLocked => _edit != null && _edit!.ticketsTotal > 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = _edit;
+    if (e == null) return;
+    _nameCtrl.text = e.name;
+    _descCtrl.text = e.description ?? '';
+    _capacityCtrl.text = '${e.capacity}';
+    _paid = e.isPaid;
+    if (e.isPaid) {
+      final p = e.ticketPrice;
+      _priceCtrl.text = p == p.roundToDouble() ? p.toStringAsFixed(0) : p.toString();
+    }
+    final s = Fmt.toLaPaz(e.startsAt);
+    final f = Fmt.toLaPaz(e.endsAt);
+    _date = DateTime(s.year, s.month, s.day);
+    _start = TimeOfDay(hour: s.hour, minute: s.minute);
+    _end = TimeOfDay(hour: f.hour, minute: f.minute);
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -187,10 +224,12 @@ class _CreateEventFormState extends State<_CreateEventForm> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final first = DateTime(now.year, now.month, now.day);
+    final initial = _date ?? now;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _date ?? now,
-      firstDate: DateTime(now.year, now.month, now.day),
+      initialDate: initial.isBefore(first) ? first : initial,
+      firstDate: first,
       lastDate: DateTime(now.year + 3),
     );
     if (picked != null) setState(() => _date = picked);
@@ -220,6 +259,9 @@ class _CreateEventFormState extends State<_CreateEventForm> {
     if (_end == null) return 'Elige la hora de fin.';
     final cap = int.tryParse(_capacityCtrl.text.trim());
     if (cap == null || cap <= 0) return 'La capacidad debe ser un número mayor a 0.';
+    if (_edit != null && cap < _edit!.ticketsTotal) {
+      return 'La capacidad no puede ser menor a las ${_edit!.ticketsTotal} entradas ya emitidas.';
+    }
     if (_paid) {
       final price = double.tryParse(_priceCtrl.text.trim().replaceAll(',', '.'));
       if (price == null || price <= 0) return 'Ingresa un precio válido para el ticket.';
@@ -246,19 +288,33 @@ class _CreateEventFormState extends State<_CreateEventForm> {
       _error = null;
     });
     try {
-      await AdminRepository.instance.createEvent(
-        name: _nameCtrl.text,
-        description: _descCtrl.text,
-        startsAt: startsAt,
-        endsAt: endsAt,
-        capacity: int.parse(_capacityCtrl.text.trim()),
-        paid: _paid,
-        price: _paid ? double.parse(_priceCtrl.text.trim().replaceAll(',', '.')) : 0,
-      );
+      final price = _paid ? double.parse(_priceCtrl.text.trim().replaceAll(',', '.')) : 0.0;
+      if (_edit != null) {
+        await AdminRepository.instance.updateEvent(
+          id: _edit!.id,
+          name: _nameCtrl.text,
+          description: _descCtrl.text,
+          startsAt: startsAt,
+          endsAt: endsAt,
+          capacity: int.parse(_capacityCtrl.text.trim()),
+          paid: _paid,
+          price: price,
+        );
+      } else {
+        await AdminRepository.instance.createEvent(
+          name: _nameCtrl.text,
+          description: _descCtrl.text,
+          startsAt: startsAt,
+          endsAt: endsAt,
+          capacity: int.parse(_capacityCtrl.text.trim()),
+          paid: _paid,
+          price: price,
+        );
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evento creado como borrador. Actívalo cuando esté listo.')),
+        SnackBar(content: Text(_edit != null ? 'Evento actualizado.' : 'Evento creado como borrador. Actívalo cuando esté listo.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -339,16 +395,25 @@ class _CreateEventFormState extends State<_CreateEventForm> {
         const _FieldLabel('Acceso'),
         Row(
           children: [
-            Expanded(child: _ModeButton(label: 'Gratis', selected: !_paid, onPressed: () => setState(() => _paid = false))),
+            Expanded(child: _ModeButton(label: 'Gratis', selected: !_paid, onPressed: _priceLocked ? null : () => setState(() => _paid = false))),
             const SizedBox(width: AppSpacing.s3),
-            Expanded(child: _ModeButton(label: 'De pago', selected: _paid, onPressed: () => setState(() => _paid = true))),
+            Expanded(child: _ModeButton(label: 'De pago', selected: _paid, onPressed: _priceLocked ? null : () => setState(() => _paid = true))),
           ],
         ),
+        if (_priceLocked)
+          const Padding(
+            padding: EdgeInsets.only(top: AppSpacing.s2),
+            child: Text(
+              'Ya hay entradas emitidas: el precio y el tipo de acceso no se pueden cambiar.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
+            ),
+          ),
         if (_paid) ...[
           const SizedBox(height: AppSpacing.s4),
           const _FieldLabel('Precio del ticket (Bs.)'),
           TextField(
             controller: _priceCtrl,
+            enabled: !_priceLocked,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(hintText: 'Ej: 50'),
           ),
@@ -367,7 +432,7 @@ class _CreateEventFormState extends State<_CreateEventForm> {
               width: 180,
               child: ElevatedButton(
                 onPressed: _submitting ? null : _submit,
-                child: _submitting ? const _Spinner() : const Text('Crear evento'),
+                child: _submitting ? const _Spinner() : Text(_edit != null ? 'Guardar cambios' : 'Crear evento'),
               ),
             ),
           ],
