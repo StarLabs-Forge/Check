@@ -23,7 +23,6 @@ import 'screens/login_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
 import 'theme/app_theme.dart';
-import 'widgets/admin_scaffold.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -133,7 +132,7 @@ class _CheckAppState extends State<CheckApp> {
         '/auditoria': (_) => const RoleGuard(roles: {'admin'}, child: AdminAuditScreen()),
         '/configuracion': (_) => RoleGuard(
               roles: const {'admin'},
-              child: kDemo ? const ComingSoonScreen(current: AdminRoute.configuracion) : const VenueSettingsScreen(),
+              child: const VenueSettingsScreen(),
             ),
         '/superadmin': (_) => RoleGuard(
               roles: const {'super_admin'},

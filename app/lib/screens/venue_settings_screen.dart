@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/demo_mode.dart';
+import '../proto/data/proto_store.dart';
 import '../services/app_session.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
@@ -24,6 +26,10 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
   final _bank = TextEditingController();
   final _account = TextEditingController();
 
+  bool _notifyPayment = true;
+  bool _notifyCapacity = true;
+  bool _notifySummary = false;
+
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -46,6 +52,15 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
   }
 
   Future<void> _load() async {
+    if (kDemo) {
+      _name.text = AppSession.profile.value?.venueName ?? 'Dharma Club';
+      _zone.text = 'Zona Sur';
+      _beneficiary.text = ProtoStore.bankBeneficiary;
+      _bank.text = 'Banco Unión';
+      _account.text = '1000012345678';
+      setState(() => _loading = false);
+      return;
+    }
     try {
       final uid = _db.auth.currentUser!.id;
       final row = await _db.from('venues').select().eq('owner_id', uid).maybeSingle();
@@ -58,6 +73,12 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
       } else {
         // Local nuevo: propone el nombre dado al registrarse.
         _name.text = AppSession.profile.value?.venueName ?? '';
+      }
+      final prefs = await _db.from('venue_settings').select().eq('owner_id', uid).maybeSingle();
+      if (prefs != null) {
+        _notifyPayment = prefs['notify_new_payment'] as bool? ?? true;
+        _notifyCapacity = prefs['notify_low_capacity'] as bool? ?? true;
+        _notifySummary = prefs['notify_daily_summary'] as bool? ?? false;
       }
       if (!mounted) return;
       setState(() => _loading = false);
@@ -85,6 +106,14 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
       _ok = null;
     });
     String? nn(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+    if (kDemo) {
+      if (_beneficiary.text.trim().isNotEmpty) ProtoStore.bankBeneficiary = _beneficiary.text.trim();
+      setState(() {
+        _saving = false;
+        _ok = 'Modo demo: los cambios no se guardan en la base.';
+      });
+      return;
+    }
     try {
       final uid = _db.auth.currentUser!.id;
       final data = {
@@ -100,6 +129,12 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
       } else {
         await _db.from('venues').update(data).eq('owner_id', uid);
       }
+      await _db.from('venue_settings').upsert({
+        'owner_id': uid,
+        'notify_new_payment': _notifyPayment,
+        'notify_low_capacity': _notifyCapacity,
+        'notify_daily_summary': _notifySummary,
+      });
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -151,6 +186,27 @@ class _VenueSettingsScreenState extends State<VenueSettingsScreen> {
               _field('Beneficiario de la cuenta', _beneficiary, hint: 'Nombre o razón social'),
               _field('Banco', _bank, hint: 'Ej: Banco Unión'),
               _field('Número de cuenta', _account),
+              const SizedBox(height: AppSpacing.s3),
+              const Text('Avisos', style: TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.bodyLg, fontWeight: FontWeight.w700)),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Pago nuevo por verificar'),
+                value: _notifyPayment,
+                onChanged: (v) => setState(() => _notifyPayment = v),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Capacidad casi agotada'),
+                value: _notifyCapacity,
+                onChanged: (v) => setState(() => _notifyCapacity = v),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Resumen diario'),
+                value: _notifySummary,
+                onChanged: (v) => setState(() => _notifySummary = v),
+              ),
+              const SizedBox(height: AppSpacing.s3),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.s3),

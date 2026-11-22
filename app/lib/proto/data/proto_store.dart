@@ -258,7 +258,7 @@ class ProtoStore extends ChangeNotifier {
 
   static final ProtoStore instance = ProtoStore();
 
-  static const bankBeneficiary = 'Dharma Club S.R.L.';
+  static String bankBeneficiary = 'Dharma Club S.R.L.';
   /// Administrador del local: usa el perfil real de la sesión si existe.
   static Actor get admin => Actor(
         id: 'admin',
