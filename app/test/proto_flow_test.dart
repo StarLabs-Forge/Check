@@ -174,12 +174,12 @@ void main() {
 
       // f) superadmin: 5 secciones, sin aprobar pagos
       await tapText('Superadministrador');
-      for (final s in ['Resumen', 'Locales', 'Eventos', 'Actividad', 'Auditoría']) {
+      for (final s in ['Resumen', 'Locales', 'Eventos', 'Auditoría', 'Plataforma']) {
         await tapText(s, last: size.width < 700);
         expect(find.text('Aprobar pago'), findsNothing);
         expect(find.text('Revisar pago'), findsNothing);
+        if (s == 'Auditoría') expect(find.textContaining('Solo lectura'), findsWidgets);
       }
-      expect(find.textContaining('Solo lectura'), findsWidgets);
     });
   }
 
