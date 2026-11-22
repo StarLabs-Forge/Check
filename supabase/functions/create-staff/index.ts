@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
       password: password as string,
       email_confirm: true,
       user_metadata: { full_name, created_by: owner },
+      app_metadata: { provisioned: true },
     });
     if (error || !data.user) return json({ error: error?.message ?? 'No se pudo crear' }, 400);
     const id = data.user.id;

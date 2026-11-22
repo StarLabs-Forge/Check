@@ -22,6 +22,8 @@ import 'screens/venue_settings_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
+import 'services/superadmin_service.dart' show PlatformStatus;
+import 'widgets/maintenance_gate.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -32,6 +34,7 @@ Future<void> main() async {
       publishableKey: SupabaseConfig.anonKey,
     );
   }
+  await PlatformStatus.instance.refresh();
   runApp(const CheckApp());
 }
 
@@ -92,6 +95,15 @@ class _CheckAppState extends State<CheckApp> {
           _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(error)));
           return; // load() ya cerró la sesión → llegará signedOut.
         }
+        // Mantenimiento: solo el superadministrador puede entrar.
+        await PlatformStatus.instance.refresh();
+        if (PlatformStatus.instance.maintenance && AppSession.profile.value?.role != 'super_admin') {
+          _messengerKey.currentState?.showSnackBar(
+            const SnackBar(content: Text('La plataforma está en mantenimiento. Intenta más tarde.')),
+          );
+          await AuthService.signOut();
+          return;
+        }
         nav.pushNamedAndRemoveUntil(AppSession.entryRoute, (route) => false);
       case AuthChangeEvent.signedOut:
         AppSession.clear();
@@ -111,6 +123,7 @@ class _CheckAppState extends State<CheckApp> {
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
+      builder: (context, child) => MaintenanceGate(navigatorKey: _navigatorKey, child: child ?? const SizedBox.shrink()),
       home: const _Bootstrap(),
       // Rutas con nombre usadas por la navegación lateral del panel Admin
       // (AdminScaffold) y por el listener de auth. Login/Registro/Verificación
