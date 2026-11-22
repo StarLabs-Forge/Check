@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
 import '../data/staff_models.dart';
+import '../data/supabase_staff_repository.dart' show StaffForbidden;
 import '../staff_scope.dart';
 import '../theme/staff_tokens.dart';
 import '../widgets/staff_icon.dart';
@@ -41,6 +42,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
         _event = _event.copyWith(checkins: outcome.checkins);
       }
       await Navigator.of(context).push(ScanResultScreen.route(outcome));
+    } on StaffForbidden {
+      // La base rechazó el escaneo: sin permiso o cuenta desactivada.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tu cuenta ya no tiene permiso para escanear. Contacta al administrador.')),
+      );
+      Navigator.of(context).pop();
     } catch (_) {
       // Sin red / backend caído: la validación es en línea, no hay modo offline.
       if (mounted) setState(() => _offline = true);

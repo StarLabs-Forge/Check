@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/demo_mode.dart';
+import '../proto/data/proto_store.dart';
 import '../utils/format.dart';
 
 /// Perfil del usuario logueado (tabla `profiles` + metadata de Auth).
@@ -114,6 +115,23 @@ class AppSession {
   /// Modo demo: perfil simulado según el correo (`super…` = superadmin).
   static void signInDemo(String email) {
     final e = email.trim().toLowerCase();
+    demoEmail = e;
+    // Cuentas de staff creadas desde el panel Admin demo también pueden entrar.
+    StaffAccount? created;
+    for (final a in ProtoStore.instance.staffAccounts) {
+      if (a.email == e) created = a;
+    }
+    if (created != null) {
+      profile.value = Profile(
+        id: 'demo-staff-${created.id}',
+        fullName: created.name,
+        role: 'staff',
+        plan: 'pro',
+        status: 'active',
+        venueName: 'Dharma Club',
+      );
+      return;
+    }
     final isSuper = e.startsWith('super');
     final isStaff = e.startsWith('staff');
     profile.value = Profile(
@@ -126,5 +144,11 @@ class AppSession {
     );
   }
 
-  static void clear() => profile.value = null;
+  /// Correo con el que se entró en modo demo (para resolver permisos de staff).
+  static String? demoEmail;
+
+  static void clear() {
+    profile.value = null;
+    demoEmail = null;
+  }
 }
