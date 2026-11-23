@@ -67,6 +67,7 @@ class _StaffEventsScreenState extends State<StaffEventsScreen> {
   @override
   Widget build(BuildContext context) {
     final events = _events;
+    final access = StaffScope.accessOf(context);
     final selected = (events != null && events.isNotEmpty) ? events[_selected] : null;
 
     return Scaffold(
@@ -102,11 +103,20 @@ class _StaffEventsScreenState extends State<StaffEventsScreen> {
                       StaffButton(
                         label: 'Iniciar Scanner',
                         height: 56,
-                        onPressed: selected == null ? null : () => _startScanner(selected),
+                        onPressed: selected == null || !access.can(StaffPermission.scanQr) ? null : () => _startScanner(selected),
                       ),
+                      if (!access.can(StaffPermission.scanQr))
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.s2),
+                          child: Text(
+                            'Tu cuenta no tiene permiso para escanear QR. Pídeselo al administrador.',
+                            style: GoogleFonts.inter(fontSize: AppTextSize.caption, color: AppColors.textSecondary, height: 1.4),
+                          ),
+                        ),
                       ListenableBuilder(
                         listenable: ProtoStore.instance,
-                        builder: (context, _) => !ProtoStore.instance.verifierEnabled(ProtoStore.verifierActor.id)
+                        builder: (context, _) => !access.can(StaffPermission.verifyPayments) ||
+                                !ProtoStore.instance.verifierEnabled(ProtoStore.verifierActor.id)
                             ? const SizedBox.shrink()
                             : Padding(
                                 padding: const EdgeInsets.only(top: AppSpacing.s3),

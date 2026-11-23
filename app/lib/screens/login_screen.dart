@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
+import '../services/superadmin_service.dart' show PlatformStatus;
 import 'register_screen.dart';
 import 'verification_screen.dart';
 
@@ -62,14 +63,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } on AuthException catch (e) {
       if (!mounted) return;
       if (e.code == 'email_not_confirmed') {
-        // Cuenta creada pero sin confirmar: reenvía el código y pide verificarlo.
+        // Cuenta creada pero sin confirmar: reenvía el correo y pide confirmarlo.
         try {
-          await AuthService.resendSignupCode(email);
+          await AuthService.resendSignupLink(email);
         } catch (_) {}
         if (!mounted) return;
         setState(() => _isSubmitting = false);
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => VerificationScreen(email: email)),
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              email: email,
+              password: _passwordController.text,
+            ),
+          ),
         );
         return;
       }
@@ -159,22 +165,31 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _isSubmitting ? null : _continueWithGoogle,
             ),
             const AuthGap(AppSpacing.s2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '¿No tienes cuenta?',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
-                  child: const Text('Regístrate'),
-                ),
-              ],
+            ListenableBuilder(
+              listenable: PlatformStatus.instance,
+              builder: (context, _) => !PlatformStatus.instance.registrationOpen
+                  ? const Text(
+                      'El registro de nuevos locales está cerrado por ahora.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          '¿No tienes cuenta?',
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                            );
+                          },
+                          child: const Text('Regístrate'),
+                        ),
+                      ],
+                    ),
             ),
             if (kDemo)
               const Padding(

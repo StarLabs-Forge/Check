@@ -8,6 +8,10 @@ String friendlyError(Object error) {
   if (error is PostgrestException) return _postgrestMessage(error);
 
   final text = error.toString();
+  if (text.contains('capacity_below_sold')) return 'La capacidad no puede ser menor a las entradas ya vendidas o reservadas.';
+  if (text.contains('price_locked_with_sales')) return 'No puedes cambiar el precio ni el tipo de acceso: ya hay entradas vendidas.';
+  if (text.contains('invalid_dates')) return 'La hora de fin debe ser posterior a la de inicio.';
+  if (text.contains('event_locked')) return 'Un evento finalizado o suspendido no se puede modificar.';
   if (text.contains('SocketException') ||
       text.contains('ClientException') ||
       text.contains('Failed host lookup') ||
@@ -56,6 +60,9 @@ String _postgrestMessage(PostgrestException e) {
   }
   if (m.contains('event_closed')) return 'El evento ya está cerrado: no se pueden emitir tickets.';
   if (m.contains('event_locked')) return 'Un evento finalizado o suspendido no se puede modificar.';
+  if (m.contains('capacity_below_sold')) return 'La capacidad no puede ser menor a las entradas ya vendidas o reservadas.';
+  if (m.contains('price_locked_with_sales')) return 'No puedes cambiar el precio ni el tipo de acceso: ya hay entradas vendidas.';
+  if (m.contains('invalid_dates')) return 'La hora de fin debe ser posterior a la de inicio.';
   if (m.contains('invalid_status_transition')) return 'Ese cambio de estado no está permitido.';
   if (m.contains('invalid_guest_name')) return 'El nombre del invitado no es válido.';
   if (m.contains('ticket_not_payable')) return 'Ese ticket ya no se puede marcar como pagado.';

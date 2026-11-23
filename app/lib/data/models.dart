@@ -83,6 +83,7 @@ class EventItem {
   bool get canActivate => isDraft;
   bool get canGoLive => isActive;
   bool get canClose => isActive || isLive;
+  bool get canEdit => !(dbStatus == 'finished' || dbStatus == 'suspended');
   bool get canIssueTickets => !(dbStatus == 'finished' || dbStatus == 'suspended');
 
   BadgeStatus get status => switch (dbStatus) {

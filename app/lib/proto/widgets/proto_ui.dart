@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../config/demo_mode.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/motion.dart';
 import '../data/proto_store.dart';
@@ -412,7 +413,7 @@ class AdaptiveShell extends StatelessWidget {
       child: KeyedSubtree(key: ValueKey(index), child: body),
     );
 
-    final demoBar = Container(
+    final Widget demoBar = !kDemo ? const SizedBox.shrink() : Container(
       width: double.infinity,
       color: PColors.warning.withValues(alpha: 0.12),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),

@@ -132,6 +132,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
+  Future<void> _editEvent(EventItem event) async {
+    final saved = await showEditEventModal(context, event: event);
+    if (saved == true) _load();
+  }
+
   Future<void> _generateTickets(EventItem event) async {
     final issued = await showGenerateTicketsModal(context, event: event);
     if (issued == true) _load();
@@ -203,6 +208,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ],
           ),
+          if (event.canEdit)
+            SizedBox(
+              width: 140,
+              child: OutlinedButton(
+                onPressed: _changingStatus ? null : () => _editEvent(event),
+                child: const Text('Editar'),
+              ),
+            ),
           if (event.canClose)
             SizedBox(
               width: 180,

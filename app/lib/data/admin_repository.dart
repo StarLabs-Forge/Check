@@ -67,6 +67,43 @@ class AdminRepository {
     });
   }
 
+  /// Edita un evento. RLS limita la fila al dueño y `guard_event` rechaza
+  /// capacidad por debajo de lo vendido, cambio de precio con ventas y
+  /// eventos cerrados (`capacity_below_sold`, `price_locked_with_sales`, `event_locked`).
+  Future<void> updateEvent({
+    required String id,
+    required String name,
+    String? description,
+    required DateTime startsAt,
+    required DateTime endsAt,
+    required int capacity,
+    required bool paid,
+    double price = 0,
+  }) async {
+    if (kDemo) {
+      return DemoAdminData.instance.updateEvent(
+        id: id,
+        name: name,
+        description: description,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        capacity: capacity,
+        paid: paid,
+        price: price,
+      );
+    }
+    final updated = await _db.from('events').update({
+      'name': name.trim(),
+      'description': (description == null || description.trim().isEmpty) ? null : description.trim(),
+      'starts_at': startsAt.toUtc().toIso8601String(),
+      'ends_at': endsAt.toUtc().toIso8601String(),
+      'capacity': capacity,
+      'access_type': paid ? 'paid' : 'free',
+      'ticket_price': paid ? price : 0,
+    }).eq('id', id).select('id');
+    if (updated.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
+  }
+
   /// Cambia el estado (`active`, `live`, `finished`...). Las transiciones
   /// inválidas las rechaza el trigger `guard_event`.
   Future<void> setEventStatus(String eventId, String status) async {

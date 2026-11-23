@@ -9,7 +9,7 @@ import 'check_logo.dart';
 /// Rutas de la navegación lateral del panel Admin. `configuracion` todavía
 /// no tiene diseño en Figma (solo aparece como ítem de sidebar) — al
 /// seleccionarla se muestra un aviso en vez de navegar a una pantalla vacía.
-enum AdminRoute { dashboard, eventos, tickets, pagos, verificadores, auditoria, configuracion }
+enum AdminRoute { dashboard, eventos, tickets, pagos, verificadores, personal, auditoria, configuracion }
 
 /// Layout compartido del panel Admin (Dashboard / Eventos / Tickets):
 /// sidebar fija de 220px en desktop, Drawer en mobile/tablet angosto,
@@ -138,6 +138,7 @@ class _SidebarContent extends StatelessWidget {
       AdminRoute.tickets => '/tickets',
       AdminRoute.pagos => '/pagos',
       AdminRoute.verificadores => '/verificadores',
+      AdminRoute.personal => '/personal',
       AdminRoute.auditoria => '/auditoria',
       // "Configuración" ya tiene pantalla propia (frame "Estado — Próximamente"
       // en Figma) — un estado vacío reusable en vez del aviso temporal.
@@ -200,6 +201,13 @@ class _SidebarContent extends StatelessWidget {
                 label: 'Verificadores',
                 active: current == AdminRoute.verificadores,
                 onTap: () => _go(context, AdminRoute.verificadores),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+              _NavItem(
+                icon: Icons.badge_outlined,
+                label: 'Personal',
+                active: current == AdminRoute.personal,
+                onTap: () => _go(context, AdminRoute.personal),
               ),
               const SizedBox(height: AppSpacing.s2),
               _NavItem(

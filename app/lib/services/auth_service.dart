@@ -33,7 +33,7 @@ class AuthService {
   /// `handle_new_user` para crear el perfil; `venue_name` queda en metadata.
   ///
   /// Devuelve `true` si ya hay sesión (confirmación de correo desactivada) o
-  /// `false` si falta confirmar el correo con el código.
+  /// `false` si falta confirmar el correo con el enlace que llega por email.
   /// Lanza [AuthException] si el correo ya existe.
   static Future<bool> signUp({
     required String fullName,
@@ -46,6 +46,7 @@ class AuthService {
       email: email.trim(),
       password: password,
       data: {'full_name': fullName.trim(), 'venue_name': venueName.trim()},
+      emailRedirectTo: _webOrigin,
     );
 
     // Con confirmación activa, Supabase NO devuelve error si el correo ya
@@ -57,12 +58,34 @@ class AuthService {
     return res.session != null;
   }
 
-  static Future<void> verifySignupCode({required String email, required String code}) async {
-    await _auth.verifyOTP(email: email.trim(), token: code.trim(), type: OtpType.signup);
+  /// En web, el enlace del correo vuelve al mismo sitio desde el que se
+  /// registró (debe estar en Authentication → URL Configuration → Redirect
+  /// URLs; si no, Supabase usa el Site URL). En móvil usa el Site URL.
+  static String? get _webOrigin => kIsWeb ? Uri.base.origin : null;
+
+  /// Reenvía el correo con el enlace de confirmación.
+  static Future<void> resendSignupLink(String email) async {
+    await _auth.resend(
+      type: OtpType.signup,
+      email: email.trim(),
+      emailRedirectTo: _webOrigin,
+    );
   }
 
-  static Future<void> resendSignupCode(String email) async {
-    await _auth.resend(type: OtpType.signup, email: email.trim());
+  /// Intenta iniciar sesión para saber si el correo ya fue confirmado.
+  /// Devuelve `true` si entró (el listener de `main.dart` navega al panel) y
+  /// `false` si el correo sigue sin confirmar. Cualquier otro error se propaga.
+  static Future<bool> tryConfirmedSignIn({required String email, required String password}) async {
+    try {
+      await _auth.signInWithPassword(email: email.trim(), password: password);
+      return true;
+    } on AuthException catch (e) {
+      if (e.code == 'email_not_confirmed' ||
+          e.message.toLowerCase().contains('email not confirmed')) {
+        return false;
+      }
+      rethrow;
+    }
   }
 
   /// OAuth con Google. Requiere habilitar el proveedor en Supabase
