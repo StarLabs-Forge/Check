@@ -20,6 +20,7 @@ import 'screens/loading_screen.dart';
 import 'screens/payments_screens.dart';
 import 'screens/venue_settings_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
 import 'services/superadmin_service.dart' show PlatformStatus;
@@ -133,6 +134,8 @@ class _CheckAppState extends State<CheckApp> {
         '/bienvenida': (_) => const WelcomeScreen(),
         '/acceso-locales': (_) => const PlatformSelectScreen(),
         '/login': (_) => const LoginScreen(),
+        // Enlace directo desde la web (planes / prueba gratis): salta la selección de tipo de usuario.
+        '/registro': (_) => const RegisterScreen(),
         '/comprar': (_) => const BuyerHome(),
         // Privadas: cada una exige el rol correspondiente (RoleGuard).
         '/completar-perfil': (_) => const RoleGuard(roles: {'admin'}, child: CompleteProfileScreen()),
