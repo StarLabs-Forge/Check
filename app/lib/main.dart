@@ -31,6 +31,8 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kDemo) {
+    final problem = SupabaseConfig.problem();
+    if (problem != null) throw StateError(problem); // nunca pruebas sobre producción por error
     await Supabase.initialize(
       url: SupabaseConfig.url,
       publishableKey: SupabaseConfig.anonKey,
@@ -129,7 +131,13 @@ class _CheckAppState extends State<CheckApp> {
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      builder: (context, child) => MaintenanceGate(navigatorKey: _navigatorKey, child: child ?? const SizedBox.shrink()),
+      builder: (context, child) {
+        final app = MaintenanceGate(navigatorKey: _navigatorKey, child: child ?? const SizedBox.shrink());
+        // Distintivo permanente del entorno de desarrollo.
+        return SupabaseConfig.isDev && !kDemo
+            ? Banner(message: 'DEV', location: BannerLocation.topEnd, color: AppColors.error, child: app)
+            : app;
+      },
       home: const _Bootstrap(),
       // Rutas con nombre usadas por la navegación lateral del panel Admin
       // (AdminScaffold) y por el listener de auth. Login/Registro/Verificación
