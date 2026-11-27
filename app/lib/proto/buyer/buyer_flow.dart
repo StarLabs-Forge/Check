@@ -33,10 +33,21 @@ class _BuyerHomeState extends State<BuyerHome> {
   String? _venue;
   bool _onlyAvailable = false;
 
+  Timer? _refresh;
+
   @override
   void initState() {
     super.initState();
     _store.loadCatalog();
+    // El catálogo público no tiene Realtime (el comprador es anónimo): se
+    // refresca cada minuto para reflejar publicaciones, estados y cupos.
+    if (_store.live) _refresh = Timer.periodic(const Duration(seconds: 60), (_) => _store.loadCatalog());
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    super.dispose();
   }
 
   @override
@@ -243,6 +254,7 @@ class EventDetailScreen extends StatelessWidget {
                 child: Row(children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(t.name, style: ts(AppTextSize.bodyLg, w: FontWeight.w600)),
+                    if (t.description.isNotEmpty) Text(t.description, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
                     Text(r == 0 ? 'Agotado' : '$r disponibles', style: ts(AppTextSize.caption, c: r == 0 ? AppColors.error : AppColors.textSecondary)),
                   ])),
                   Text(money(t.price), style: ts(AppTextSize.bodyLg, w: FontWeight.w700, c: AppColors.accentPrimary)),
@@ -333,6 +345,7 @@ class _TicketSelectionState extends State<TicketSelectionScreen> {
               child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(t.name, style: ts(AppTextSize.bodyLg, w: FontWeight.w700)),
+                  if (t.description.isNotEmpty) Text(t.description, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
                   Text('${money(t.price)} c/u', style: ts(AppTextSize.body, c: AppColors.accentPrimary, w: FontWeight.w600)),
                   Text(_max(t) == 0 ? 'Agotado' : 'Máx. ${_max(t)} por pedido · quedan ${_store.remaining(t)}', style: ts(AppTextSize.caption, c: _max(t) == 0 ? AppColors.error : AppColors.textSecondary)),
                 ])),

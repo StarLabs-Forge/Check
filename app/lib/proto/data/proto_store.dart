@@ -22,12 +22,14 @@ class TicketType {
     required this.price,
     required this.capacity,
     this.maxPerOrder = 6,
+    this.description = '',
   });
   final String id;
   final String name;
   final double price;
   final int capacity;
   final int maxPerOrder;
+  final String description;
 }
 
 enum EventState { active, upcoming, finished }
@@ -777,12 +779,14 @@ class ProtoStore extends ChangeNotifier {
         price: (m['price'] as num).toDouble(),
         capacity: (m['capacity'] as num).toInt(),
         maxPerOrder: (m['max_per_order'] as num?)?.toInt() ?? 6,
+        description: (m['description'] as String?) ?? '',
       ));
     }
     return EventItem(
       id: j['id'] as String,
       name: j['name'] as String,
-      venueId: venueName,
+      // Id real del local (venues.id); sin fila de local no hay agrupación posible.
+      venueId: (j['venue_id'] as String?) ?? 'sin-local-${j['id']}',
       date: start,
       place: zone.isEmpty ? venueName : '$venueName · $zone',
       description: (j['description'] as String?) ?? '',
@@ -810,7 +814,7 @@ class ProtoStore extends ChangeNotifier {
         final m = Map<String, dynamic>.from(raw as Map);
         final e = _eventFromJson(m);
         evs.add(e);
-        vs.putIfAbsent(e.venueId, () => Venue(id: e.venueId, name: e.venueId, zone: (m['venue_zone'] as String?) ?? '', active: true, plan: ''));
+        vs.putIfAbsent(e.venueId, () => Venue(id: e.venueId, name: (m['venue_name'] as String?) ?? 'Local', zone: (m['venue_zone'] as String?) ?? '', active: true, plan: ''));
       }
       events = evs;
       venues = vs.values.toList();
