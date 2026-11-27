@@ -71,6 +71,7 @@ String _postgrestMessage(PostgrestException e) {
   if (m.contains('ticket_not_payable')) return 'Ese ticket ya no se puede marcar como pagado.';
   if (m.contains('ticket_not_cancellable')) return 'Ese ticket ya no se puede cancelar.';
   if (m.contains('forbidden') || e.code == '42501') return 'No tienes permiso para hacer esto.';
+  if (e.code == '23503') return 'Esta categoría ya tiene pedidos o entradas: desactívala en lugar de eliminarla.';
   if (e.code == '23514') return 'Hay un dato fuera de rango. Revisa los campos.';
   return 'No se pudo completar la operación. Intenta de nuevo.';
 }

@@ -123,6 +123,79 @@ class AdminRepository {
     }
   }
 
+  // ───────────────────────── Categorías de entrada ─────────────────────────
+
+  /// Categorías del evento con vendidas/reservadas/disponibles (`ticket_type_stats`).
+  /// Sin demo: la demo no tiene categorías persistidas.
+  Future<List<TicketCategory>> listCategories(String eventId) async {
+    if (kDemo) return const [];
+    final rows = await _db
+        .from('ticket_types')
+        .select('id, name, description, price, capacity, max_per_order, position, active')
+        .eq('event_id', eventId)
+        .order('position')
+        .order('price');
+    var stats = <String, Map<String, dynamic>>{};
+    try {
+      final res = await _db.rpc('ticket_type_stats', params: {'p_event_id': eventId});
+      stats = {for (final m in (res as List)) (m as Map)['id'] as String: Map<String, dynamic>.from(m)};
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow; // migración 14 pendiente: sin cifras
+    }
+    return rows.map<TicketCategory>((r) {
+      final st = stats[r['id']];
+      return TicketCategory(
+        id: r['id'] as String,
+        name: r['name'] as String,
+        description: (r['description'] as String?) ?? '',
+        price: (r['price'] as num).toDouble(),
+        capacity: (r['capacity'] as num).toInt(),
+        maxPerOrder: (r['max_per_order'] as num).toInt(),
+        active: (r['active'] as bool?) ?? true,
+        sold: (st?['sold'] as num?)?.toInt(),
+        reserved: (st?['reserved'] as num?)?.toInt(),
+        available: (st?['available'] as num?)?.toInt(),
+      );
+    }).toList();
+  }
+
+  /// Crea (`id == null`) o edita una categoría. Los pedidos existentes conservan su
+  /// precio (`order_lines.unit_price`); el cupo no puede bajar de lo vendido/reservado
+  /// (trigger `guard_ticket_type_capacity`).
+  Future<void> saveCategory({
+    String? id,
+    required String eventId,
+    required String name,
+    String? description,
+    required double price,
+    required int capacity,
+    required int maxPerOrder,
+    required bool active,
+  }) async {
+    final desc = (description == null || description.trim().isEmpty) ? null : description.trim();
+    final data = {
+      'name': name.trim(),
+      'description': desc,
+      'price': price,
+      'capacity': capacity,
+      'max_per_order': maxPerOrder,
+      'active': active,
+    };
+    if (id == null) {
+      await _db.from('ticket_types').insert({...data, 'event_id': eventId});
+    } else {
+      final rows = await _db.from('ticket_types').update(data).eq('id', id).select('id');
+      if (rows.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
+    }
+  }
+
+  /// Elimina una categoría sin operaciones asociadas; si tiene pedidos o entradas la
+  /// base lo rechaza (FK, código 23503) y hay que desactivarla en su lugar.
+  Future<void> deleteCategory(String id) async {
+    final rows = await _db.from('ticket_types').delete().eq('id', id).select('id');
+    if (rows.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
+  }
+
   // ───────────────────────── Prueba gratuita ─────────────────────────
 
   /// Estado de la prueba de 14 días, calculado en el servidor (`trial_status`).
@@ -210,4 +283,33 @@ class TrialStatus {
         daysLeft: (m['days_left'] as num).toInt(),
         endsAt: DateTime.parse(m['ends_at'] as String).toLocal(),
       );
+}
+
+/// Categoría de entrada de un evento. `sold/reserved/available` son null si la
+/// migración 14 (ticket_type_stats) aún no está aplicada.
+class TicketCategory {
+  const TicketCategory({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.price,
+    required this.capacity,
+    required this.maxPerOrder,
+    required this.active,
+    this.sold,
+    this.reserved,
+    this.available,
+  });
+  final String id;
+  final String name;
+  final String description;
+  final double price;
+  final int capacity;
+  final int maxPerOrder;
+  final bool active;
+  final int? sold;
+  final int? reserved;
+  final int? available;
+
+  bool get hasOperations => (sold ?? 0) + (reserved ?? 0) > 0;
 }

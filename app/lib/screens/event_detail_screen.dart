@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/admin_modals.dart';
 import '../widgets/admin_scaffold.dart';
 import '../widgets/async_states.dart';
+import '../widgets/ticket_categories_section.dart';
 
 /// "Detalle de Evento" — cabecera con estado + acciones, 3 métricas (Total,
 /// Ingresados, Pendientes), barra de ocupación y lista de invitados con
@@ -323,6 +324,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           MetricCard(label: 'Pendientes', value: '$pendientes', trendLabel: 'Sin cambios', width: 359),
         ],
       ),
+      const SizedBox(height: AppSpacing.s5),
+      TicketCategoriesSection(eventId: event.id, locked: !event.canIssueTickets),
       const SizedBox(height: AppSpacing.s5),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
