@@ -12,6 +12,94 @@
 
 ---
 
+## Estado real de la implementación (verificado)
+
+> Esta sección describe lo que existe **hoy** en el repositorio y prevalece sobre las secciones de concepto/MVP de más abajo (p. ej. el panel Admin **no** es React: todo el producto de aplicación es una única app Flutter).
+> Nota de mantenimiento: la primera línea de este archivo contiene, pegada antes del título, la salida de un `npm run dev` fallido. Es una modificación sin commitear del autor del repo y se preservó tal cual; conviene que la limpie quien la hizo.
+
+### Arquitectura
+
+| Pieza | Tecnología | Ubicación |
+|---|---|---|
+| App (comprador, Admin del local, Staff, Superadmin) | Flutter 3.38 — Web, Android, iOS | `app/` |
+| Backend | Supabase: Auth, PostgreSQL + RLS, RPC `SECURITY DEFINER`, Realtime, Edge Functions (`create-staff`, `create-venue`) | `supabase/` |
+| Sitio público | HTML/CSS/JS estático | `website/` |
+
+Reglas V1 aplicadas en la base (no en el cliente): QR único por persona, reserva de 15 min, pedidos con pago informado conservan cupo, rechazo/expiración liberan cupo, máximo 3 pedidos activos por teléfono (normalizado, toda la plataforma), sin pasarelas ni devoluciones.
+
+### Variables de entorno (`--dart-define`)
+
+| Variable | Uso |
+|---|---|
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Proyecto Supabase (la *publishable key* es pública por diseño; **nunca** pongas la `service_role`). Hay valores por defecto del proyecto actual. |
+| `DEMO=true` | Build de demostración: **no inicializa Supabase**, usa datos simulados (`admin@demo.com`, `staff@demo.com`, `super@demo.com`). |
+
+### Ejecución local
+
+```bash
+cd app
+flutter pub get
+flutter run -d chrome                          # contra Supabase
+flutter run -d chrome --dart-define=DEMO=true  # demo, sin backend
+flutter build web
+```
+
+### Pruebas
+
+| Comando (desde `app/`) | Qué ejecuta |
+|---|---|
+| `flutter analyze` | Análisis estático |
+| `flutter test` | Unitarias y de componentes. Las que dependen de la demo se **omiten declarando el motivo** (`test/demo_only.dart`) |
+| `flutter test --dart-define=DEMO=true` | Lo anterior + suites demo (flujos del store simulado, ajuste a pantalla, permisos de staff demo) |
+| `supabase/tests/14_status_audit_trial.sql` | Regresión SQL de la migración 14; **debe ejecutarse en una rama/entorno aislado** (termina en `ROLLBACK`) |
+
+No existen todavía pruebas de integración automáticas contra Supabase ni E2E de navegador en CI.
+
+### Migraciones
+
+Aplicadas en el proyecto `check`: `20261001_*` … `20261122_13_superadmin_platform`.
+
+**Pendientes de aplicar (no desplegadas):**
+- `20261127_14_status_audit_trial_categories.sql` — auditoría de estados (`event_status_log`, `set_event_status`), prueba de 14 días (`venue_trials`, `start_trial`, `trial_status`), categorías (`description`, `active`, `ticket_type_stats`, guarda de cupo), `venue_id` en `public_events`, límite por teléfono en `create_order`.
+- `20261127_15_enforce_status_rpc.sql` — revoca el UPDATE directo de `events.status`. Orden: 14 → publicar la app → 15. Recuperación: `grant update (status) on public.events to authenticated;`.
+
+Procedimiento recomendado: crear una rama de Supabase, aplicar 14, ejecutar `supabase/tests/14_status_audit_trial.sql` (esperado en su cabecera), probar la app contra la rama, luego aplicar 14 en el proyecto principal, publicar la app y por último 15. La app tolera 14 ausente (cae al UPDATE directo y oculta el banner de prueba) hasta que 15 se aplique.
+
+### Roles
+
+`super_admin` (plataforma, sin acceso a compradores ni pagos), `admin` (local), `staff` (permisos por cuenta: `scanQr`, `verifyPayments`, `viewGuests`, `createTickets`, `viewEvents`), comprador anónimo (RPC con token de pedido). El rol sale de `profiles` en la base; las columnas `role/plan/status` no son escribibles por el cliente. El registro público solo crea `admin`.
+
+### Autenticación
+
+- Registro con correo (con o sin confirmación), cuenta existente (respuesta anti-enumeración detectada en `AuthService.isObfuscatedExistingUser`), login por selector de plataforma, Google OAuth, perfil incompleto → `/completar-perfil`.
+- **Google OAuth**: habilitar el proveedor en Supabase → Authentication → Providers → Google y registrar las Redirect URLs (origen web y `io.supabase.check://login-callback/`).
+
+### Funcionalidades
+
+| Funcionalidad | Estado |
+|---|---|
+| Catálogo del comprador por local real (`venues.id`), refresco cada 60 s | Implementado; **pendiente de despliegue** (migración 14) |
+| Categorías de entrada: UI de gestión, cifras vendidas/reservadas/disponibles | Implementado; pendiente de despliegue; sin validar contra Supabase |
+| Auditoría de estados de evento y motivo obligatorio | Implementado; **pendiente de despliegue y de validación en entorno aislado** |
+| Prueba gratuita de 14 días | Implementado en servidor + banner (probado con widget tests); pendiente de despliegue |
+| Límite de 3 pedidos activos por teléfono | Implementado; pendiente de despliegue |
+| Pedidos, pagos, verificadores, auditoría, staff, superadmin | Desplegado (migraciones 06–13) |
+| Demo aislada (build `DEMO`) | Implementado y probado en la suite demo |
+| Registro, login, Google OAuth contra Supabase real | Implementado; **sin validar de extremo a extremo** (Google requiere interacción manual) |
+| Navegación web / responsive en navegador | Build web (demo) compila; **validación en navegador real bloqueada** (extensión de Chrome no conectada); solo pruebas de widget |
+
+### Limitaciones y decisiones de negocio pendientes
+
+- La migración 14 y la 15 no están aplicadas ni validadas en una base aislada.
+- Prueba gratuita: mecanismo de activación (hoy botón manual, una vez), restricciones al vencer, notificación por correo y cobro quedan **sin definir**; no se bloquea nada al vencer.
+- Duración y límites comerciales de la demo: sin definir.
+- ¿Qué ocurre con pagos informados si un evento vuelve a borrador? Hoy siguen pudiendo aprobarse; solo se exige motivo y queda auditado.
+- Protección contra contraseñas filtradas desactivada (ajuste del panel de Supabase Auth).
+- Entradas emitidas manualmente (`create_ticket`) no descuentan del cupo por categoría (`held_seats` cuenta solo pedidos).
+- El wordmark del sidebar, auth y staff sigue la especificación de Figma (texto), no el SVG horizontal.
+
+---
+
 ## ¿Qué es CHECK?
 
 CHECK digitaliza y centraliza el control de acceso y el manejo de entradas para locales nocturnos, bares, clubs y organizadores de eventos independientes.
