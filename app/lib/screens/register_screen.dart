@@ -84,11 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) return 'Crea una contraseña';
-    if (value.length < 6) return 'Mínimo 6 caracteres';
-    return null;
-  }
+  String? _validatePassword(String? value) => AuthService.newPasswordProblem(value);
 
   String? _validateConfirm(String? value) {
     if (value != _passwordController.text) return 'Las contraseñas no coinciden';

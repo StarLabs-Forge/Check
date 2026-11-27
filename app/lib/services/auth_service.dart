@@ -62,6 +62,31 @@ class AuthService {
   static bool isObfuscatedExistingUser({required bool hasSession, required List<UserIdentity>? identities}) =>
       !hasSession && identities != null && identities.isEmpty;
 
+  /// Longitud mínima de contraseña aprobada para todos los roles. El servidor
+  /// debe exigir lo mismo (Authentication → Providers → Email → Minimum length).
+  static const int minPasswordLength = 8;
+
+  /// Reglas de contraseña NUEVA: solo longitud (se permiten frases con espacios).
+  static String? newPasswordProblem(String? value) {
+    if (value == null || value.isEmpty) return 'Crea una contraseña';
+    if (value.length < minPasswordLength) return 'Mínimo $minPasswordLength caracteres';
+    if (value.length > 72) return 'Máximo 72 caracteres';
+    return null;
+  }
+
+  /// Verifica el código OTP del registro. Si es correcto, Supabase crea la sesión.
+  static Future<void> verifySignupCode(String email, String code) async {
+    if (kDemo) throw AuthException(_demoOnly);
+    await _auth.verifyOTP(type: OtpType.signup, email: email.trim(), token: code.trim());
+  }
+
+  /// Segundos que el servidor pide esperar antes de reenviar, si lo informa.
+  static int? retryAfterSeconds(Object error) {
+    if (error is! AuthException) return null;
+    final m = RegExp(r'after (\d+) seconds?').firstMatch(error.message);
+    return m == null ? null : int.parse(m.group(1)!);
+  }
+
   /// En web, el enlace del correo vuelve al mismo sitio desde el que se
   /// registró (debe estar en Authentication → URL Configuration → Redirect
   /// URLs; si no, Supabase usa el Site URL). En móvil usa el Site URL.

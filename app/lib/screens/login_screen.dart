@@ -43,8 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String? _validatePassword(String? value) {
+    // Al iniciar sesión no se valida la longitud: la decide el servidor.
     if (value == null || value.isEmpty) return 'Ingresa tu contraseña';
-    if (value.length < 6) return 'Mínimo 6 caracteres';
     return null;
   }
 

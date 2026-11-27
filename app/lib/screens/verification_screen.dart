@@ -1,185 +1,181 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_scaffold.dart';
 
-/// Confirmación de correo por enlace (flujo por defecto de Supabase Auth).
+/// Confirmación de correo con el código OTP nativo de Supabase Auth.
 ///
-/// Supabase manda un correo con un enlace; al abrirlo el correo queda
-/// confirmado. Esta pantalla avisa que hay que revisar el correo y, mientras
-/// está abierta, consulta cada pocos segundos si ya se confirmó (intentando
-/// iniciar sesión con las mismas credenciales). Al confirmarse, Supabase crea
-/// la sesión y el listener de `main.dart` lleva al panel.
+/// Requiere que la plantilla «Confirm signup» del proyecto use `{{ .Token }}`
+/// (Authentication → Email Templates). La longitud y la vigencia del código las
+/// fija la configuración del proyecto; el servidor es quien lo valida. Al
+/// verificar, Supabase crea la sesión y el listener de `main.dart` navega.
 ///
-/// Si no se recibe la contraseña (`password == null`) no se puede consultar
-/// solo: queda el botón para volver a iniciar sesión.
-///
-/// Nota: esto es verificación de correo, NO un 2FA en cada login. Un 2FA real
-/// requeriría Supabase MFA (TOTP).
+/// Mientras la plantilla antigua (enlace) siga activa, «Ya confirmé con el
+/// enlace» permite entrar si el registro entregó la contraseña.
 class VerificationScreen extends StatefulWidget {
-  const VerificationScreen({super.key, required this.email, this.password});
+  const VerificationScreen({super.key, required this.email, this.password, this.verify, this.resend});
 
   final String email;
   final String? password;
+
+  /// Inyectables para pruebas; por defecto usan [AuthService].
+  final Future<void> Function(String email, String code)? verify;
+  final Future<void> Function(String email)? resend;
+
+  static const minCodeLength = 6;
+  static const maxCodeLength = 10;
 
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
+  /// Espera por defecto de Supabase entre correos al mismo destinatario. Si el
+  /// servidor pide otra, se usa la que informa en el error.
   static const _resendSeconds = 60;
-  // Supabase limita los inicios de sesión por IP: 15 s deja margen de sobra.
-  static const _pollEvery = Duration(seconds: 15);
-  static const _pollMax = Duration(minutes: 10);
 
+  final _code = TextEditingController();
   Timer? _resendTimer;
-  Timer? _pollTimer;
   int _secondsLeft = _resendSeconds;
-  bool _checking = false;
-  bool _gaveUp = false;
+  bool _verifying = false;
+  bool _resending = false;
   String? _error;
-  final Stopwatch _watch = Stopwatch()..start();
+  String? _notice;
 
   @override
   void initState() {
     super.initState();
-    _startResendTimer();
-    if (widget.password != null) {
-      _pollTimer = Timer.periodic(_pollEvery, (_) => _check(silent: true));
-    }
+    _startResendTimer(_resendSeconds);
   }
 
-  void _startResendTimer() {
+  void _startResendTimer(int seconds) {
     _resendTimer?.cancel();
-    setState(() => _secondsLeft = _resendSeconds);
+    setState(() => _secondsLeft = seconds);
     _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsLeft <= 1) {
-        timer.cancel();
-        if (mounted) setState(() => _secondsLeft = 0);
-      } else {
-        if (mounted) setState(() => _secondsLeft -= 1);
-      }
+      if (!mounted) return timer.cancel();
+      setState(() => _secondsLeft -= 1);
+      if (_secondsLeft <= 0) timer.cancel();
     });
   }
 
   @override
   void dispose() {
     _resendTimer?.cancel();
-    _pollTimer?.cancel();
+    _code.dispose();
     super.dispose();
   }
 
-  /// Revisa si el correo ya fue confirmado. Si lo está, el inicio de sesión
-  /// crea la sesión y el listener de auth navega al panel.
-  Future<void> _check({bool silent = false}) async {
-    final password = widget.password;
-    if (password == null || _checking) return;
-
-    if (_watch.elapsed > _pollMax) {
-      _pollTimer?.cancel();
-      if (mounted) setState(() => _gaveUp = true);
-      if (silent) return;
+  Future<void> _verify() async {
+    if (_verifying) return;
+    final code = _code.text.trim();
+    if (code.length < VerificationScreen.minCodeLength) {
+      setState(() => _error = 'Escribe el código completo que llegó a tu correo.');
+      return;
     }
-
     setState(() {
-      _checking = true;
-      if (!silent) _error = null;
+      _verifying = true;
+      _error = null;
+      _notice = null;
     });
     try {
-      final confirmed = await AuthService.tryConfirmedSignIn(
-        email: widget.email,
-        password: password,
-      );
-      if (!mounted) return;
-      if (!confirmed && !silent) {
-        setState(() => _error = 'Todavía no vemos la confirmación. Abre el enlace del correo y vuelve aquí.');
-      }
+      await (widget.verify ?? AuthService.verifySignupCode)(widget.email, code);
+      if (mounted) setState(() => _notice = 'Correo confirmado. Entrando…');
     } catch (e) {
-      if (!mounted) return;
-      _pollTimer?.cancel();
-      setState(() => _error = friendlyError(e));
+      if (mounted) setState(() => _error = friendlyError(e));
     }
-    if (mounted) setState(() => _checking = false);
+    if (mounted) setState(() => _verifying = false);
   }
 
   Future<void> _resend() async {
-    if (_secondsLeft > 0) return;
+    if (_secondsLeft > 0 || _resending) return;
+    setState(() {
+      _resending = true;
+      _error = null;
+      _notice = null;
+    });
     try {
-      await AuthService.resendSignupLink(widget.email);
+      await (widget.resend ?? AuthService.resendSignupLink)(widget.email);
       if (!mounted) return;
-      _startResendTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Correo reenviado')),
-      );
+      _startResendTimer(_resendSeconds);
+      setState(() => _notice = 'Enviamos un código nuevo. El anterior deja de servir.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(e))));
+      final wait = AuthService.retryAfterSeconds(e);
+      if (wait != null) _startResendTimer(wait);
+      setState(() => _error = friendlyError(e));
     }
+    if (mounted) setState(() => _resending = false);
+  }
+
+  Future<void> _useLink() async {
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+    try {
+      final ok = await AuthService.tryConfirmedSignIn(email: widget.email, password: widget.password!);
+      if (!ok && mounted) setState(() => _error = 'Todavía no vemos la confirmación.');
+    } catch (e) {
+      if (mounted) setState(() => _error = friendlyError(e));
+    }
+    if (mounted) setState(() => _verifying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final canPoll = widget.password != null;
     return AuthScaffold(
-      title: 'Revisa tu correo',
-      subtitle: 'Enviamos un enlace de confirmación a ${widget.email}',
+      title: 'Verifica tu correo',
+      subtitle: 'Enviamos un código a ${widget.email}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.mark_email_unread_outlined, size: 56, color: AppColors.accentPrimary),
-          const SizedBox(height: AppSpacing.s4),
           const Text(
-            'Abre el correo y toca el enlace para activar tu cuenta. '
-            'Si no lo ves, revisa la carpeta de spam.',
+            'Escribe o pega el código para activar tu cuenta. Si no lo ves, revisa la carpeta de spam.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
           ),
           const SizedBox(height: AppSpacing.s4),
-          if (canPoll && !_gaveUp)
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentPrimary),
-                ),
-                SizedBox(width: AppSpacing.s2),
-                Text(
-                  'Esperando tu confirmación…',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
-                ),
-              ],
-            ),
-          if (_gaveUp)
-            const Text(
-              'Dejamos de esperar. Cuando confirmes el correo, inicia sesión.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.caption),
-            ),
+          TextField(
+            controller: _code,
+            autofocus: true,
+            enabled: !_verifying,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            textAlign: TextAlign.center,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly, // pegar «123 456» deja solo los dígitos
+              LengthLimitingTextInputFormatter(VerificationScreen.maxCodeLength),
+            ],
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, letterSpacing: 6),
+            decoration: const InputDecoration(labelText: 'Código de verificación'),
+            onSubmitted: (_) => _verify(),
+          ),
           AuthError(_error),
-          const SizedBox(height: AppSpacing.s5),
-          if (canPoll)
-            AuthSubmit(label: 'Ya confirmé mi correo', loading: _checking, onPressed: () => _check()),
-          if (!canPoll)
-            AuthSubmit(
-              label: 'Ir a iniciar sesión',
-              loading: false,
-              onPressed: () => Navigator.of(context).maybePop(),
+          if (_notice != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.s2),
+              child: Text(_notice!, style: const TextStyle(color: AppColors.accentPrimary, fontSize: AppTextSize.caption)),
             ),
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: AppSpacing.s5),
+          AuthSubmit(label: 'Verificar código', loading: _verifying, onPressed: _verify),
+          const SizedBox(height: AppSpacing.s3),
           Center(
             child: TextButton(
-              onPressed: _secondsLeft == 0 ? _resend : null,
-              child: Text(
-                _secondsLeft == 0
-                    ? 'Reenviar correo'
-                    : 'Reenviar correo en ${_secondsLeft}s',
-              ),
+              onPressed: _secondsLeft <= 0 && !_resending ? _resend : null,
+              child: Text(_secondsLeft <= 0 ? 'Reenviar código' : 'Reenviar código en ${_secondsLeft}s'),
             ),
           ),
+          if (widget.password != null)
+            Center(
+              child: TextButton(
+                onPressed: _verifying ? null : _useLink,
+                child: const Text('Ya confirmé con el enlace del correo'),
+              ),
+            ),
         ],
       ),
     );
