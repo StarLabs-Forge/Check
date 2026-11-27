@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:check/config/demo_mode.dart';
 import 'package:check/proto/buyer/buyer_flow.dart';
 import 'package:check/proto/data/proto_store.dart';
 import 'package:check/screens/complete_profile_screen.dart';
@@ -37,6 +38,15 @@ Future<void> _loadFonts() async {
   }
 }
 
+/// Pantallas del comprador que leen eventos/pedidos sembrados por el store de
+/// DEMO (ids e1, o1042...). Sin `--dart-define=DEMO=true` el store arranca vacío
+/// y no hay nada que medir: la prueba se OMITE declarando el motivo, no se oculta.
+const _demoScreens = {
+  'Detalle de evento', 'Elegir entradas', 'Datos del comprador',
+  'Pedido en verificación', 'Pedido aprobado (2 QR)', 'Pedido rechazado', 'Consultar pedido',
+};
+String? _needsDemo(bool needs) => (needs && !kDemo) ? 'Requiere datos demo: flutter test --dart-define=DEMO=true' : null;
+
 void main() {
   setUpAll(() async {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -70,7 +80,7 @@ void main() {
 
   for (final entry in sizes.entries) {
     for (final s in screens.entries) {
-      testWidgets('${s.key} · ${entry.key}', (tester) async {
+      testWidgets('${s.key} · ${entry.key}', skip: _needsDemo(_demoScreens.contains(s.key)) != null, (tester) async {
         tester.view.physicalSize = entry.value;
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -94,7 +104,7 @@ void main() {
 
   // Ticket múltiple y pago pendiente (necesitan crear el pedido antes).
   for (final entry in sizes.entries) {
-    testWidgets('Pago pendiente · ${entry.key}', (tester) async {
+    testWidgets('Pago pendiente · ${entry.key}', skip: _needsDemo(true) != null, (tester) async {
       tester.view.physicalSize = entry.value;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);

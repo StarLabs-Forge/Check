@@ -5,8 +5,10 @@ import 'package:check/proto/data/proto_store.dart';
 import 'package:check/services/app_session.dart';
 import 'package:check/staff/data/staff_access.dart';
 
+import 'demo_only.dart';
+
 void main() {
-  group('editar eventos (demo)', () {
+  group('editar eventos (demo)', skip: demoOnly, () {
     final d = DemoAdminData.instance;
     final s = DateTime.now().toUtc().add(const Duration(days: 3));
 
@@ -39,7 +41,7 @@ void main() {
     });
   });
 
-  test('demo respeta las transiciones de estado existentes', () async {
+  test('demo respeta las transiciones de estado existentes', skip: demoOnly != null, () async {
     final d = DemoAdminData.instance;
     await d.setEventStatus('ev-techno', 'draft');
     expect((await d.getEvent('ev-techno'))!.dbStatus, 'draft');
@@ -50,7 +52,7 @@ void main() {
     await d.setEventStatus('ev-techno', 'active');
   });
 
-  group('permisos de staff (demo)', () {
+  group('permisos de staff (demo)', skip: demoOnly, () {
     final store = ProtoStore.instance;
 
     test('una cuenta creada solo con scanQr no puede verificar pagos', () async {

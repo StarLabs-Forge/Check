@@ -6,11 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Recorre los flujos del prototipo en tres anchos. Cualquier overflow de
 /// layout lanza una excepción de render y hace fallar la prueba.
+import 'demo_only.dart';
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   for (final size in const [Size(360, 740), Size(768, 1024), Size(1280, 800)]) {
-    testWidgets('flujos completos a ${size.width.toInt()} px', (tester) async {
+    testWidgets('flujos completos a ${size.width.toInt()} px', skip: demoOnly != null, (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -183,7 +185,7 @@ void main() {
     });
   }
 
-  test('expiración libera cupos', () async {
+  test('expiración libera cupos', skip: demoOnly != null, () async {
     final s = ProtoStore.instance;
     final t = s.events.first.types.first;
     final before = s.remaining(t);

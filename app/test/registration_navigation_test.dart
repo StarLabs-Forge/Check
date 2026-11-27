@@ -2,8 +2,10 @@ import 'package:check/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'demo_only.dart';
+
 void main() {
-  testWidgets('el registro directo permanece abierto y permite iniciar sesión', (tester) async {
+  testWidgets('el registro directo permanece abierto y permite iniciar sesión', skip: demoOnly != null, (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     tester.binding.platformDispatcher.defaultRouteNameTestValue = '/registro';
     addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
