@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/auth_scaffold.dart' show FieldPair;
+import '../../widgets/check_logo.dart';
 import '../../widgets/motion.dart';
 import '../data/proto_store.dart';
 import '../widgets/proto_ui.dart';
@@ -55,7 +56,7 @@ class _BuyerHomeState extends State<BuyerHome> {
     final pad = Bp.isMobile(context) ? AppSpacing.s4 : AppSpacing.s6;
     return Scaffold(
       appBar: AppBar(
-        title: Text('CHECK.', style: ts(20, w: FontWeight.w800, c: AppColors.accentPrimary)),
+        title: const CheckLogoMark(height: 28),
         actions: [
           TextButton.icon(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrderLookupScreen())),

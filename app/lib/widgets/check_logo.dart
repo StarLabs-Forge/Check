@@ -76,3 +76,17 @@ class CheckLogo extends StatelessWidget {
     );
   }
 }
+
+/// Logo horizontal oficial (assets/branding/check_logo_horizontal.svg, 4:1), para
+/// cabeceras compactas donde antes había un texto "CHECK." sin la marca.
+class CheckLogoMark extends StatelessWidget {
+  const CheckLogoMark({super.key, this.height = 28});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: 'CHECK',
+        child: SvgPicture.asset('assets/branding/check_logo_horizontal.svg', height: height, fit: BoxFit.contain),
+      );
+}

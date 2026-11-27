@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../config/demo_mode.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/check_logo.dart';
 import '../../widgets/motion.dart';
 import '../data/proto_store.dart';
 
@@ -396,7 +397,7 @@ class AdaptiveShell extends StatelessWidget {
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, AppSpacing.s2),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('CHECK.', style: ts(20, w: FontWeight.w800, c: AppColors.accentPrimary)),
+        const CheckLogoMark(height: 28),
         const SizedBox(height: 2),
         Text(title, style: ts(AppTextSize.body, w: FontWeight.w600)),
         Text(subtitle, style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
@@ -462,7 +463,7 @@ class AdaptiveShell extends StatelessWidget {
               unselectedLabelTextStyle: ts(AppTextSize.body, c: AppColors.textSecondary),
               leading: extended
                   ? SizedBox(width: 220, child: header)
-                  : Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('CHECK.', style: ts(14, w: FontWeight.w800, c: AppColors.accentPrimary))),
+                  : Padding(padding: const EdgeInsets.only(bottom: 8), child: const CheckLogoMark(height: 20)),
               trailing: onExit == null
                   ? null
                   : Padding(

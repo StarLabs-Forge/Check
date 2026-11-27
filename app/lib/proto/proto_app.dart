@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/check_logo.dart';
 import 'admin/admin_flow.dart';
 import 'buyer/buyer_flow.dart';
 import 'data/proto_store.dart';
@@ -50,7 +51,7 @@ class ExperienceSelector extends StatelessWidget {
         maxWidth: 900,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const SizedBox(height: 16),
-          Text('CHECK.', style: ts(32, w: FontWeight.w800, c: AppColors.accentPrimary)),
+          const CheckLogoMark(height: 40),
           const SizedBox(height: 4),
           Text('Prototipo V1 · elige una experiencia', style: ts(AppTextSize.bodyLg, c: AppColors.textSecondary)),
           const SizedBox(height: 12),
