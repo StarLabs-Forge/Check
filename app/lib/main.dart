@@ -23,6 +23,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
+import 'services/errors.dart';
 import 'services/superadmin_service.dart' show PlatformStatus;
 import 'widgets/maintenance_gate.dart';
 import 'theme/app_theme.dart';
@@ -62,7 +63,11 @@ class _CheckAppState extends State<CheckApp> {
     if (kDemo) {
       _demoSub = AuthService.demoSession.stream.listen(_onDemoChange);
     } else {
-      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(_onAuthChange);
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+        _onAuthChange,
+        // OAuth cancelado o rechazado: el SDK lo informa como error del stream.
+        onError: (Object e) => _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(friendlyError(e)))),
+      );
     }
   }
 
