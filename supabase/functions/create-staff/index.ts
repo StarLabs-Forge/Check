@@ -23,6 +23,14 @@ Deno.serve(async (req) => {
   const { data: prof } = await admin.from('profiles').select('role,status').eq('id', owner).maybeSingle();
   if (!prof || prof.status !== 'active' || prof.role !== 'admin') return json({ error: 'Sin permiso' }, 403);
 
+  // La service role omite RLS: el segundo factor se comprueba aquí con el token de quien llama.
+  const asCaller = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+  const mfa = await asCaller.rpc('session_mfa_status');
+  if (mfa.error && mfa.error.code !== 'PGRST202') return json({ error: 'No se pudo verificar el segundo factor' }, 502);
+  if (mfa.data?.required && !mfa.data?.satisfied) return json({ error: 'Verifica tu segundo factor (MFA)' }, 403);
+
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
   const action = String(body.action ?? 'create');
