@@ -32,7 +32,7 @@ String _authMessage(AuthException e) {
     return 'Confirma tu correo antes de ingresar.';
   }
   if (code == 'user_already_exists' || msg.contains('already registered')) {
-    return 'Ese correo ya está registrado.';
+    return 'Si ya tienes una cuenta con este correo, inicia sesión para continuar.';
   }
   if (code == 'weak_password' || msg.contains('password should be')) {
     return 'La contraseña es muy débil. Usa al menos 6 caracteres.';
