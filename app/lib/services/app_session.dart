@@ -14,7 +14,11 @@ class Profile {
     required this.plan,
     required this.status,
     required this.venueName,
+    this.mfaPending = false,
   });
+
+  /// El servidor exige un segundo factor y esta sesión aún no lo cumplió.
+  final bool mfaPending;
 
   final String id;
   final String fullName;
@@ -83,12 +87,30 @@ class AppSession {
         plan: row['plan'] as String,
         status: status,
         venueName: (venue == null || venue.isEmpty) ? 'Mi local' : venue,
+        mfaPending: (role == 'admin' || role == 'super_admin') && await _mfaPending(),
       );
       return null;
     } catch (_) {
       return 'No pudimos cargar tu perfil. Revisa tu conexión e intenta de nuevo.';
     }
   }
+
+  /// Pregunta al servidor si falta el segundo factor. Antes de la migración 20 la
+  /// función no existe (PGRST202) y no se exige. Cualquier otro error se propaga:
+  /// ante la duda no se entra al panel.
+  static Future<bool> _mfaPending() async {
+    try {
+      final res = await _db.rpc('session_mfa_status');
+      return mfaPendingFrom(res);
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202') return false;
+      rethrow;
+    }
+  }
+
+  /// Interpreta la respuesta de `session_mfa_status`.
+  static bool mfaPendingFrom(Object? res) =>
+      res is Map && res['required'] == true && res['satisfied'] != true;
 
   /// `true` si falta el nombre del local, que el registro con correo siempre
   /// guarda y el de Google no (ver `CompleteProfileScreen`).
@@ -102,6 +124,7 @@ class AppSession {
   /// Ruta de entrada tras autenticarse.
   /// Panel de destino según el rol autenticado (el rol sale de `profiles`).
   static String get entryRoute {
+    if (profile.value?.mfaPending ?? false) return '/mfa';
     switch (profile.value?.role) {
       case 'super_admin':
         return '/superadmin';

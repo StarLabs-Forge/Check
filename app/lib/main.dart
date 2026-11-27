@@ -20,6 +20,7 @@ import 'screens/loading_screen.dart';
 import 'screens/payments_screens.dart';
 import 'screens/venue_settings_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/mfa_screen.dart';
 import 'screens/register_screen.dart';
 import 'services/app_session.dart';
 import 'services/auth_service.dart';
@@ -150,6 +151,7 @@ class _CheckAppState extends State<CheckApp> {
         // Enlace directo desde la web (planes / prueba gratis): salta la selección de tipo de usuario.
         '/registro': (_) => const RegisterScreen(),
         '/comprar': (_) => const BuyerHome(),
+        '/mfa': (_) => const RoleGuard(roles: {'admin', 'super_admin'}, allowMfaPending: true, child: MfaScreen()),
         // Privadas: cada una exige el rol correspondiente (RoleGuard).
         '/completar-perfil': (_) => const RoleGuard(roles: {'admin'}, child: CompleteProfileScreen()),
         '/home': (_) => const RoleGuard(roles: {'admin'}, child: HomeScreen()),

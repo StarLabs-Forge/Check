@@ -9,8 +9,10 @@ import 'check_logo.dart';
 /// seguridad real). Sin sesión → vuelve a la bienvenida; con otro rol → aviso
 /// con salida a su propio panel. La seguridad real sigue siendo RLS en la base.
 class RoleGuard extends StatefulWidget {
-  const RoleGuard({super.key, required this.roles, required this.child});
+  const RoleGuard({super.key, required this.roles, required this.child, this.allowMfaPending = false});
 
+  /// Solo la propia pantalla de MFA admite sesiones sin segundo factor.
+  final bool allowMfaPending;
   final Set<String> roles;
   final Widget child;
 
@@ -31,6 +33,15 @@ class _RoleGuardState extends State<RoleGuard> {
             _redirected = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/bienvenida', (r) => false);
+            });
+          }
+          return const Scaffold(body: SizedBox.shrink());
+        }
+        if (profile.mfaPending && !widget.allowMfaPending) {
+          if (!_redirected) {
+            _redirected = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/mfa', (r) => false);
             });
           }
           return const Scaffold(body: SizedBox.shrink());
