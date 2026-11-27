@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/demo_mode.dart';
+import '../services/app_session.dart';
 import '../services/auth_service.dart';
 import '../services/errors.dart';
 import '../theme/app_theme.dart';
@@ -28,6 +32,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _acceptedTerms = false;
   bool _isSubmitting = false;
   String? _error;
+  bool _existingAccount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Con sesión activa no hay nada que registrar: va directo a su panel
+    // (el rol sale del perfil en la base, no de la URL ni del cliente).
+    if (!kDemo && Supabase.instance.client.auth.currentSession != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (AppSession.profile.value == null) await AppSession.load();
+        if (!mounted || AppSession.profile.value == null) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(AppSession.entryRoute, (r) => false);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -75,6 +94,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       _isSubmitting = true;
       _error = null;
+      _existingAccount = false;
     });
 
     final email = _emailController.text.trim();
@@ -100,7 +120,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = friendlyError(e));
+      setState(() {
+        _error = friendlyError(e);
+        _existingAccount = e is AuthException &&
+            (e.code == 'user_already_exists' || e.message.toLowerCase().contains('already registered'));
+      });
     }
 
     if (mounted) setState(() => _isSubmitting = false);
@@ -231,6 +255,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
             AuthError(_error),
+            if (_existingAccount)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/acceso-locales', (route) => false),
+                  child: const Text('Iniciar sesión'),
+                ),
+              ),
             const AuthGap(AppSpacing.s4),
             AuthSubmit(label: 'Crear cuenta', loading: _isSubmitting, onPressed: _submit),
             const AuthGap(AppSpacing.s3),

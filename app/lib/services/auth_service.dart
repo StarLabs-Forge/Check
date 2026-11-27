@@ -49,14 +49,18 @@ class AuthService {
       emailRedirectTo: _webOrigin,
     );
 
-    // Con confirmación activa, Supabase NO devuelve error si el correo ya
-    // existe (anti-enumeración): devuelve un usuario sin identidades.
-    final identities = res.user?.identities;
-    if (res.session == null && identities != null && identities.isEmpty) {
+    if (isObfuscatedExistingUser(hasSession: res.session != null, identities: res.user?.identities)) {
       throw AuthException('User already registered', code: 'user_already_exists');
     }
     return res.session != null;
   }
+
+  /// Con confirmación de correo activa, Supabase NO devuelve error si el correo ya
+  /// existe (anti-enumeración): responde "éxito" con un usuario SIN identidades y sin
+  /// sesión. Con confirmación desactivada sí lanza `user_already_exists`. Un éxito de
+  /// `signUp` por sí solo no prueba que se haya creado una cuenta nueva.
+  static bool isObfuscatedExistingUser({required bool hasSession, required List<UserIdentity>? identities}) =>
+      !hasSession && identities != null && identities.isEmpty;
 
   /// En web, el enlace del correo vuelve al mismo sitio desde el que se
   /// registró (debe estar en Authentication → URL Configuration → Redirect
