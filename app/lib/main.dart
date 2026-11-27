@@ -161,6 +161,17 @@ class _CheckAppState extends State<CheckApp> {
             ),
         '/staff': (_) => const RoleGuard(roles: {'staff'}, child: StaffPanel()),
       },
+      // `/registro?origen=prueba|demo`: conserva el contexto del botón de origen.
+      onGenerateRoute: (settings) {
+        final uri = Uri.tryParse(settings.name ?? '');
+        if (uri != null && uri.path == '/registro') {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => RegisterScreen(origin: uri.queryParameters['origen']),
+          );
+        }
+        return null;
+      },
       // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
       onUnknownRoute: (settings) => MaterialPageRoute(
         builder: (_) => const ComingSoonScreen(

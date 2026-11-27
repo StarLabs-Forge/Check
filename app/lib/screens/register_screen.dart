@@ -13,7 +13,11 @@ import 'verification_screen.dart';
 /// esta pantalla: recibe acceso por código de parte del Admin (ver
 /// VerificationScreen / flujo de staff, pendiente de pantalla propia).
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, this.origin});
+
+  /// Contexto con el que se llegó (`/registro?origen=prueba|demo`). Solo informa:
+  /// NO activa la prueba ni cambia permisos; la prueba se activa en el panel.
+  final String? origin;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -34,12 +38,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
   bool _existingAccount = false;
 
+  static bool get _hasActiveSession {
+    if (kDemo) return false;
+    try {
+      return Supabase.instance.client.auth.currentSession != null;
+    } catch (_) {
+      return false; // Supabase sin inicializar (pruebas de componentes)
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     // Con sesión activa no hay nada que registrar: va directo a su panel
     // (el rol sale del perfil en la base, no de la URL ni del cliente).
-    if (!kDemo && Supabase.instance.client.auth.currentSession != null) {
+    if (_hasActiveSession) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (AppSession.profile.value == null) await AppSession.load();
         if (!mounted || AppSession.profile.value == null) return;
@@ -169,6 +182,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  String? get _originNote => switch (widget.origin) {
+        'prueba' => 'Estás solicitando la prueba gratuita de 14 días. Se activa desde tu panel, una sola vez, cuando completes los datos de tu local.',
+        'demo' => kDemo ? 'Estás en la DEMO: los datos son de ejemplo y no se guardan.' : null,
+        _ => null,
+      };
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -180,6 +199,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_originNote != null) ...[
+              Text(_originNote!, style: const TextStyle(color: AppColors.accentPrimary, fontSize: AppTextSize.body)),
+              const AuthGap(AppSpacing.s3),
+            ],
             FieldPair(
               a: TextFormField(
                 controller: _nameController,
