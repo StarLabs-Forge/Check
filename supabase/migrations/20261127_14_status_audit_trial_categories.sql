@@ -41,6 +41,27 @@ end $$;
 create trigger events_status_log after update of status on public.events
   for each row execute function private.log_event_status();
 
+-- El motivo es obligatorio al pasar de activo a borrador con entradas vendidas o
+-- pedidos pendientes. Es un trigger (no la RPC) para que un UPDATE directo
+-- de events.status tampoco pueda omitirlo.
+create or replace function private.require_status_reason() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare v_sold int; v_pend int;
+begin
+  if not (old.status = 'active' and new.status = 'draft') or auth.uid() is null then return new; end if;
+  if nullif(btrim(coalesce(current_setting('check.status_reason', true), '')), '') is not null then return new; end if;
+  select count(*) into v_sold from public.tickets t where t.event_id = new.id and t.status <> 'cancelled';
+  select count(*) into v_pend from public.orders o
+   where o.event_id = new.id and (o.status = 'verifying' or (o.status = 'awaiting_payment' and o.expires_at > now()));
+  if v_sold > 0 or v_pend > 0 then
+    raise exception 'reason_required' using errcode = 'P0001',
+      hint = 'Hay ' || v_sold || ' entradas y ' || v_pend || ' pedidos pendientes.';
+  end if;
+  return new;
+end $$;
+create trigger events_status_reason before update of status on public.events
+  for each row execute function private.require_status_reason();
+
 -- Cambio de estado con motivo. Las transiciones válidas las sigue imponiendo
 -- private.guard_event (trigger BEFORE UPDATE); esta función solo añade el motivo.
 -- Pasar de activo a borrador con entradas vendidas o pedidos pendientes exige motivo.
@@ -55,10 +76,6 @@ begin
   select count(*) into v_sold from public.tickets t where t.event_id = e.id and t.status <> 'cancelled';
   select count(*) into v_pend from public.orders o
    where o.event_id = e.id and (o.status = 'verifying' or (o.status = 'awaiting_payment' and o.expires_at > now()));
-  if e.status = 'active' and p_status = 'draft' and (v_sold > 0 or v_pend > 0) and v_reason is null then
-    raise exception 'reason_required' using errcode = 'P0001',
-      hint = 'Hay ' || v_sold || ' entradas y ' || v_pend || ' pedidos pendientes.';
-  end if;
   perform set_config('check.status_reason', coalesce(left(v_reason, 300), ''), true);
   update public.events set status = p_status where id = p_event_id;
   return jsonb_build_object('status', p_status, 'tickets_sold', v_sold, 'orders_pending', v_pend);
@@ -117,6 +134,20 @@ alter table public.ticket_types
   add column active boolean not null default true;
 grant insert (description, active), update (description, active) on public.ticket_types to authenticated;
 
+-- El cupo de una categoría no puede bajar de lo vendido + reservado (evita sobreventa
+-- al editar desde el panel). Los pedidos y sus precios históricos no se tocan.
+create or replace function private.guard_ticket_type_capacity() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.capacity < private.held_seats(new.id) then
+    raise exception 'capacity_below_sold' using errcode = 'P0001',
+      hint = 'Ya hay ' || private.held_seats(new.id) || ' entradas vendidas o reservadas en esta categoría.';
+  end if;
+  return new;
+end $$;
+create trigger ticket_types_capacity_guard before update of capacity on public.ticket_types
+  for each row when (new.capacity < old.capacity) execute function private.guard_ticket_type_capacity();
+
 create or replace function public.public_events() returns jsonb
 language sql stable security definer set search_path = '' as $$
   select coalesce(jsonb_agg(x order by x ->> 'starts_at'), '[]'::jsonb)
@@ -124,7 +155,7 @@ language sql stable security definer set search_path = '' as $$
     select jsonb_build_object(
       'id', e.id, 'name', e.name, 'description', e.description,
       'starts_at', e.starts_at, 'ends_at', e.ends_at, 'status', e.status,
-      'venue_name', v.name, 'venue_zone', v.zone,
+      'venue_id', v.id, 'venue_name', v.name, 'venue_zone', v.zone,
       'types', (select jsonb_agg(jsonb_build_object(
                   'id', t.id, 'name', t.name, 'description', t.description, 'price', t.price,
                   'capacity', t.capacity, 'max_per_order', t.max_per_order,
@@ -139,6 +170,25 @@ language sql stable security definer set search_path = '' as $$
       and exists (select 1 from public.ticket_types t where t.event_id = e.id and t.active)
   ) s
 $$;
+
+-- Cifras por categoría para el panel del local: vendidas (pedidos aprobados),
+-- reservadas (pedidos en verificación o con pago pendiente vigente) y disponibles.
+-- Misma definición que private.held_seats, que es la que usa create_order.
+create or replace function public.ticket_type_stats(p_event_id uuid) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', t.id, 'sold', s.sold, 'reserved', s.reserved,
+           'available', greatest(t.capacity - s.sold - s.reserved, 0)) order by t.position, t.price), '[]'::jsonb)
+  from public.ticket_types t
+  cross join lateral (
+    select coalesce(sum(l.qty) filter (where o.status = 'approved'), 0)::int as sold,
+           coalesce(sum(l.qty) filter (where o.status = 'verifying'
+                      or (o.status = 'awaiting_payment' and o.expires_at > now())), 0)::int as reserved
+    from public.order_lines l join public.orders o on o.id = l.order_id
+    where l.ticket_type_id = t.id) s
+  where t.event_id = p_event_id and private.owns_event(p_event_id)
+$$;
+revoke execute on function public.ticket_type_stats(uuid) from public, anon;
+grant execute on function public.ticket_type_stats(uuid) to authenticated;
 
 -- ── 4. create_order: categoría activa y máximo 3 órdenes activas por teléfono ─
 create or replace function public.create_order(p_event_id uuid, p_buyer_name text, p_buyer_ci text,

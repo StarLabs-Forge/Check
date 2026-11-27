@@ -1,0 +1,11 @@
+-- 15 · Cierra la vía directa: tras desplegar la migración 14 y la versión de la app que
+-- usa set_event_status, el cliente ya no puede escribir events.status con UPDATE.
+-- Todo cambio de estado pasa por set_event_status (SECURITY DEFINER), que registra
+-- motivo y actor. Los triggers guard_event / require_status_reason / log_event_status
+-- siguen aplicándose a cualquier escritura.
+--
+-- ORDEN DE DESPLIEGUE: 14 -> publicar app (usa la RPC) -> 15.
+-- Aplicar 15 antes de que todos los clientes usen la RPC rompe las versiones antiguas
+-- de la app (su UPDATE directo recibirá "permission denied").
+-- RECUPERACIÓN: grant update (status) on public.events to authenticated;
+revoke update (status) on public.events from authenticated;

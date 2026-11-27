@@ -1,4 +1,4 @@
--- Prueba de regresión de la migración 14. Ejecutar DESPUÉS de aplicarla, en un
+-- Prueba de regresión de la migración 14 (y 15 si se aplicó: ver bloque final). Ejecutar DESPUÉS de aplicarla, en un
 -- entorno de desarrollo/rama de Supabase. Todo ocurre dentro de una transacción
 -- que termina en ROLLBACK: el resultado llega como el mensaje de una excepción
 -- "RESULTS: ...". Resultado esperado (resumen):
@@ -11,7 +11,7 @@
 begin;
 do $t$
 declare
-  u uuid := gen_random_uuid(); ev uuid; t1 uuid; t2 uuid; o jsonb; out text := ''; r jsonb; n int;
+  u uuid := gen_random_uuid(); ev uuid; ev2 uuid; t1 uuid; t2 uuid; t3 uuid; o jsonb; o1 uuid; out text := ''; r jsonb; n int;
 begin
   insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
   values (u, 'authenticated', 'authenticated', 'rollback-test@example.invalid', '{}',
@@ -41,6 +41,7 @@ begin
     o := public.create_order(ev, 'Comprador ' || n, 'CI12345' || n,
            case n when 1 then '7 111 1111' when 2 then '71111111' else '711-11111' end, null,
            jsonb_build_array(jsonb_build_object('type_id', t1, 'qty', 1)));
+    if n = 1 then o1 := (o ->> 'order_id')::uuid; end if;
   end loop;
   out := out || 'orders_3_ok;';
   begin perform public.create_order(ev, 'Otro', 'CI999999', '(7)111-1111', null,
@@ -51,7 +52,39 @@ begin
          jsonb_build_array(jsonb_build_object('type_id', t2, 'qty', 2), jsonb_build_object('type_id', t1, 'qty', 1)));
   out := out || 'mixed_order_total=' || (o ->> 'total') || ';other_phone_ok;';
 
+  -- Regla por teléfono en toda la plataforma: otro evento, mismo teléfono, otro formato
   set local role authenticated;
+  insert into public.events (owner_id, name, starts_at, ends_at, capacity, access_type, ticket_price)
+  values (u, 'Evento 2', now() + interval '3 days', now() + interval '4 days', 50, 'paid', 30) returning id into ev2;
+  perform public.set_event_status(ev2, 'active');
+  select id into t3 from public.ticket_types where event_id = ev2 limit 1;
+  set local role anon;
+  begin perform public.create_order(ev2, 'Otro', 'CI777777', '+591 7111 1111', null,
+          jsonb_build_array(jsonb_build_object('type_id', t3, 'qty', 1)));
+        out := out || 'other_event_same_phone=ALLOWED(BAD);';
+  exception when others then out := out || 'other_event_same_phone=' || sqlerrm || ';'; end;
+  -- un pedido con comprobante informado (verifying) sigue contando
+  reset role;
+  update public.orders set status = 'verifying', declared_at = now() where id = o1;
+  set local role anon;
+  begin perform public.create_order(ev2, 'Otro', 'CI777777', '71111111', null,
+          jsonb_build_array(jsonb_build_object('type_id', t3, 'qty', 1)));
+        out := out || 'verifying_counts=ALLOWED(BAD);';
+  exception when others then out := out || 'verifying_counts=' || sqlerrm || ';'; end;
+  -- un rechazo libera el límite
+  reset role;
+  update public.orders set status = 'rejected', decided_at = now(), reject_reason = 'test' where id = o1;
+  set local role anon;
+  perform public.create_order(ev2, 'Otro', 'CI777777', '71111111', null,
+          jsonb_build_array(jsonb_build_object('type_id', t3, 'qty', 1)));
+  out := out || 'rejected_releases=ok;';
+
+  -- cifras por categoría y guardas de cupo
+  set local role authenticated;
+  out := out || 'stats=' || (public.ticket_type_stats(ev))::text || ';';
+  begin update public.ticket_types set capacity = 1 where id = t1; out := out || 'capacity_guard=ALLOWED(BAD);';
+  exception when others then out := out || 'capacity_guard=' || sqlerrm || ';'; end;
+
   update public.ticket_types set active = false where id = t2;
   set local role anon;
   begin perform public.create_order(ev, 'Otro', 'CI999998', '73333333', null,
@@ -63,6 +96,9 @@ begin
   set local role authenticated;
   begin perform public.set_event_status(ev, 'draft'); out := out || 'draft_noreason=ALLOWED(BAD);';
   exception when others then out := out || 'draft_noreason=' || sqlerrm || ';'; end;
+  -- La vía directa no puede omitir el motivo (trigger require_status_reason)
+  begin update public.events set status = 'draft' where id = ev; out := out || 'direct_update_noreason=ALLOWED(BAD);';
+  exception when others then out := out || 'direct_update_noreason=' || sqlerrm || ';'; end;
   perform public.set_event_status(ev, 'draft', 'Corregir datos');
   perform public.set_event_status(ev, 'active');
   select jsonb_agg(jsonb_build_object('old', old_status, 'new', new_status, 'why', reason,
@@ -72,6 +108,8 @@ begin
   begin delete from public.event_status_log; out := out || 'log_delete=ALLOWED(BAD);';
   exception when others then out := out || 'log_delete=blocked;'; end;
 
+  -- Solo con la migración 15 aplicada: UPDATE directo de status => permission denied.
+  -- begin update public.events set status = 'draft' where id = ev; ... exception when insufficient_privilege ...
   reset role;
   raise exception 'RESULTS: %', out;
 end $t$;
