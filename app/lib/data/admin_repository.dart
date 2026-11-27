@@ -104,11 +104,44 @@ class AdminRepository {
     if (updated.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
   }
 
-  /// Cambia el estado (`active`, `live`, `finished`...). Las transiciones
-  /// inválidas las rechaza el trigger `guard_event`.
-  Future<void> setEventStatus(String eventId, String status) async {
+  /// Cambia el estado (`active`, `live`, `finished`...) con la RPC `set_event_status`,
+  /// que registra el cambio (y su motivo) en `event_status_log`. Las transiciones
+  /// inválidas las rechaza el trigger `guard_event`. Si la migración 14 aún no
+  /// está aplicada (RPC inexistente, PGRST202) cae al UPDATE directo, sin auditoría.
+  Future<void> setEventStatus(String eventId, String status, {String? reason}) async {
     if (kDemo) return DemoAdminData.instance.setEventStatus(eventId, status);
-    await _db.from('events').update({'status': status}).eq('id', eventId);
+    try {
+      await _db.rpc('set_event_status', params: {
+        'p_event_id': eventId,
+        'p_status': status,
+        'p_reason': (reason == null || reason.trim().isEmpty) ? null : reason.trim(),
+      });
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow;
+      final rows = await _db.from('events').update({'status': status}).eq('id', eventId).select('id');
+      if (rows.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
+    }
+  }
+
+  // ───────────────────────── Prueba gratuita ─────────────────────────
+
+  /// Estado de la prueba de 14 días, calculado en el servidor (`trial_status`).
+  /// `null` si no se activó o si la migración 14 aún no existe.
+  Future<TrialStatus?> trialStatus() async {
+    if (kDemo) throw StateError('demo');
+    try {
+      final res = await _db.rpc('trial_status');
+      return res == null ? null : TrialStatus.fromMap(Map<String, dynamic>.from(res as Map));
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202') throw StateError('migration_14_missing');
+      rethrow;
+    }
+  }
+
+  /// Activa la prueba (una sola vez; repetirla no reinicia el periodo).
+  Future<TrialStatus?> startTrial() async {
+    final res = await _db.rpc('start_trial');
+    return res == null ? null : TrialStatus.fromMap(Map<String, dynamic>.from(res as Map));
   }
 
   // ───────────────────────── Tickets ─────────────────────────
@@ -161,4 +194,20 @@ class AdminRepository {
     });
     return CreatedTicket.fromMap(Map<String, dynamic>.from(res as Map));
   }
+}
+
+/// Estado de la prueba gratuita. `state`: `active` | `expiring` | `expired`.
+class TrialStatus {
+  const TrialStatus({required this.state, required this.daysLeft, required this.endsAt});
+  final String state;
+  final int daysLeft;
+  final DateTime endsAt;
+
+  bool get expired => state == 'expired';
+
+  factory TrialStatus.fromMap(Map<String, dynamic> m) => TrialStatus(
+        state: m['state'] as String,
+        daysLeft: (m['days_left'] as num).toInt(),
+        endsAt: DateTime.parse(m['ends_at'] as String).toLocal(),
+      );
 }

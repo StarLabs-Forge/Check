@@ -63,6 +63,9 @@ String _postgrestMessage(PostgrestException e) {
   if (m.contains('capacity_below_sold')) return 'La capacidad no puede ser menor a las entradas ya vendidas o reservadas.';
   if (m.contains('price_locked_with_sales')) return 'No puedes cambiar el precio ni el tipo de acceso: ya hay entradas vendidas.';
   if (m.contains('invalid_dates')) return 'La hora de fin debe ser posterior a la de inicio.';
+  if (m.contains('reason_required')) return 'Indica el motivo: hay entradas vendidas o pedidos pendientes en este evento.';
+  if (m.contains('venue_required')) return 'Completa los datos de tu local antes de activar la prueba gratuita.';
+  if (m.contains('too_many_open_orders')) return 'Este teléfono ya tiene 3 pedidos activos.';
   if (m.contains('invalid_status_transition')) return 'Ese cambio de estado no está permitido.';
   if (m.contains('invalid_guest_name')) return 'El nombre del invitado no es válido.';
   if (m.contains('ticket_not_payable')) return 'Ese ticket ya no se puede marcar como pagado.';

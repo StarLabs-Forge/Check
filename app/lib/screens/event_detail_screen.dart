@@ -93,10 +93,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     return _allGuests.where((g) => g.name.toLowerCase().contains(q)).toList();
   }
 
-  Future<void> _changeStatus(String status, {required String okMessage}) async {
+  Future<void> _changeStatus(String status, {required String okMessage, String? reason}) async {
     setState(() => _changingStatus = true);
     try {
-      await _repo.setEventStatus(widget.eventId, status);
+      await _repo.setEventStatus(widget.eventId, status, reason: reason);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(okMessage)));
       await _load();
@@ -105,6 +105,48 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(e))));
     }
     if (mounted) setState(() => _changingStatus = false);
+  }
+
+  Future<void> _returnToDraft(EventItem event) async {
+    final reason = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: const Text('¿Volver a borrador?', style: TextStyle(color: AppColors.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '"${event.name}" dejará de aparecer en el catálogo y no recibirá pedidos nuevos. '
+              'Los pedidos y entradas existentes se conservan. El cambio queda registrado.',
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.s3),
+            TextField(
+              controller: reason,
+              maxLength: 300,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(
+                labelText: 'Motivo',
+                helperText: 'Obligatorio si hay entradas vendidas o pedidos pendientes',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Volver a borrador')),
+        ],
+      ),
+    );
+    final text = reason.text;
+    reason.dispose();
+    if (confirmed == true) {
+      await _changeStatus('draft',
+          okMessage: 'Evento devuelto a borrador; ya no aparece en el catálogo', reason: text);
+    }
   }
 
   Future<void> _closeEvent(EventItem event) async {
@@ -251,7 +293,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: OutlinedButton(
                 onPressed: _changingStatus
                     ? null
-                    : () => _changeStatus('draft', okMessage: 'Evento devuelto a borrador; ya no aparece en el catálogo'),
+                    : () => _returnToDraft(event),
                 child: const Text('Volver a borrador'),
               ),
             ),

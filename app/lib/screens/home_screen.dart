@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/admin_scaffold.dart';
 import '../widgets/async_states.dart';
+import '../widgets/trial_banner.dart';
 
 /// Pantalla inicial del Admin — frame "Dashboard Principal" del Figma.
 /// Datos reales de Supabase y actualización en vivo vía Realtime: cada
@@ -148,6 +149,7 @@ class _DashboardContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _Header(),
+          const TrialBanner(),
           const SizedBox(height: AppSpacing.s8),
           Wrap(
             spacing: AppSpacing.s6,
