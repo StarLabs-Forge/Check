@@ -249,7 +249,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/acceso-locales',
+                    (route) => false,
+                  ),
                   child: const Text('Inicia sesión'),
                 ),
               ],

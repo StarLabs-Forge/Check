@@ -193,7 +193,9 @@ class _BootstrapState extends State<_Bootstrap> {
       error = await AppSession.load();
     }
     await minSplash;
-    if (!mounted) return;
+    // Flutter puede construir esta ruta debajo de un enlace directo. En ese
+    // caso no debe reemplazar la pantalla que el usuario ya está viendo.
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
 
     if (hasSession && error == null) {
       Navigator.of(context).pushReplacementNamed(AppSession.entryRoute);
