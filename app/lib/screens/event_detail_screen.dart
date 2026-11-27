@@ -245,6 +245,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 child: const Text('Iniciar evento'),
               ),
             ),
+          if (event.canReturnToDraft)
+            SizedBox(
+              width: 200,
+              child: OutlinedButton(
+                onPressed: _changingStatus
+                    ? null
+                    : () => _changeStatus('draft', okMessage: 'Evento devuelto a borrador; ya no aparece en el catálogo'),
+                child: const Text('Volver a borrador'),
+              ),
+            ),
           if (event.canIssueTickets)
             SizedBox(
               width: 232,

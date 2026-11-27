@@ -81,6 +81,7 @@ class EventItem {
   // Transiciones permitidas por el trigger `guard_event`:
   // draft->active, active->draft, active->live, live->finished, active->finished.
   bool get canActivate => isDraft;
+  bool get canReturnToDraft => isActive;
   bool get canGoLive => isActive;
   bool get canClose => isActive || isLive;
   bool get canEdit => !(dbStatus == 'finished' || dbStatus == 'suspended');

@@ -39,6 +39,17 @@ void main() {
     });
   });
 
+  test('demo respeta las transiciones de estado existentes', () async {
+    final d = DemoAdminData.instance;
+    await d.setEventStatus('ev-techno', 'draft');
+    expect((await d.getEvent('ev-techno'))!.dbStatus, 'draft');
+    await expectLater(
+      d.setEventStatus('ev-techno', 'finished'),
+      throwsA(predicate((e) => e.toString().contains('invalid_status_transition'))),
+    );
+    await d.setEventStatus('ev-techno', 'active');
+  });
+
   group('permisos de staff (demo)', () {
     final store = ProtoStore.instance;
 

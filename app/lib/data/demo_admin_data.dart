@@ -151,7 +151,17 @@ class DemoAdminData {
 
   Future<void> setEventStatus(String id, String status) async {
     await _lag();
-    _events.firstWhere((e) => e.id == id).status = status;
+    final event = _events.firstWhere((e) => e.id == id);
+    if (event.status == status) return;
+    const allowed = {
+      'draft': {'active'},
+      'active': {'draft', 'live', 'finished'},
+      'live': {'finished'},
+    };
+    if (!(allowed[event.status]?.contains(status) ?? false)) {
+      throw Exception('invalid_status_transition');
+    }
+    event.status = status;
   }
 
   Future<List<GuestItem>> listTickets({String? eventId, String query = '', int limit = 500}) async {
