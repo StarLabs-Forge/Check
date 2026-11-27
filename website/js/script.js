@@ -210,6 +210,152 @@
                 });
             }
 
+            // 6. Spotlight de tarjetas que sigue al puntero (solo puntero fino y sin reduced-motion)
+            if (window.matchMedia('(pointer: fine)').matches && !reduceMotion) {
+                document.body.classList.add('has-spotlight');
+                document.querySelectorAll('.module-card, .state-card, .plan-card').forEach(card => {
+                    card.addEventListener('pointermove', e => {
+                        const r = card.getBoundingClientRect();
+                        card.style.setProperty('--sx', (e.clientX - r.left) + 'px');
+                        card.style.setProperty('--sy', (e.clientY - r.top) + 'px');
+                    }, { passive: true });
+                });
+            }
+
+            // 7. Métricas: cuenta hasta el valor real al entrar en pantalla (el texto final no cambia)
+            if (!reduceMotion && 'IntersectionObserver' in window) {
+                const countObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        obs.unobserve(entry.target);
+                        const el = entry.target;
+                        const m = el.dataset.final.match(/^(\D*)([\d,]+)(\D*)$/);
+                        const end = parseInt(m[2].replace(/,/g, ''), 10);
+                        const t0 = performance.now(), dur = 1200;
+                        const tick = now => {
+                            const k = Math.min(1, (now - t0) / dur);
+                            const eased = 1 - Math.pow(1 - k, 3);
+                            el.textContent = m[1] + Math.round(end * eased).toLocaleString('en-US') + m[3];
+                            if (k < 1) requestAnimationFrame(tick);
+                            else el.textContent = el.dataset.final;
+                        };
+                        requestAnimationFrame(tick);
+                    });
+                }, { threshold: 0.6 });
+                document.querySelectorAll('.metric-num').forEach(el => {
+                    const txt = el.textContent.trim();
+                    const m = txt.match(/^\D*([\d,]+)\D*$/);
+                    if (m && parseInt(m[1].replace(/,/g, ''), 10) >= 10) {
+                        el.dataset.final = txt;
+                        countObserver.observe(el);
+                    }
+                });
+            }
+
+            // 8. Dispositivo 3D: inclinacion segun el puntero y tilt de tarjetas
+            const finePointer = window.matchMedia('(pointer: fine)').matches;
+            const tilt = document.getElementById('deviceTilt');
+            if (tilt && finePointer && !reduceMotion) {
+                const heroSec = document.querySelector('.hero');
+                heroSec.addEventListener('pointermove', e => {
+                    const r = heroSec.getBoundingClientRect();
+                    const nx = (e.clientX - r.left) / r.width - 0.5;
+                    const ny = (e.clientY - r.top) / r.height - 0.5;
+                    tilt.classList.add('is-live');
+                    tilt.style.setProperty('--ry', (nx * 26).toFixed(1) + 'deg');
+                    tilt.style.setProperty('--rx', (-ny * 18).toFixed(1) + 'deg');
+                }, { passive: true });
+                heroSec.addEventListener('pointerleave', () => {
+                    tilt.classList.remove('is-live');
+                    tilt.style.removeProperty('--ry');
+                    tilt.style.removeProperty('--rx');
+                });
+            }
+            if (finePointer && !reduceMotion) {
+                document.querySelectorAll('.module-card, .state-card, .plan-card:not(.featured)').forEach(card => {
+                    card.addEventListener('pointermove', e => {
+                        const r = card.getBoundingClientRect();
+                        const nx = (e.clientX - r.left) / r.width - 0.5;
+                        const ny = (e.clientY - r.top) / r.height - 0.5;
+                        card.style.setProperty('--try', (nx * 10).toFixed(1) + 'deg');
+                        card.style.setProperty('--trx', (-ny * 10).toFixed(1) + 'deg');
+                    }, { passive: true });
+                    card.addEventListener('pointerleave', () => {
+                        card.style.removeProperty('--try');
+                        card.style.removeProperty('--trx');
+                    });
+                });
+            }
+
+            // 9. Parallax del hero ligado al scroll
+            if (!reduceMotion) {
+                const heroEl = document.querySelector('.hero');
+                const wrapEl = document.querySelector('.device-wrapper');
+                let pTick = false;
+                const updateParallax = () => {
+                    pTick = false;
+                    const p = Math.max(0, Math.min(1, window.scrollY / (heroEl.offsetHeight || 1))).toFixed(3);
+                    heroEl.style.setProperty('--hero-p', p);
+                    if (wrapEl) wrapEl.style.setProperty('--hero-p', p);
+                };
+                window.addEventListener('scroll', () => { if (!pTick) { pTick = true; requestAnimationFrame(updateParallax); } }, { passive: true });
+                updateParallax();
+            }
+
+            // 10. Frase del problema: separa palabras para el volteo 3D (el texto accesible no cambia)
+            const quoteEl = document.querySelector('.quote-statement');
+            if (quoteEl && !reduceMotion) {
+                const txt = quoteEl.textContent.trim();
+                quoteEl.setAttribute('aria-label', txt);
+                quoteEl.textContent = '';
+                txt.split(/\s+/).forEach((w, i, arr) => {
+                    const span = document.createElement('span');
+                    span.className = 'qw';
+                    span.setAttribute('aria-hidden', 'true');
+                    span.style.setProperty('--i', i);
+                    span.textContent = w;
+                    quoteEl.appendChild(span);
+                    if (i < arr.length - 1) quoteEl.appendChild(document.createTextNode(' '));
+                });
+            }
+
+            // 11. Abanico 3D: --fan va de 1 (borde de pantalla) a 0 (centrado)
+            if (!reduceMotion) {
+                const fanGrids = Array.from(document.querySelectorAll('.states-grid, .plans-grid, .modules-grid'));
+                let fanTick = false;
+                const updateFan = () => {
+                    fanTick = false;
+                    const mid = window.innerHeight / 2;
+                    fanGrids.forEach(g => {
+                        const r = g.getBoundingClientRect();
+                        const d = Math.abs((r.top + r.height / 2) - mid) / mid;
+                        const fan = Math.max(0, Math.min(1, (d - 0.15) / 0.85));
+                        g.style.setProperty('--fan', fan.toFixed(3));
+                    });
+                };
+                window.addEventListener('scroll', () => { if (!fanTick) { fanTick = true; requestAnimationFrame(updateFan); } }, { passive: true });
+                window.addEventListener('resize', updateFan);
+                updateFan();
+            }
+
+            // 12. Tilt 3D en contacto y caja del CTA final
+            if (finePointer && !reduceMotion) {
+                document.querySelectorAll('.contact-info-item, .cta-box').forEach(card => {
+                    const k = card.classList.contains('cta-box') ? 6 : 8;
+                    card.addEventListener('pointermove', e => {
+                        const r = card.getBoundingClientRect();
+                        const nx = (e.clientX - r.left) / r.width - 0.5;
+                        const ny = (e.clientY - r.top) / r.height - 0.5;
+                        card.style.setProperty('--try', (nx * k).toFixed(1) + 'deg');
+                        card.style.setProperty('--trx', (-ny * k).toFixed(1) + 'deg');
+                    }, { passive: true });
+                    card.addEventListener('pointerleave', () => {
+                        card.style.removeProperty('--try');
+                        card.style.removeProperty('--trx');
+                    });
+                });
+            }
+
             // 3. Scroll Reveal Animation using IntersectionObserver
             const revealElements = document.querySelectorAll('.reveal');
 
