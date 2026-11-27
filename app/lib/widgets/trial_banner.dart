@@ -8,7 +8,11 @@ import '../theme/app_theme.dart';
 /// calcula en el servidor (`trial_status`); acá solo se muestra. Si no hay
 /// prueba ofrece activarla una única vez. En demo o sin migración no se muestra.
 class TrialBanner extends StatefulWidget {
-  const TrialBanner({super.key});
+  const TrialBanner({super.key, this.loadStatus, this.startTrial});
+
+  /// Inyectables para pruebas; por defecto usan [AdminRepository].
+  final Future<TrialStatus?> Function()? loadStatus;
+  final Future<TrialStatus?> Function()? startTrial;
 
   @override
   State<TrialBanner> createState() => _TrialBannerState();
@@ -29,7 +33,7 @@ class _TrialBannerState extends State<TrialBanner> {
 
   Future<void> _load() async {
     try {
-      final t = await _repo.trialStatus();
+      final t = await (widget.loadStatus ?? _repo.trialStatus)();
       if (mounted) setState(() { _trial = t; _available = true; });
     } catch (_) {
       if (mounted) setState(() => _available = false);
@@ -39,7 +43,7 @@ class _TrialBannerState extends State<TrialBanner> {
   Future<void> _start() async {
     setState(() { _busy = true; _error = null; });
     try {
-      final t = await _repo.startTrial();
+      final t = await (widget.startTrial ?? _repo.startTrial)();
       if (mounted) setState(() => _trial = t);
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
