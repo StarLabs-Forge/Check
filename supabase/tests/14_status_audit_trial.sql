@@ -1,5 +1,9 @@
--- Prueba de regresión de la migración 14 (y 15 si se aplicó: ver bloque final). Ejecutar DESPUÉS de aplicarla, en un
--- entorno de desarrollo/rama de Supabase. Todo ocurre dentro de una transacción
+-- HISTÓRICA: válida contra el esquema 14 (antes de aplicar 15+). Las migraciones 16-22
+-- cambian reglas que aquí se asumen (cupos <= aforo, borrador con ventas, prueba por local);
+-- su regresión vigente es 18_events_inventory.sql, 19_trial_commercial.sql y 20_mfa_isolation.sql.
+-- Resultado en CHECK-DEV con el esquema 14: todo según lo esperado salvo
+-- other_event_same_phone=ALLOWED(BAD), defecto real corregido por la migración 16.
+-- Ejecutar en un entorno de desarrollo/rama de Supabase. Todo ocurre dentro de una transacción
 -- que termina en ROLLBACK: el resultado llega como el mensaje de una excepción
 -- "RESULTS: ...". Resultado esperado (resumen):
 --   profile_role=admin (el rol NO sale del metadata del cliente)
@@ -73,7 +77,7 @@ begin
   exception when others then out := out || 'verifying_counts=' || sqlerrm || ';'; end;
   -- un rechazo libera el límite
   reset role;
-  update public.orders set status = 'rejected', decided_at = now(), reject_reason = 'test' where id = o1;
+  update public.orders set status = 'rejected', decided_at = now(), decided_by = u, reject_reason = 'test' where id = o1;
   set local role anon;
   perform public.create_order(ev2, 'Otro', 'CI777777', '71111111', null,
           jsonb_build_array(jsonb_build_object('type_id', t3, 'qty', 1)));
