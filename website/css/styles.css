@@ -1821,3 +1821,211 @@
     /* CTA final */
     .final-cta .section-desc { margin-bottom: clamp(1rem, 3vh, 2rem) !important; }
 }
+
+/* ===== Nivel 2-3: entrada escalonada de Estados y Planes, foco de color, spotlight ===== */
+.states-grid .state-card.reveal.active,
+.plans-grid .plan-card.reveal.active { animation: moduleIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.states-grid .state-card:nth-child(2).reveal.active,
+.plans-grid .plan-card:nth-child(2).reveal.active { animation-delay: 0.1s; }
+.states-grid .state-card:nth-child(3).reveal.active,
+.plans-grid .plan-card:nth-child(3).reveal.active { animation-delay: 0.2s; }
+.plans-grid .plan-card:nth-child(4).reveal.active { animation-delay: 0.3s; }
+
+/* Cada estado se ilumina con su propio color al explorarlo */
+.state-card.verde:hover, .state-card.verde:focus-within { box-shadow: 0 16px 34px -18px var(--success); border-color: var(--success); }
+.state-card.amarillo:hover, .state-card.amarillo:focus-within { box-shadow: 0 16px 34px -18px var(--warning); border-color: var(--warning); }
+.state-card.rojo:hover, .state-card.rojo:focus-within { box-shadow: 0 16px 34px -18px var(--error); border-color: var(--error); }
+
+/* Pulso del punto de estado: dos veces al aparecer y continuo al explorar */
+.state-card .state-dot { position: relative; }
+.state-card .state-dot::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: inherit; opacity: 0; pointer-events: none;
+}
+.state-card.reveal.active .state-dot::after { animation: dotPing 1.4s ease-out 0.6s 2; }
+.state-card:hover .state-dot::after { animation: dotPing 1.4s ease-out infinite; }
+@keyframes dotPing {
+    0% { transform: scale(1); opacity: 0.55; }
+    100% { transform: scale(3); opacity: 0; }
+}
+
+/* Spotlight que sigue al puntero (solo puntero fino; --sx/--sy los fija script.js) */
+.has-spotlight .module-card, .has-spotlight .state-card, .has-spotlight .plan-card { position: relative; }
+.has-spotlight .module-card::before, .has-spotlight .state-card::before, .has-spotlight .plan-card::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(260px circle at var(--sx, 50%) var(--sy, 50%), rgba(108, 92, 231, 0.12), transparent 70%);
+    opacity: 0; transition: opacity 0.3s ease;
+}
+.has-spotlight .module-card:hover::before, .has-spotlight .state-card:hover::before, .has-spotlight .plan-card:hover::before { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .states-grid .state-card.reveal.active, .plans-grid .plan-card.reveal.active { animation: none; }
+    .state-card .state-dot::after, .state-card:hover .state-dot::after { animation: none !important; }
+    .has-spotlight .module-card::before, .has-spotlight .state-card::before, .has-spotlight .plan-card::before { display: none; }
+}
+
+/* ===== Nivel 5 (CSS 3D): dispositivo con profundidad, chips orbitando, parallax ===== */
+.device-wrapper { perspective: 1100px; }
+.tilt-3d {
+    position: relative; width: 100%; max-width: 360px;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rx, 6deg)) rotateY(var(--ry, -12deg));
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: deviceFloat 6s ease-in-out infinite;
+}
+.tilt-3d.is-live { transition: transform 0.12s linear; }
+@keyframes deviceFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+
+/* Halo en un plano profundo detras del dispositivo */
+.tilt-3d::before {
+    content: ""; position: absolute; inset: -14% -18%; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(108, 92, 231, 0.45), transparent 72%);
+    transform: translateZ(-90px); filter: blur(14px); pointer-events: none;
+    animation: haloPulse 5s ease-in-out infinite;
+}
+@keyframes haloPulse { 0%, 100% { opacity: 0.55; scale: 1; } 50% { opacity: 0.95; scale: 1.08; } }
+.tilt-3d .device-container { transform: translateZ(0); }
+
+/* Chips de estado flotando por delante del dispositivo (distinta profundidad) */
+.orbit-chip {
+    position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.4rem 0.75rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.04em; white-space: nowrap;
+    background: rgba(18, 22, 31, 0.85); border: 1px solid var(--line);
+    backdrop-filter: blur(6px); box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.6);
+    pointer-events: none; animation: chipFloat 5s ease-in-out infinite;
+}
+.orbit-chip i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+.chip-v { color: var(--success); top: 8%; left: -14%; transform: translateZ(90px); }
+.chip-a { color: var(--warning); top: 52%; right: -16%; transform: translateZ(120px); animation-delay: -1.7s; }
+.chip-r { color: var(--error); bottom: 6%; left: -10%; transform: translateZ(70px); animation-delay: -3.2s; }
+@keyframes chipFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+
+/* En tactil no hay puntero: balanceo suave en lugar de seguir el cursor */
+@media (pointer: coarse) {
+    .tilt-3d { animation: deviceFloat 6s ease-in-out infinite, deviceSway 8s ease-in-out infinite; }
+}
+@keyframes deviceSway { 0%, 100% { rotate: y -6deg; } 50% { rotate: y 8deg; } }
+@media (max-width: 900px) { .orbit-chip { display: none; } .tilt-3d::before { inset: -6%; } }
+
+/* Entrada 3D de tarjetas: giran desde el borde superior hacia el plano */
+.states-grid, .plans-grid, .modules-grid { perspective: 1100px; }
+.states-grid .state-card.reveal.active,
+.plans-grid .plan-card.reveal.active,
+.modules-grid .module-card.reveal.active { animation-name: cardIn3d; animation-duration: 0.9s; transform-origin: 50% 0%; }
+@keyframes cardIn3d {
+    from { opacity: 0; transform: translateY(40px) rotateX(-22deg) scale(0.96); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Tilt 3D de tarjetas con el puntero (--trx/--try los fija script.js) */
+.has-spotlight .module-card:hover, .has-spotlight .state-card:hover, .has-spotlight .plan-card:not(.featured):hover {
+    transform: perspective(800px) rotateX(var(--trx, 0deg)) rotateY(var(--try, 0deg)) translateY(-6px) scale(1.015);
+}
+
+/* Parallax del hero con el scroll (--hero-p va de 0 a 1) */
+.hero::before { translate: 0 calc(var(--hero-p, 0) * -70px); }
+.hero::after { translate: 0 calc(var(--hero-p, 0) * 50px); }
+.hero-grid > :first-child { translate: 0 calc(var(--hero-p, 0) * -28px); }
+.device-wrapper { translate: 0 calc(var(--hero-p, 0) * 36px); }
+
+@media (prefers-reduced-motion: reduce) {
+    .tilt-3d { animation: none !important; transform: rotateX(4deg) rotateY(-8deg); }
+    .tilt-3d::before, .orbit-chip { animation: none !important; }
+    .states-grid .state-card.reveal.active, .plans-grid .plan-card.reveal.active, .modules-grid .module-card.reveal.active { animation: none; }
+    .hero::before, .hero::after, .hero-grid > :first-child, .device-wrapper { translate: none; }
+    .has-spotlight .module-card:hover, .has-spotlight .state-card:hover, .has-spotlight .plan-card:hover { transform: none; }
+}
+
+/* ===== 3D en el resto de secciones ===== */
+
+/* Titulares: giran hacia el plano al revelarse */
+.reveal.active .section-title { animation: titleIn3d 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards; transform-origin: 50% 100%; }
+@keyframes titleIn3d {
+    from { opacity: 0; transform: perspective(700px) rotateX(-55deg) translateY(24px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Problema: la frase entra palabra por palabra con volteo 3D (las palabras las crea script.js) */
+.quote-statement { perspective: 800px; }
+.quote-statement .qw { display: inline-block; opacity: 0; transform-origin: 50% 100%; }
+.reveal.active .quote-statement .qw { animation: wordIn3d 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(0.15s + var(--i) * 0.07s); }
+@keyframes wordIn3d {
+    from { opacity: 0; transform: rotateX(-80deg) translateY(0.5em); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Como funciona: la lista tiene profundidad; el paso activo avanza hacia ti */
+.steps-list { perspective: 1000px; }
+.js-steps .step-card {
+    transform-origin: 0% 50%;
+    rotate: y 5deg; translate: 0 0 -24px;
+    transition: transform 0.25s ease, border-color 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease,
+                opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), rotate 0.6s cubic-bezier(0.16, 1, 0.3, 1), translate 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.js-steps .step-card.is-active { rotate: y 0deg; translate: 0 0 28px; }
+.js-steps .step-card.is-done { rotate: y 2deg; translate: 0 0 -6px; }
+.step-card.is-active .step-num { animation: numFlip 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes numFlip { from { rotate: y 0deg; } to { rotate: y 360deg; } }
+
+/* Abanico 3D: las tarjetas laterales se abren y se alinean al llegar al centro (--fan 1 a 0, lo calcula script.js) */
+.states-grid .state-card:nth-child(1), .plans-grid .plan-card:nth-child(1), .modules-grid .module-card:nth-child(3n+1) { rotate: y calc(var(--fan, 0) * 16deg); translate: 0 0 calc(var(--fan, 0) * -50px); }
+.plans-grid .plan-card:nth-child(2) { rotate: y calc(var(--fan, 0) * 7deg); translate: 0 0 calc(var(--fan, 0) * -20px); }
+.plans-grid .plan-card:nth-child(3) { rotate: y calc(var(--fan, 0) * -7deg); translate: 0 0 calc(var(--fan, 0) * -20px); }
+.states-grid .state-card:nth-child(3), .plans-grid .plan-card:nth-child(4), .modules-grid .module-card:nth-child(3n) { rotate: y calc(var(--fan, 0) * -16deg); translate: 0 0 calc(var(--fan, 0) * -50px); }
+.states-grid .state-card:nth-child(2) { translate: 0 0 calc(var(--fan, 0) * 10px); }
+
+/* Modulos: el icono salta al plano frontal y gira */
+.module-card { transform-style: preserve-3d; }
+.module-icon { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, rotate 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+.module-card:hover .module-icon { transform: translateZ(46px) scale(1.12) rotate(-5deg); rotate: y 360deg; }
+
+/* Plan destacado: reflejo que recorre la tarjeta + respiracion de brillo */
+.plan-card.featured::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.09) 50%, transparent 62%);
+    background-size: 260% 100%; background-position: 160% 0; animation: sheen 5s ease-in-out infinite;
+}
+@keyframes sheen { 0%, 55% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+.plans-grid .plan-card.featured.reveal.active { animation-name: cardIn3d, featuredGlow; animation-duration: 0.9s, 4s; animation-iteration-count: 1, infinite; animation-delay: 0s, 1s; }
+@keyframes featuredGlow {
+    0%, 100% { box-shadow: 0 0 0 1px var(--primary-dim), 0 10px 30px -14px rgba(108, 92, 231, 0.35); }
+    50% { box-shadow: 0 0 0 1px var(--primary), 0 18px 46px -12px rgba(108, 92, 231, 0.7); }
+}
+
+/* Contacto: los datos entran girando desde la izquierda, en cascada */
+.contact-info-list { perspective: 900px; }
+.contact-info-list.reveal.active .contact-info-item { animation: itemIn3d 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards; transform-origin: 0% 50%; }
+.contact-info-list.reveal.active .contact-info-item:nth-child(2) { animation-delay: 0.1s; }
+.contact-info-list.reveal.active .contact-info-item:nth-child(3) { animation-delay: 0.2s; }
+.contact-info-list.reveal.active .contact-info-item:nth-child(4) { animation-delay: 0.3s; }
+@keyframes itemIn3d { from { opacity: 0; transform: rotateY(-40deg) translateX(-24px); } to { opacity: 1; transform: none; } }
+
+/* CTA final: caja con tilt 3D y boton con anillo pulsante */
+.final-cta .container { perspective: 1200px; }
+.has-spotlight .cta-box.reveal.active { transform: perspective(1000px) rotateX(var(--trx, 0deg)) rotateY(var(--try, 0deg)); transition: transform 0.18s linear; }
+.final-cta .btn-primary { position: relative; }
+.final-cta .btn-primary::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.55); animation: ctaRing 2.4s ease-out infinite;
+}
+@keyframes ctaRing { 0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.55); } 80%, 100% { box-shadow: 0 0 0 18px rgba(108, 92, 231, 0); } }
+
+/* Tilt tambien en datos de contacto */
+.has-spotlight .contact-info-item:hover { transform: perspective(800px) rotateX(var(--trx, 0deg)) rotateY(var(--try, 0deg)) translateY(-3px); }
+
+@media (max-width: 900px) {
+    .states-grid .state-card, .plans-grid .plan-card, .modules-grid .module-card { rotate: none !important; translate: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal.active .section-title, .step-card.is-active .step-num,
+    .plan-card.featured::after, .final-cta .btn-primary::after,
+    .contact-info-list.reveal.active .contact-info-item { animation: none !important; }
+    .plans-grid .plan-card.featured.reveal.active { animation: none; }
+    .quote-statement .qw { opacity: 1; animation: none !important; }
+    .js-steps .step-card, .js-steps .step-card.is-active, .js-steps .step-card.is-done,
+    .states-grid .state-card, .plans-grid .plan-card, .modules-grid .module-card { rotate: none; translate: none; }
+    .module-card:hover .module-icon { rotate: none; transform: none; }
+    .has-spotlight .cta-box.reveal.active, .has-spotlight .contact-info-item:hover { transform: none; }
+}
