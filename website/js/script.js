@@ -161,6 +161,22 @@
 
             // Header: marca el enlace de la sección donde está el usuario
             const navLinks = Array.from(document.querySelectorAll('.nav-link[href^="#"]'));
+            const hoverNavigation = window.matchMedia('(hover: hover) and (pointer: fine)');
+            navLinks.forEach(link => {
+                let hoverTimeout;
+                link.addEventListener('pointerenter', event => {
+                    if (!hoverNavigation.matches || event.pointerType !== 'mouse') return;
+                    hoverTimeout = setTimeout(() => {
+                        const hash = link.getAttribute('href');
+                        const section = document.getElementById(hash.slice(1));
+                        if (!section) return;
+                        if (location.hash !== hash) history.replaceState(history.state, '', hash);
+                        section.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' });
+                    }, 240);
+                });
+                link.addEventListener('pointerleave', () => clearTimeout(hoverTimeout));
+                link.addEventListener('click', () => clearTimeout(hoverTimeout));
+            });
             const spySections = Array.from(document.querySelectorAll('section[id]'));
             if (navLinks.length && spySections.length) {
                 let spyTicking = false;
