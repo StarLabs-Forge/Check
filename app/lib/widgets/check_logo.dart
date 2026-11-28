@@ -90,19 +90,24 @@ class CheckLogoMark extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
         label: 'CHECK',
         excludeSemantics: true,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SvgPicture.asset('assets/branding/check_logo_icon.svg', width: height, height: height),
-            SizedBox(width: height * 0.25),
-            Text.rich(
-              const TextSpan(children: [
-                TextSpan(text: 'CHECK'),
-                TextSpan(text: '.', style: TextStyle(color: AppColors.accentPrimary)),
-              ]),
-              style: GoogleFonts.inter(fontSize: height * 0.7, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            ),
-          ],
+        // En cabeceras angostas se reduce completo en lugar de desbordarse.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset('assets/branding/check_logo_icon.svg', width: height, height: height),
+              SizedBox(width: height * 0.25),
+              Text.rich(
+                const TextSpan(children: [
+                  TextSpan(text: 'CHECK'),
+                  TextSpan(text: '.', style: TextStyle(color: AppColors.accentPrimary)),
+                ]),
+                style: GoogleFonts.inter(fontSize: height * 0.7, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
         ),
       );
 }
