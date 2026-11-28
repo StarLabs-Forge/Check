@@ -104,10 +104,10 @@ class AdminRepository {
     if (updated.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
   }
 
-  /// Cambia el estado (`active`, `live`, `finished`...) con la RPC `set_event_status`,
-  /// que registra el cambio (y su motivo) en `event_status_log`. Las transiciones
-  /// inválidas las rechaza el trigger `guard_event`. Si la migración 14 aún no
-  /// está aplicada (RPC inexistente, PGRST202) cae al UPDATE directo, sin auditoría.
+  /// Cambia el estado (`active`, `live`, `finished`...) SOLO mediante la RPC
+  /// `set_event_status`, que valida y audita. No hay vía alternativa: si el
+  /// esquema no la tiene, se informa la incompatibilidad en vez de escribir sin
+  /// auditoría.
   Future<void> setEventStatus(String eventId, String status, {String? reason}) async {
     if (kDemo) return DemoAdminData.instance.setEventStatus(eventId, status);
     try {
@@ -117,9 +117,10 @@ class AdminRepository {
         'p_reason': (reason == null || reason.trim().isEmpty) ? null : reason.trim(),
       });
     } on PostgrestException catch (e) {
-      if (e.code != 'PGRST202') rethrow;
-      final rows = await _db.from('events').update({'status': status}).eq('id', eventId).select('id');
-      if (rows.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
+      if (e.code == 'PGRST202') {
+        throw const PostgrestException(message: 'schema_outdated', code: 'PGRST202');
+      }
+      rethrow;
     }
   }
 
@@ -135,13 +136,9 @@ class AdminRepository {
         .eq('event_id', eventId)
         .order('position')
         .order('price');
-    var stats = <String, Map<String, dynamic>>{};
-    try {
-      final res = await _db.rpc('ticket_type_stats', params: {'p_event_id': eventId});
-      stats = {for (final m in (res as List)) (m as Map)['id'] as String: Map<String, dynamic>.from(m)};
-    } on PostgrestException catch (e) {
-      if (e.code != 'PGRST202') rethrow; // migración 14 pendiente: sin cifras
-    }
+    // Sin datos de relleno: si las cifras fallan, el error se muestra.
+    final res = await _db.rpc('ticket_type_stats', params: {'p_event_id': eventId});
+    final stats = {for (final m in (res as List)) (m as Map)['id'] as String: Map<String, dynamic>.from(m)};
     return rows.map<TicketCategory>((r) {
       final st = stats[r['id']];
       return TicketCategory(
@@ -255,6 +252,7 @@ class AdminRepository {
     required String guestName,
     String? guestPhone,
     bool paid = false,
+    String? ticketTypeId,
   }) async {
     if (kDemo) {
       return DemoAdminData.instance.createTicket(eventId: eventId, guestName: guestName, guestPhone: guestPhone, paid: paid);
@@ -264,24 +262,29 @@ class AdminRepository {
       'p_guest_name': guestName.trim(),
       'p_guest_phone': (guestPhone == null || guestPhone.trim().isEmpty) ? null : guestPhone.trim(),
       'p_payment_status': paid ? 'paid' : 'pending',
+      // Obligatoria desde la migración 18; antes de ella no se envía.
+      'p_ticket_type_id': ?ticketTypeId,
     });
     return CreatedTicket.fromMap(Map<String, dynamic>.from(res as Map));
   }
 }
 
-/// Estado de la prueba gratuita. `state`: `active` | `expiring` | `expired`.
+/// Estado comercial del local. `state`: `active` | `expiring` | `expired`
+/// (prueba), `subscribed` (plan contratado) o `plan_ended`.
 class TrialStatus {
-  const TrialStatus({required this.state, required this.daysLeft, required this.endsAt});
+  const TrialStatus({required this.state, required this.daysLeft, this.endsAt, this.plan});
   final String state;
   final int daysLeft;
-  final DateTime endsAt;
+  final DateTime? endsAt;
+  final String? plan;
 
   bool get expired => state == 'expired';
 
   factory TrialStatus.fromMap(Map<String, dynamic> m) => TrialStatus(
         state: m['state'] as String,
         daysLeft: (m['days_left'] as num).toInt(),
-        endsAt: DateTime.parse(m['ends_at'] as String).toLocal(),
+        endsAt: m['ends_at'] == null ? null : DateTime.parse(m['ends_at'] as String).toLocal(),
+        plan: m['plan'] as String?,
       );
 }
 

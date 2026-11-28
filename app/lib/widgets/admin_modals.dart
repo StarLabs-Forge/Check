@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../config/demo_mode.dart';
 import '../data/admin_repository.dart';
 import '../data/models.dart';
 import '../services/errors.dart';
@@ -493,6 +494,36 @@ class _GenerateTicketsFormState extends State<_GenerateTicketsForm> {
   bool _submitting = false;
   String? _error;
 
+  /// Categorías activas (modo real). Cada entrada descuenta el cupo de una.
+  List<TicketCategory> _categories = const [];
+  String? _typeId;
+
+  TicketCategory? get _category {
+    for (final c in _categories) {
+      if (c.id == _typeId) return c;
+    }
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final all = await AdminRepository.instance.listCategories(widget.event.id);
+      if (!mounted) return;
+      setState(() {
+        _categories = [for (final c in all) if (c.active) c];
+        _typeId = _categories.length == 1 ? _categories.first.id : _typeId;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = friendlyError(e));
+    }
+  }
+
   /// Último ticket emitido: se muestra su QR (el token no se puede recuperar).
   CreatedTicket? _created;
   String _createdName = '';
@@ -516,12 +547,20 @@ class _GenerateTicketsFormState extends State<_GenerateTicketsForm> {
       return;
     }
 
+    if (!kDemo && _typeId == null) {
+      setState(() => _error = _categories.isEmpty
+          ? 'Este evento no tiene categorías activas. Crea una en el detalle del evento.'
+          : 'Elige la categoría de la entrada.');
+      return;
+    }
+
     setState(() {
       _submitting = true;
       _error = null;
     });
     try {
       final ticket = await AdminRepository.instance.createTicket(
+        ticketTypeId: _typeId,
         eventId: widget.event.id,
         guestName: name,
         guestPhone: _phoneCtrl.text,
@@ -537,6 +576,7 @@ class _GenerateTicketsFormState extends State<_GenerateTicketsForm> {
         _phoneCtrl.clear();
         _alreadyPaid = false;
       });
+      _loadCategories(); // los cupos cambiaron
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -589,6 +629,27 @@ class _GenerateTicketsFormState extends State<_GenerateTicketsForm> {
         ),
         const SizedBox(height: AppSpacing.s5),
         if (_mode == _LoadMode.single) ...[
+          if (!kDemo) ...[
+            const _FieldLabel('Categoría'),
+            DropdownButtonFormField<String>(
+              key: ValueKey('$_typeId-${_categories.length}'),
+              initialValue: _typeId,
+              isExpanded: true,
+              hint: const Text('Elige la categoría'),
+              dropdownColor: AppColors.bgSurface,
+              items: [
+                for (final c in _categories)
+                  DropdownMenuItem(
+                    value: c.id,
+                    enabled: (c.available ?? 1) > 0,
+                    child: Text('${c.name} · ${Fmt.money(c.price)} · ${c.available ?? c.capacity} disponibles',
+                        overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _typeId = v),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+          ],
           const _FieldLabel('Nombre del invitado'),
           TextField(controller: _nameCtrl, decoration: const InputDecoration(hintText: 'Ej: Valentina Quispe')),
           const SizedBox(height: AppSpacing.s4),
@@ -604,7 +665,7 @@ class _GenerateTicketsFormState extends State<_GenerateTicketsForm> {
               children: [
                 Expanded(
                   child: Text(
-                    'Ya pagó (${Fmt.money(widget.event.ticketPrice)})',
+                    'Ya pagó (${Fmt.money(_category?.price ?? widget.event.ticketPrice)})',
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: AppTextSize.body),
                   ),
                 ),

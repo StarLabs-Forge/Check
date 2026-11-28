@@ -66,6 +66,7 @@ String _postgrestMessage(PostgrestException e) {
   if (m.contains('capacity_below_sold')) return 'La capacidad no puede ser menor a las entradas ya vendidas o reservadas.';
   if (m.contains('price_locked_with_sales')) return 'No puedes cambiar el precio ni el tipo de acceso: ya hay entradas vendidas.';
   if (m.contains('invalid_dates')) return 'La hora de fin debe ser posterior a la de inicio.';
+  if (m.contains('schema_outdated')) return 'La base de datos no está actualizada para esta versión de la app. Avisa al equipo de CHECK.';
   if (m.contains('reason_required')) return 'Indica el motivo del cambio.';
   if (m.contains('draft_blocked_sales')) return 'No se puede volver a borrador: el evento ya tiene entradas vendidas.';
   if (m.contains('draft_blocked_used_qr')) return 'No se puede volver a borrador: ya hay ingresos registrados con QR.';
