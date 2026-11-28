@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CHECK | Eventos</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/entry.css">
+    <script src="./js/qrcode-generator.js" defer></script>
+    <script src="./js/checkout-demo.js" defer></script>
+    <script src="./js/catalog.js" defer></script>
+</head>
+<body class="catalog">
+    <header class="entry-header catalog-header">
+        <a href="./" aria-label="CHECK, inicio"><img src="./assets/check-logo-3d.svg" width="316" height="88" alt="CHECK"></a>
+        <a class="catalog-action catalog-action-secondary" href="#soporte">Soporte</a>
+    </header>
+    <main class="catalog-main">
+        <div class="catalog-intro" id="catalog-intro">
+            <a class="catalog-action catalog-action-secondary catalog-return" href="./">← Volver al inicio</a>
+            <p class="welcome-label">CHECK EVENTOS</p>
+            <h1>Explora eventos</h1>
+            <div class="catalog-filters" id="catalog-filters">
+                <label for="when">Fecha
+                    <select id="when">
+                        <option value="upcoming">Todos los próximos eventos</option>
+                        <option value="today">Hoy</option>
+                        <option value="week">Esta semana</option>
+                        <option value="month">Este mes</option>
+                        <option value="next-month">Próximo mes</option>
+                    </select>
+                </label>
+                <label for="category" id="category-filter" hidden>Categoría
+                    <select id="category"><option value="">Todas las categorías</option></select>
+                </label>
+            </div>
+        </div>
+        <p class="catalog-state" id="catalog-state" role="status">Cargando eventos…</p>
+        <button type="button" class="btn btn-outline" id="catalog-retry" hidden>Reintentar</button>
+        <div class="catalog-grid" id="catalog-results"></div>
+        <noscript>Activa JavaScript para consultar los eventos abiertos al público.</noscript>
+    </main>
+    <footer class="catalog-support" id="soporte" aria-labelledby="support-title">
+        <div>
+            <h2 id="support-title">Soporte CHECK</h2>
+            <p>Si tienes un problema con un pago, un pedido o una entrada, escríbenos. Incluye el número de pedido si lo tienes.</p>
+        </div>
+        <a class="catalog-action catalog-action-primary" href="mailto:starlabs.dev1999@gmail.com?subject=Soporte%20CHECK%20-%20Entradas">Escribir a soporte</a>
+    </footer>
+</body>
+</html>

@@ -19,7 +19,7 @@
             const deviceText = document.getElementById('deviceText');
             const deviceSub = document.getElementById('deviceSub');
             const ticketCode = document.getElementById('ticketCode');
-            const qrRing = document.getElementById('qrRing');
+            const gateState = document.getElementById('gateState');
             const doorDevice = document.getElementById('doorDevice');
 
             const states = [
@@ -30,6 +30,7 @@
                     sub: 'Camila Ruiz — Mesa VIP 04 (Pagado)',
                     code: 'TK-8842-OK',
                     dotClass: 'v',
+                    gate: 'Acceso abierto',
                     bg: 'rgba(46, 204, 113, 0.12)',
                     border: 'rgba(46, 204, 113, 0.3)'
                 },
@@ -40,6 +41,7 @@
                     sub: 'Diego Mendoza — Entrada General (Pago Pendiente)',
                     code: 'TK-3109-PEND',
                     dotClass: 'a',
+                    gate: 'Pago pendiente',
                     bg: 'rgba(255, 176, 32, 0.12)',
                     border: 'rgba(255, 176, 32, 0.3)'
                 },
@@ -50,6 +52,7 @@
                     sub: 'Escaneado previamente a las 23:14:02',
                     code: 'TK-0021-DUPL',
                     dotClass: 'r',
+                    gate: 'Acceso bloqueado',
                     bg: 'rgba(255, 85, 102, 0.12)',
                     border: 'rgba(255, 85, 102, 0.3)'
                 }
@@ -76,6 +79,7 @@
                 deviceText.textContent = st.text;
                 deviceSub.textContent = st.sub;
                 ticketCode.textContent = st.code;
+                gateState.textContent = st.gate;
 
                 // Update styles & classes
                 deviceDot.className = `state-dot ${st.dotClass}`;
@@ -85,7 +89,6 @@
 
                 // CSS Variable for QR ring & scan beam glow
                 doorDevice.style.setProperty('--device-color', st.colorHex);
-                qrRing.style.background = `conic-gradient(from 0deg, ${st.colorHex}, transparent 80%)`;
                 doorDevice.style.borderColor = st.border;
 
                 // Transición de resultado: flash del color + movimiento propio de cada estado
@@ -103,12 +106,12 @@
                 deviceText.textContent = 'ESCANEANDO…';
                 deviceSub.textContent = 'Leyendo código QR';
                 deviceDot.className = 'state-dot';
+                gateState.textContent = 'Validando';
                 deviceBadge.style.backgroundColor = 'transparent';
                 deviceBadge.style.border = '1px solid var(--line)';
                 deviceBadge.style.color = 'var(--muted)';
                 doorDevice.style.setProperty('--device-color', 'var(--active)');
                 doorDevice.style.borderColor = '';
-                qrRing.style.background = '';
                 replay(statusMain, 'swap-in');
                 replay(deviceSub, 'swap-in');
             }
@@ -117,8 +120,6 @@
             function runCycle() {
                 if (reduceMotion) {
                     applyDeviceState(currentStateIndex);
-                    currentStateIndex = (currentStateIndex + 1) % states.length;
-                    setTimeout(runCycle, 6000);
                     return;
                 }
                 startScanning();
@@ -131,18 +132,7 @@
 
             runCycle();
 
-            // Logo del header: aparece solo cuando el logo del hero sale por arriba
             const header = document.querySelector('.header');
-            const heroLogo = document.getElementById('heroLogo');
-            if (header && heroLogo && 'IntersectionObserver' in window) {
-                new IntersectionObserver(([entry]) => {
-                    const passed = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-                    header.classList.toggle('logo-in', passed);
-                }, { rootMargin: '-70px 0px 0px 0px' }).observe(heroLogo);
-            } else if (header) {
-                header.classList.add('logo-in');
-            }
-
 
             // 4. Cómo funciona: el paso activo sigue al scroll + línea de progreso
             const stepsList = document.getElementById('stepsList');
@@ -171,6 +161,22 @@
 
             // Header: marca el enlace de la sección donde está el usuario
             const navLinks = Array.from(document.querySelectorAll('.nav-link[href^="#"]'));
+            const hoverNavigation = window.matchMedia('(hover: hover) and (pointer: fine)');
+            navLinks.forEach(link => {
+                let hoverTimeout;
+                link.addEventListener('pointerenter', event => {
+                    if (!hoverNavigation.matches || event.pointerType !== 'mouse') return;
+                    hoverTimeout = setTimeout(() => {
+                        const hash = link.getAttribute('href');
+                        const section = document.getElementById(hash.slice(1));
+                        if (!section) return;
+                        if (location.hash !== hash) history.replaceState(history.state, '', hash);
+                        section.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' });
+                    }, 240);
+                });
+                link.addEventListener('pointerleave', () => clearTimeout(hoverTimeout));
+                link.addEventListener('click', () => clearTimeout(hoverTimeout));
+            });
             const spySections = Array.from(document.querySelectorAll('section[id]'));
             if (navLinks.length && spySections.length) {
                 let spyTicking = false;
@@ -300,23 +306,6 @@
                 };
                 window.addEventListener('scroll', () => { if (!pTick) { pTick = true; requestAnimationFrame(updateParallax); } }, { passive: true });
                 updateParallax();
-            }
-
-            // 10. Frase del problema: separa palabras para el volteo 3D (el texto accesible no cambia)
-            const quoteEl = document.querySelector('.quote-statement');
-            if (quoteEl && !reduceMotion) {
-                const txt = quoteEl.textContent.trim();
-                quoteEl.setAttribute('aria-label', txt);
-                quoteEl.textContent = '';
-                txt.split(/\s+/).forEach((w, i, arr) => {
-                    const span = document.createElement('span');
-                    span.className = 'qw';
-                    span.setAttribute('aria-hidden', 'true');
-                    span.style.setProperty('--i', i);
-                    span.textContent = w;
-                    quoteEl.appendChild(span);
-                    if (i < arr.length - 1) quoteEl.appendChild(document.createTextNode(' '));
-                });
             }
 
             // 11. Abanico 3D: --fan va de 1 (borde de pantalla) a 0 (centrado)
