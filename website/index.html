@@ -182,46 +182,82 @@
     </section>
 
     <!-- 6. Estados en la puerta -->
+    <!-- 6. Lenguaje visual: escenas animadas por estado -->
     <section class="section" id="estados">
         <div class="container">
             <div class="reveal section-head">
                 <div class="kicker" style="justify-content: center;">LENGUAJE VISUAL REAL</div>
                 <h2 class="section-title">Respuesta instantánea en el escáner</h2>
-                <p class="section-desc" style="margin: 0 auto;">El staff no pierde tiempo leyendo detalles complejos. El sistema responde con tres estados inequívocos.</p>
+                <p class="section-desc" style="margin: 0 auto;">Escanea una entrada y conoce su estado al instante.</p>
             </div>
 
             <div class="states-grid">
-                <div class="state-card verde reveal">
-                    <div class="state-header">
-                        <span class="state-dot v"></span>
-                        <h3 class="state-title" style="color:var(--success);">VERDE</h3>
+                <article class="state-card scene-card verde reveal" data-scene="verde" style="--accent: var(--success);">
+                    <h3 class="state-title" style="color:var(--success);">VERDE</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-8842</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">Entrada válida. Acceso autorizado</div>
+                        </div>
                     </div>
                     <p class="state-desc"><strong>Ingresa directo.</strong> La entrada o reserva está 100% pagada y confirmada. El cliente pasa sin demoras.</p>
-                    <div class="state-tag v">PAGADO / CONFIRMADO</div>
-                </div>
+                </article>
 
-                <div class="state-card amarillo reveal">
-                    <div class="state-header">
-                        <span class="state-dot a"></span>
-                        <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
+                <article class="state-card scene-card amarillo reveal" data-scene="amarillo" style="--accent: var(--warning);">
+                    <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-3109</span>
+                                <span class="chip anim" style="--d: 700ms;">Saldo Bs 100</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm">Ingreso</span></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm on" style="--d: 1250ms;">Cobro</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">Saldo pendiente. Cobrar en puerta</div>
+                        </div>
                     </div>
                     <p class="state-desc"><strong>Cobrar en puerta.</strong> Reserva válida pero existe un saldo pendiente de cobro antes de permitir el acceso.</p>
-                    <div class="state-tag a">PAGO PENDIENTE</div>
-                </div>
+                </article>
 
-                <div class="state-card rojo reveal">
-                    <div class="state-header">
-                        <span class="state-dot r"></span>
-                        <h3 class="state-title" style="color:var(--error);">ROJO</h3>
+                <article class="state-card scene-card rojo reveal" data-scene="rojo" style="--accent: var(--error);">
+                    <h3 class="state-title" style="color:var(--error);">ROJO</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-0021</span>
+                                <span class="stamp anim" style="--d: 700ms;">USADO</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark no anim" style="--d: 1450ms;">✕</b></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">QR inválido. No ingresa</div>
+                        </div>
                     </div>
                     <p class="state-desc"><strong>No ingresa.</strong> Código QR inválido, previamente utilizado en la misma noche o cancelado por el administrador.</p>
-                    <div class="state-tag r">INVÁLIDO / CANCELADO</div>
-                </div>
+                </article>
             </div>
         </div>
     </section>
 
-    <!-- 7. Módulos -->
+    <!-- 7. Módulos: escenas animadas por funcionalidad -->
     <section class="section section-alt" id="modulos">
         <div class="container">
             <div class="reveal">
@@ -232,58 +268,117 @@
 
             <div class="modules-grid">
                 <!-- 1 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="eventos" style="--accent: var(--primary);">
                     <h3 class="module-title">Gestión de eventos</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc cal anim" style="--d: 100ms;">
+                                <i class="cell anim" style="--d: 150ms;"></i><i class="cell anim" style="--d: 180ms;"></i><i class="cell anim" style="--d: 210ms;"></i><i class="cell anim" style="--d: 240ms;"></i><i class="cell anim" style="--d: 270ms;"></i><i class="cell anim" style="--d: 300ms;"></i><i class="cell anim" style="--d: 330ms;"></i>
+                                <i class="cell anim" style="--d: 360ms;"></i><i class="cell sel anim" style="--d: 390ms;"></i><i class="cell anim" style="--d: 420ms;"></i><i class="cell anim" style="--d: 450ms;"></i><i class="cell anim" style="--d: 480ms;"></i><i class="cell anim" style="--d: 510ms;"></i><i class="cell anim" style="--d: 540ms;"></i>
+                                <i class="cell anim" style="--d: 570ms;"></i><i class="cell anim" style="--d: 600ms;"></i><i class="cell anim" style="--d: 630ms;"></i><i class="cell anim" style="--d: 660ms;"></i><i class="cell anim" style="--d: 690ms;"></i><i class="cell anim" style="--d: 720ms;"></i><i class="cell anim" style="--d: 750ms;"></i>
+                            </div>
+                            <div class="sc side">
+                                <span class="pill anim" style="--d: 600ms;">Apertura 20:00</span>
+                                <span class="pill anim" style="--d: 750ms;">Cierre 04:00</span>
+                                <div class="meter anim" style="--d: 900ms;"><span class="fill"></span></div>
+                                <span class="meter-label anim" style="--d: 1100ms;">Aforo configurado</span>
+                            </div>
+                            <div class="sc result anim" style="--d: 1250ms;">Evento activo</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Configura fechas, horarios, límites de aforo y parámetros de corte para cada fiesta o noche operativa.</p>
-                </div>
+                </article>
 
                 <!-- 2 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="mesas" style="--accent: var(--primary);">
                     <h3 class="module-title">Gestión de mesas</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc zone anim" style="--d: 100ms; left: 6%; top: 14%; width: 88%; height: 22%;">
+                                <span class="zone-name">VIP</span>
+                                <i class="tbl on anim" style="--d: 500ms;"></i><i class="tbl anim" style="--d: 560ms;"></i><i class="tbl on anim" style="--d: 620ms;"></i><i class="tbl anim" style="--d: 680ms;"></i>
+                            </div>
+                            <div class="sc zone anim" style="--d: 250ms; left: 6%; top: 42%; width: 88%; height: 22%;">
+                                <span class="zone-name">ULTRA VIP</span>
+                                <i class="tbl anim" style="--d: 700ms;"></i><i class="tbl on anim" style="--d: 760ms;"></i><i class="tbl anim" style="--d: 820ms;"></i>
+                            </div>
+                            <div class="sc zone anim" style="--d: 400ms; left: 6%; top: 70%; width: 88%; height: 18%;">
+                                <span class="zone-name">GENERAL</span>
+                                <i class="tbl on anim" style="--d: 900ms;"></i><i class="tbl anim" style="--d: 950ms;"></i><i class="tbl anim" style="--d: 1000ms;"></i><i class="tbl anim" style="--d: 1050ms;"></i><i class="tbl anim" style="--d: 1100ms;"></i>
+                            </div>
+                            <div class="sc result anim" style="--d: 1250ms;">Mesas asignadas con titular</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Control por zonas (VIP, Ultra VIP, General) con asignación de consumos mínimos y nombres de titulares.</p>
-                </div>
+                </article>
 
                 <!-- 3 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="tickets" style="--accent: var(--primary);">
                     <h3 class="module-title">Reservas y tickets</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-8842</span>
+                            </div>
+                            <div class="sc trail"><span class="trail-dot"></span></div>
+                            <div class="sc phone anim" style="--d: 700ms;"><span class="phone-screen">Enlace directo</span></div>
+                            <div class="sc result anim" style="--d: 1100ms;">Token QR emitido y enviado</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Emisión inmediata de tokens QR únicos. Envío por enlace directo para el cliente sin descargas obligatorias.</p>
-                </div>
+                </article>
 
                 <!-- 4 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="staff" style="--accent: var(--primary);">
                     <h3 class="module-title">Check-in de staff</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc people">
+                                <div class="person anim" style="--d: 150ms;"><span class="avatar"></span><span class="r-name">Portero</span><span class="role-tag">Entrada</span><b class="mark anim" style="--d: 700ms;">✓</b></div>
+                                <div class="person anim" style="--d: 330ms;"><span class="avatar"></span><span class="r-name">Cajero</span><span class="role-tag">Cobro</span><b class="mark anim" style="--d: 900ms;">✓</b></div>
+                                <div class="person anim" style="--d: 510ms;"><span class="avatar"></span><span class="r-name">RRPP</span><span class="role-tag">Lista</span><b class="mark anim" style="--d: 1100ms;">✓</b></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1300ms;">Cada validación queda registrada</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Asignación de roles específicos para porteros, cajeros y RRPP. Registro de quién valida cada entrada.</p>
-                </div>
+                </article>
 
                 <!-- 5 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="dashboard" style="--accent: var(--primary);">
                     <h3 class="module-title">Dashboard en vivo</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc kpis">
+                                <span class="kpi anim" style="--d: 120ms;"><small>Aforo</small><b>72%</b></span>
+                                <span class="kpi anim" style="--d: 260ms;"><small>Ingresos</small><b>128</b></span>
+                            </div>
+                            <div class="sc bars">
+                                <i class="col" style="--h: 35%; --d: 450ms;"></i><i class="col" style="--h: 58%; --d: 520ms;"></i><i class="col" style="--h: 46%; --d: 590ms;"></i><i class="col" style="--h: 74%; --d: 660ms;"></i><i class="col" style="--h: 62%; --d: 730ms;"></i><i class="col hi" style="--h: 88%; --d: 800ms;"></i>
+                            </div>
+                            <div class="sc result anim" style="--d: 1100ms;">Actualizado en tiempo real</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Métricas de aforo actual, porcentaje de ingresos completados y recaudación de puerta en tiempo real.</p>
-                </div>
+                </article>
 
                 <!-- 6 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    </div>
+                <article class="module-card scene-card reveal" data-scene="auditoria" style="--accent: var(--primary);">
                     <h3 class="module-title">Gestión de staff</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc log">
+                                <div class="log-row anim" style="--d: 150ms;"><span class="t">21:42</span><span class="a">Ingreso validado</span><span class="w">Portero</span></div>
+                                <div class="log-row anim" style="--d: 420ms;"><span class="t">21:47</span><span class="a">Cobro registrado</span><span class="w">Cajero</span></div>
+                                <div class="log-row anim" style="--d: 690ms;"><span class="t">21:53</span><span class="a">Mesa asignada</span><span class="w">RRPP</span></div>
+                                <div class="log-row anim" style="--d: 960ms;"><span class="t">22:05</span><span class="a">Acceso revisado</span><span class="w">Admin</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1250ms;">Auditoría por usuario</div>
+                        </div>
+                    </div>
                     <p class="module-desc">Auditoría completa de actividad por usuario para prevenir accesos no autorizados o cortesías falsas.</p>
-                </div>
+                </article>
             </div>
         </div>
     </section>
@@ -496,5 +591,6 @@
 
     <script src="./js/aurora.js" defer></script>
     <script src="./js/script.js"></script>
+    <script src="./js/scenes.js"></script>
 </body>
 </html>
