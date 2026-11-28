@@ -127,6 +127,12 @@ class Order {
   /// `true` si el pedido vive en Supabase (no es de la demo).
   final bool remote;
 
+  /// Estado del evento según el servidor (`draft`, `active`...).
+  String? eventStatus;
+
+  /// El local volvió el evento a borrador: los QR no permiten ingresar todavía.
+  bool get eventInactive => eventStatus == 'draft';
+
   /// Datos bancarios del local (solo mientras se espera o verifica el pago).
   Map<String, dynamic>? bank;
 
@@ -895,6 +901,7 @@ class ProtoStore extends ChangeNotifier {
     o.decidedAt = _dtn(j['decided_at']);
     o.rejectReason = j['reject_reason'] as String?;
     o.bank = res['bank'] == null ? null : Map<String, dynamic>.from(res['bank'] as Map);
+    o.eventStatus = (res['event'] as Map?)?['status'] as String?;
     o.ticketCodes = [
       for (final t in ((res['tickets'] as List?) ?? const [])) (t as Map)['qr_token'] as String,
     ];

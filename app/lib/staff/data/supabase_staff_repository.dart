@@ -65,6 +65,9 @@ class SupabaseStaffRepository implements StaffRepository {
       res = Map<String, dynamic>.from(raw as Map);
     } on PostgrestException catch (e) {
       if (e.code == '42501') throw const StaffForbidden();
+      if (e.message.contains('commercial_inactive')) {
+        return const ScanOutcome.denied(reason: 'El local no tiene activado el control de accesos.');
+      }
       rethrow;
     }
     final name = (res['guest_name'] as String?) ?? '';
@@ -80,6 +83,9 @@ class SupabaseStaffRepository implements StaffRepository {
         );
       case 'already_used':
         return ScanOutcome.alreadyRegistered(guestName: name, checkedInAt: at);
+      case 'event_inactive':
+        return const ScanOutcome.denied(
+            reason: 'El evento no está activo. La entrada no se marcó como usada: vuelve a intentarlo cuando se active.');
       default: // invalid, wrong_event, cancelled, pending_payment
         return const ScanOutcome.denied();
     }

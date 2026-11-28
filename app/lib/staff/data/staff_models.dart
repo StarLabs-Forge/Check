@@ -74,7 +74,11 @@ class ScanOutcome {
     this.checkedInAt,
     this.checkins,
     this.capacity,
+    this.reason,
   });
+
+  /// Motivo específico de un acceso denegado (p. ej. evento no activo).
+  final String? reason;
 
   const ScanOutcome.success({
     required String guestName,
@@ -92,7 +96,7 @@ class ScanOutcome {
   const ScanOutcome.alreadyRegistered({required String guestName, required DateTime checkedInAt})
       : this._(kind: ScanResultKind.alreadyRegistered, guestName: guestName, checkedInAt: checkedInAt);
 
-  const ScanOutcome.denied() : this._(kind: ScanResultKind.denied);
+  const ScanOutcome.denied({String? reason}) : this._(kind: ScanResultKind.denied, reason: reason);
 
   final ScanResultKind kind;
   final String? guestName;

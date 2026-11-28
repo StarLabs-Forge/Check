@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../theme/app_theme.dart';
+import '../../utils/qr_png.dart';
+import '../../utils/save_png.dart';
 import '../../widgets/auth_scaffold.dart' show FieldPair;
 import '../../widgets/check_logo.dart';
 import '../../widgets/motion.dart';
@@ -1178,6 +1180,14 @@ class _TicketCard extends StatelessWidget {
   const _TicketCard(this.o, this.i);
   final Order o;
   final int i;
+
+  Future<void> _download(BuildContext context, String code) async {
+    if (!o.remote) return toast(context, 'Descarga simulada de $code');
+    final saved = await savePng(await qrPng(code), 'check-${o.number}-${i + 1}.png');
+    if (context.mounted) {
+      toast(context, saved ? 'QR descargado' : 'En este dispositivo guarda una captura de pantalla del QR.');
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final code = o.ticketCodes[i];
@@ -1196,13 +1206,16 @@ class _TicketCard extends StatelessWidget {
         const SizedBox(height: 4),
         Row(children: [
           Expanded(child: Text(o.remote ? '${o.number} · ${i + 1}/${o.ticketCount}' : code, style: ts(AppTextSize.caption, c: AppColors.textSecondary))),
-          if (!o.remote) TextButton.icon(
+          TextButton.icon(
             style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2), minimumSize: const Size(0, 32), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-            onPressed: () => toast(context, 'Descarga simulada de $code'),
+            onPressed: () => _download(context, code),
             icon: const Icon(Icons.download, size: 18),
             label: const Text('Descargar QR'),
           ),
         ]),
+        if (o.eventInactive)
+          Text('El evento todavía no está activo: esta entrada permitirá ingresar cuando el local lo active.',
+              textAlign: TextAlign.center, style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
         if (!o.remote) Text('QR de demostración · no válido en ningún evento', textAlign: TextAlign.center, style: ts(AppTextSize.caption, w: FontWeight.w700, c: PColors.warning)),
       ]),
     );

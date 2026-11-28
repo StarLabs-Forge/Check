@@ -96,7 +96,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     final detail = switch (o.kind) {
       ScanResultKind.success => 'Ticket válido · ${hhmm(o.checkedInAt!)}',
       ScanResultKind.alreadyRegistered => 'Ingresó a las ${hhmm(o.checkedInAt!)}',
-      ScanResultKind.denied => 'Ticket no encontrado o inválido',
+      ScanResultKind.denied => o.reason ?? 'Ticket no encontrado o inválido',
     };
 
     final white = GoogleFonts.inter(color: AppColors.textPrimary, height: 1.4);
