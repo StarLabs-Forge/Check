@@ -17,21 +17,33 @@
     outline-offset: 5px;
 }
 
+/* Welcome screen: everything fits in one viewport, no scrolling needed. */
+body.welcome {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+}
+body.welcome .entry-header { flex: 0 0 auto; }
+
 .welcome-split {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    min-height: calc(100svh - 76px);
+    flex: 1 1 0;
+    min-height: 0;
     transition: grid-template-columns 0.54s cubic-bezier(0.22, 0.74, 0.25, 1);
 }
 
 .welcome-panel {
     position: relative;
     display: grid;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: minmax(0, 1fr) auto;
     min-width: 0;
+    min-height: 0;
     overflow: clip;
     isolation: isolate;
-    padding: clamp(2.3rem, 5vw, 5rem);
+    padding: clamp(1rem, min(4vw, 6svh), 4.5rem);
     color: var(--text);
 }
 
@@ -56,7 +68,7 @@
 .welcome-copy h1, .welcome-copy h2, .catalog h1 {
     margin: 0.62rem 0;
     color: var(--text);
-    font: 400 clamp(2.75rem, 5.4vw, 6rem)/0.97 var(--font-display);
+    font: 400 clamp(2.2rem, min(5.4vw, 9.5svh), 6rem)/0.97 var(--font-display);
     text-wrap: balance;
     letter-spacing: 0.01em;
 }
@@ -81,15 +93,17 @@
 .welcome-art {
     position: relative;
     display: grid;
-    min-height: clamp(240px, 39vh, 470px);
+    min-height: 0;
     place-items: center;
     perspective: 900px;
     pointer-events: none;
+    container-type: size;
 }
 
+/* The scene scales to whatever room the panel leaves (width and height). */
 .stage-scene, .control-scene {
     position: relative;
-    width: min(100%, 375px);
+    width: min(100cqw, 375px, 160cqh);
     aspect-ratio: 1.6;
     transform-style: preserve-3d;
     transition: transform 0.55s ease, filter 0.55s ease;
@@ -246,20 +260,41 @@
 }
 
 @media (max-width: 799px) {
-    .entry-header { min-height: 65px; }
-    .entry-header img { width: 150px; }
-    .welcome-split { display: block; }
+    .entry-header { min-height: 56px; padding-block: 0.4rem; }
+    .entry-header img { width: 130px; }
+    /* Two equal panels stacked: each takes exactly half of the screen. */
+    .welcome-split { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr 1fr; }
     .welcome-panel {
-        grid-template-rows: auto 1fr;
-        min-height: max(360px, calc((100svh - 65px) / 2));
-        padding: 1.55rem clamp(1.1rem, 5vw, 2.4rem);
+        grid-template-rows: auto minmax(0, 1fr);
+        padding: clamp(0.8rem, 2.6svh, 1.4rem) clamp(1.1rem, 5vw, 2.4rem);
     }
     .welcome-organizers { border-inline-start: 0; border-top: 1px solid var(--line); }
-    .welcome-art { grid-row: 2; min-height: 112px; margin-top: 0.6rem; }
-    .stage-scene, .control-scene { width: min(58vw, 255px); }
-    .welcome-copy h1, .welcome-copy h2 { font-size: clamp(2.3rem, 8vw, 3.7rem); }
-    .welcome-description { margin: 0.55rem 0 1rem; }
+    .welcome-art { grid-row: 2; margin-top: 0.4rem; }
+    .welcome-copy h1, .welcome-copy h2 { margin: 0.3rem 0; font-size: clamp(1.75rem, min(8vw, 5.4svh), 3rem); }
+    .welcome-label { font-size: 0.7rem; }
+    .welcome-description { max-width: 40ch; margin: 0.35rem 0 0.7rem; font-size: clamp(0.8rem, 2svh, 0.95rem); line-height: 1.35; }
+    .welcome-action { min-height: 44px; padding: 0.45rem 0.9rem; }
     .show-ticket, .control-ticket { gap: 0.2rem; padding: 0.38rem; }
+}
+
+/* Hide the illustration only when there is truly no room left for it. */
+@container (max-height: 64px) {
+    .stage-scene, .control-scene { display: none; }
+}
+
+/* Short landscape screens (phones on their side, small laptops). */
+@media (max-height: 520px) {
+    .welcome-art { display: none; }
+    .welcome-panel { align-content: center; grid-template-rows: auto; }
+}
+@media (max-height: 520px) and (min-width: 800px) {
+    .welcome-description { margin: 0.4rem 0 0.8rem; font-size: 0.9rem; line-height: 1.35; }
+    .welcome-action { min-height: 44px; }
+}
+@media (max-height: 520px) and (max-width: 799px) {
+    .welcome-split { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); }
+    .welcome-organizers { border-top: 0; border-inline-start: 1px solid var(--line); }
+    .welcome-description { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
