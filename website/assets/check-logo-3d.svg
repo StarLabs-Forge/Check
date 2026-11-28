@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="316" height="88" viewBox="0 0 316 88">
+  <defs>
+    <linearGradient id="emerald" x1="0" y1="14" x2="0" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CEFFE9"/>
+      <stop offset=".35" stop-color="#48FFAA"/>
+      <stop offset=".72" stop-color="#00F281"/>
+      <stop offset="1" stop-color="#00B86D"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="22" x2="0" y2="63" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".45" stop-color="#ECFFF9"/>
+      <stop offset=".5" stop-color="#A4D7CC"/>
+      <stop offset="1" stop-color="#E0F9F3"/>
+    </linearGradient>
+    <filter id="glow" x="-22%" y="-22%" width="144%" height="144%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <path id="scanner" d="M18 34V22l8-8h14m14 0h14l8 8v12m0 13v13l-8 8H54m-14 0H26l-8-8V47"/>
+    <path id="check" d="m32 45 13 11 21-28"/>
+    <path id="letters" d="M109 22h29l7 7v7h-11v-3h-22v19h22v-3h11v7l-7 7h-29l-8-8V30z
+      M152 22h11v15h20V22h11v41h-11V48h-20v15h-11z
+      M202 22h40v10h-29v6h24v9h-24v6h29v10h-40z
+      M257 22h26l7 7v7h-11v-3h-20v19h20v-3h11v7l-7 7h-26l-9-8V30z"/>
+    <path id="letter-k" d="M0 22h11v15h4l13-15h14L24 42l19 21H28L15 48h-4v15H0z"/>
+  </defs>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(2 5)" stroke="#00634D">
+      <use href="#scanner" stroke-width="7"/>
+      <use href="#check" stroke-width="9"/>
+    </g>
+    <g stroke="#00F08B" filter="url(#glow)" opacity=".55">
+      <use href="#scanner" stroke-width="7"/>
+      <use href="#check" stroke-width="9"/>
+    </g>
+    <use href="#scanner" stroke="url(#emerald)" stroke-width="6"/>
+    <path d="M29 27h9v9h-9zM42 27h4v4h-4m-18 9h4v4h-4m24-7h4v4h-4" stroke="#C7FFF3" stroke-width="1.5"/>
+    <use href="#check" stroke="url(#emerald)" stroke-width="8"/>
+    <path d="m32 43 13 11 21-28" stroke="#DBFFF0" stroke-width="1.3" opacity=".75"/>
+    <path d="M79 10v7m-3.5-3.5h7M12 68v5m-2.5-2.5h5" stroke="#8DFFD1" stroke-width="1.4" opacity=".9"/>
+  </g>
+
+  <g transform="translate(-3 0) scale(.92 1)">
+    <g transform="translate(2.5 5)" fill="#1D5B52">
+      <use href="#letters"/>
+      <use href="#letter-k" x="297"/>
+    </g>
+    <g fill="url(#metal)" stroke="#E0FFF3" stroke-width=".45" stroke-linejoin="round">
+      <use href="#letters"/>
+      <use href="#letter-k" x="297"/>
+    </g>
+  </g>
+</svg>
