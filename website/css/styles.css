@@ -2578,3 +2578,18 @@
 @media (prefers-reduced-motion: reduce) {
     .tour-art, .tour-validation b, .tour-reader i { animation: none; }
 }
+
+
+.organizers .hero-subtitle {
+    max-width: 37ch;
+    color: #d7d9e7;
+    font-size: clamp(1.18rem, 1.75vw, 1.5rem);
+    line-height: 1.48;
+}
+.hero-benefit {
+    display: block;
+    margin-bottom: .4rem;
+    color: #c4baff;
+    font: 400 clamp(1.85rem, 3.5vw, 3rem)/1 var(--font-display);
+    letter-spacing: .025em;
+}
