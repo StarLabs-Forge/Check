@@ -19,7 +19,7 @@
             const deviceText = document.getElementById('deviceText');
             const deviceSub = document.getElementById('deviceSub');
             const ticketCode = document.getElementById('ticketCode');
-            const qrRing = document.getElementById('qrRing');
+            const gateState = document.getElementById('gateState');
             const doorDevice = document.getElementById('doorDevice');
 
             const states = [
@@ -30,6 +30,7 @@
                     sub: 'Camila Ruiz — Mesa VIP 04 (Pagado)',
                     code: 'TK-8842-OK',
                     dotClass: 'v',
+                    gate: 'Acceso abierto',
                     bg: 'rgba(46, 204, 113, 0.12)',
                     border: 'rgba(46, 204, 113, 0.3)'
                 },
@@ -40,6 +41,7 @@
                     sub: 'Diego Mendoza — Entrada General (Pago Pendiente)',
                     code: 'TK-3109-PEND',
                     dotClass: 'a',
+                    gate: 'Pago pendiente',
                     bg: 'rgba(255, 176, 32, 0.12)',
                     border: 'rgba(255, 176, 32, 0.3)'
                 },
@@ -50,6 +52,7 @@
                     sub: 'Escaneado previamente a las 23:14:02',
                     code: 'TK-0021-DUPL',
                     dotClass: 'r',
+                    gate: 'Acceso bloqueado',
                     bg: 'rgba(255, 85, 102, 0.12)',
                     border: 'rgba(255, 85, 102, 0.3)'
                 }
@@ -76,6 +79,7 @@
                 deviceText.textContent = st.text;
                 deviceSub.textContent = st.sub;
                 ticketCode.textContent = st.code;
+                gateState.textContent = st.gate;
 
                 // Update styles & classes
                 deviceDot.className = `state-dot ${st.dotClass}`;
@@ -85,7 +89,6 @@
 
                 // CSS Variable for QR ring & scan beam glow
                 doorDevice.style.setProperty('--device-color', st.colorHex);
-                qrRing.style.background = `conic-gradient(from 0deg, ${st.colorHex}, transparent 80%)`;
                 doorDevice.style.borderColor = st.border;
 
                 // Transición de resultado: flash del color + movimiento propio de cada estado
@@ -103,12 +106,12 @@
                 deviceText.textContent = 'ESCANEANDO…';
                 deviceSub.textContent = 'Leyendo código QR';
                 deviceDot.className = 'state-dot';
+                gateState.textContent = 'Validando';
                 deviceBadge.style.backgroundColor = 'transparent';
                 deviceBadge.style.border = '1px solid var(--line)';
                 deviceBadge.style.color = 'var(--muted)';
                 doorDevice.style.setProperty('--device-color', 'var(--active)');
                 doorDevice.style.borderColor = '';
-                qrRing.style.background = '';
                 replay(statusMain, 'swap-in');
                 replay(deviceSub, 'swap-in');
             }
@@ -117,8 +120,6 @@
             function runCycle() {
                 if (reduceMotion) {
                     applyDeviceState(currentStateIndex);
-                    currentStateIndex = (currentStateIndex + 1) % states.length;
-                    setTimeout(runCycle, 6000);
                     return;
                 }
                 startScanning();

@@ -323,12 +323,11 @@
             animation-delay: calc(0.4s + var(--i) * 0.09s);
         }
 
-        .hero-subtitle, .hero-actions, .metrics-bar {
+        .hero-subtitle, .hero-actions {
             animation: heroRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .hero-subtitle { animation-delay: 1.0s; }
         .hero-actions { animation-delay: 1.1s; }
-        .metrics-bar { animation-delay: 1.2s; }
 
         @keyframes heroRise {
             from { opacity: 0; transform: translateY(18px); }
@@ -337,7 +336,7 @@
 
         @media (prefers-reduced-motion: reduce) {
             .hero-title .w,
-            .hero-subtitle, .hero-actions, .metrics-bar {
+            .hero-subtitle, .hero-actions {
                 animation: none !important;
             }
         }
@@ -353,25 +352,6 @@
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
-            margin-bottom: 2.5rem;
-        }
-
-        .metrics-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.8rem 1.2rem;
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--muted);
-            width: fit-content;
-        }
-
-        .metrics-bar .dot {
-            color: var(--primary);
         }
 
         /* Door Device Mockup (Hero Interactive Feature) */
@@ -413,16 +393,6 @@
         @keyframes deviceFlash {
             0% { opacity: 0.35; }
             100% { opacity: 0; }
-        }
-
-        /* Fase de escaneo: láser más rápido, anillo neutro */
-        .device-container.is-scanning .scan-beam {
-            animation-duration: 0.9s;
-            opacity: 1;
-        }
-
-        .device-container.is-scanning .qr-ring {
-            background: conic-gradient(from 0deg, var(--muted-dim), transparent 80%);
         }
 
         /* Entrada del texto de estado */
@@ -495,74 +465,147 @@
 
         .qr-stage {
             position: relative;
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 1.8rem 1rem;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             align-items: center;
-            justify-content: center;
-            border: 1px solid var(--line);
+            justify-items: center;
+            gap: 0.55rem;
+            min-height: 208px;
+            padding: 1.1rem 0.65rem;
             margin-bottom: 1.2rem;
+            perspective: 620px;
             overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background:
+                radial-gradient(ellipse at 72% 78%, rgba(108, 92, 231, 0.22), transparent 64%),
+                var(--bg);
         }
 
-        /* Ring around QR */
-        .qr-ring {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .scan-ticket {
+            display: grid;
+            justify-items: center;
+            gap: 0.35rem;
+            width: min(100%, 104px);
+            padding: 0.55rem 0.35rem;
+            border: 1px solid var(--primary-hover);
+            border-radius: 10px;
+            background: linear-gradient(145deg, #312957, var(--bg-alt) 60%);
+            box-shadow: 3px 4px 0 #251d45, 9px 15px 24px rgba(0, 0, 0, 0.55);
+            color: var(--text);
+            font: 600 0.6rem var(--font-mono);
+            transform: translate3d(-3px, 0, 14px) rotateY(-14deg) rotateZ(-8deg);
+        }
+
+        .scan-ticket-brand { letter-spacing: 0.16em; }
+        .scan-ticket-label { color: var(--muted); letter-spacing: 0.1em; }
+
+        .scan-ticket-code {
             position: relative;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            background: conic-gradient(from 0deg, var(--device-color, var(--active)), transparent 80%);
-            animation: spin 8s linear infinite;
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-
-        .qr-inner {
-            width: 100%;
-            height: 100%;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 5px;
             background: var(--bg);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
         }
 
-        .qr-svg-wrap {
-            transform: rotate(0deg);
-            animation: spin-reverse 8s linear infinite;
-        }
-
-        @keyframes spin-reverse {
-            100% { transform: rotate(-360deg); }
-        }
-
-        /* Laser beam effect */
         .scan-beam {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            inset: 0 0 auto;
             height: 2px;
-            background: var(--device-color, var(--active));
-            box-shadow: 0 0 15px 2px var(--device-color, var(--active));
-            opacity: 0.8;
-            animation: scan 2.5s infinite ease-in-out;
-            z-index: 2;
+            opacity: 0;
+            background: var(--active);
+            box-shadow: 0 0 8px 2px var(--active);
         }
 
-        @keyframes scan {
-            0%, 100% { top: 10%; }
-            50% { top: 90%; }
+        .is-scanning .scan-ticket {
+            animation: ticketApproach 1.4s cubic-bezier(0.22, 0.76, 0.25, 1) both;
+        }
+
+        .is-scanning .scan-beam {
+            animation: readTicket 0.55s ease-in-out 0.55s both;
+        }
+
+        @keyframes ticketApproach {
+            0% { opacity: 0.35; transform: translate3d(-30px, 28px, 65px) rotateY(-44deg) rotateZ(-18deg); }
+            44%, 76% { opacity: 1; transform: translate3d(10px, -3px, 18px) rotateY(0deg) rotateZ(0deg); }
+        }
+
+        @keyframes readTicket {
+            0% { opacity: 0; transform: translateY(3px); }
+            16%, 80% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(51px); }
+        }
+
+        .scan-gate {
+            display: grid;
+            justify-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            color: var(--device-color, var(--success));
+        }
+
+        .scan-gate-indicator {
+            width: 1.6rem;
+            height: 4px;
+            border-radius: 999px;
+            background: currentColor;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .scan-gate-frame {
+            position: relative;
+            width: min(100%, 76px);
+            height: 96px;
+            perspective: 240px;
+            border: 3px solid #484268;
+            border-radius: 6px 6px 2px 2px;
+            background: linear-gradient(150deg, var(--bg) 28%, #29234b);
+            box-shadow: 4px 5px 0 #252037, 0 0 15px rgba(108, 92, 231, 0.24);
+        }
+
+        .scan-gate-floor {
+            position: absolute;
+            inset: auto 0 0;
+            height: 3px;
+            background: currentColor;
+            opacity: 0.6;
+        }
+
+        .scan-gate-door {
+            position: absolute;
+            inset: 2px;
+            transform-origin: left center;
+            transition: transform 0.65s cubic-bezier(0.22, 0.76, 0.25, 1);
+            border: 1px solid #6a5f93;
+            border-radius: 3px;
+            background: linear-gradient(135deg, #332c53, #191629 72%);
+        }
+
+        .scan-gate-door::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            width: 4px;
+            height: 9px;
+            border-radius: 2px;
+            background: #b7abec;
+        }
+
+        .result-v .scan-gate-door { transform: rotateY(-74deg); }
+
+        .scan-gate-label {
+            min-height: 2em;
+            text-align: center;
+            font: 600 0.6rem/1.2 var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .is-scanning .scan-ticket,
+            .is-scanning .scan-beam { animation: none; }
+            .scan-gate-door { transition: none; }
         }
 
         .device-status-badge {
@@ -1408,9 +1451,6 @@
                 transform: none;
                 transition: none;
             }
-            .qr-ring, .qr-svg-wrap, .scan-beam {
-                animation: none !important;
-            }
         }
 
         @media (max-width: 1100px) and (min-width: 901px) {
@@ -1647,7 +1687,7 @@
     .has-spotlight .module-card::before, .has-spotlight .state-card::before, .has-spotlight .plan-card::before { display: none; }
 }
 
-/* ===== Nivel 5 (CSS 3D): dispositivo con profundidad, chips orbitando, parallax ===== */
+/* ===== Nivel 5 (CSS 3D): dispositivo con profundidad y parallax ===== */
 .device-wrapper { perspective: 1100px; }
 .tilt-3d {
     position: relative; width: 100%; max-width: 360px;
@@ -1669,27 +1709,12 @@
 @keyframes haloPulse { 0%, 100% { opacity: 0.55; scale: 1; } 50% { opacity: 0.95; scale: 1.08; } }
 .tilt-3d .device-container { transform: translateZ(0); }
 
-/* Chips de estado flotando por delante del dispositivo (distinta profundidad) */
-.orbit-chip {
-    position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 0.45rem;
-    padding: 0.4rem 0.75rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
-    letter-spacing: 0.04em; white-space: nowrap;
-    background: rgba(18, 22, 31, 0.85); border: 1px solid var(--line);
-    backdrop-filter: blur(6px); box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.6);
-    pointer-events: none; animation: chipFloat 5s ease-in-out infinite;
-}
-.orbit-chip i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
-.chip-v { color: var(--success); top: 8%; left: -14%; transform: translateZ(90px); }
-.chip-a { color: var(--warning); top: 52%; right: -16%; transform: translateZ(120px); animation-delay: -1.7s; }
-.chip-r { color: var(--error); bottom: 6%; left: -10%; transform: translateZ(70px); animation-delay: -3.2s; }
-@keyframes chipFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
-
 /* En tactil no hay puntero: balanceo suave en lugar de seguir el cursor */
 @media (pointer: coarse) {
     .tilt-3d { animation: deviceFloat 6s ease-in-out infinite, deviceSway 8s ease-in-out infinite; }
 }
 @keyframes deviceSway { 0%, 100% { rotate: y -6deg; } 50% { rotate: y 8deg; } }
-@media (max-width: 900px) { .orbit-chip { display: none; } .tilt-3d::before { inset: -6%; } }
+@media (max-width: 900px) { .tilt-3d::before { inset: -6%; } }
 
 /* Entrada 3D de tarjetas: giran desde el borde superior hacia el plano */
 .states-grid, .plans-grid, .modules-grid { perspective: 1100px; }
@@ -1714,7 +1739,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .tilt-3d { animation: none !important; transform: rotateX(4deg) rotateY(-8deg); }
-    .tilt-3d::before, .orbit-chip { animation: none !important; }
+    .tilt-3d::before { animation: none !important; }
     .states-grid .state-card.reveal.active, .plans-grid .plan-card.reveal.active, .modules-grid .module-card.reveal.active { animation: none; }
     .hero::before, .hero::after, .hero-grid > :first-child, .device-wrapper { translate: none; }
     .has-spotlight .module-card:hover, .has-spotlight .state-card:hover, .has-spotlight .plan-card:hover { transform: none; }
