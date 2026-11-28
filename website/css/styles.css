@@ -19,7 +19,7 @@
             --error-dim: rgba(255, 85, 102, 0.15);
             --warning: #FFB020;
             --warning-dim: rgba(255, 176, 32, 0.15);
-            --header-height: 72px;
+            --header-height: 92px;
             
             --font-display: 'Bebas Neue', sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -207,6 +207,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 1rem;
             width: 100%;
         }
 
@@ -222,10 +223,8 @@
 }
 
 .logo-header-image {
-    width: 175px;
-    height: 54px;
-    object-fit: contain;
-    object-position: center;
+    width: clamp(9rem, 20vw, 15rem);
+    height: auto;
 }
 
 .logo-footer-image {
@@ -274,7 +273,7 @@
             min-height: calc(100svh - var(--header-height));
             display: flex;
             align-items: center;
-            padding: clamp(3.5rem, 6vh, 4.5rem) 0;
+            padding: clamp(4.5rem, 8vh, 7rem) 0;
             position: relative;
             overflow: hidden;
             isolation: isolate;
@@ -323,7 +322,7 @@
 
         .hero-grid {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
             gap: 3.5rem;
             align-items: center;
         }
@@ -337,36 +336,18 @@
         }
 
         .hero-brand-logo {
-            width: clamp(280px, 40vw, 480px);
+            display: block;
+            width: min(100%, 42rem);
             height: auto;
-            object-fit: contain;
-        }
-
-        /* Logo del header: oculto mientras el logo grande del hero está a la vista;
-           al pasar el hero "sube" desde abajo hasta su lugar en el header */
-        .logo-header-image {
-            transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            transform-origin: left center;
-        }
-
-        .header:not(.logo-in) .logo-header-image {
-            opacity: 0;
-            transform: translateY(70px) scale(1.7);
-            pointer-events: none;
-        }
-
-        .header.logo-in .logo-header-image {
-            opacity: 1;
-            transform: none;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .logo-header-image { transition: opacity 0.2s ease; transform: none !important; }
+            filter: drop-shadow(0 3px 0 #173945)
+                drop-shadow(0 5px 0 #091821)
+                drop-shadow(0 0 10px rgba(0, 255, 160, 0.58))
+                drop-shadow(0 0 28px rgba(0, 217, 192, 0.28));
         }
 
         .hero-title {
             font-family: var(--font-display);
-            font-size: clamp(2.2rem, 4vw, 3.4rem);
+            font-size: clamp(2.8rem, 6.2vw, 5.4rem);
             line-height: 1;
             margin-bottom: 1.25rem;
             letter-spacing: 0.02em;
@@ -378,7 +359,8 @@
 
         /* Entrada del hero: logo, palabras del título y resto, en secuencia */
         .hero-brand-logo {
-            animation: heroRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+            animation: heroRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both,
+                heroLogoGlow 5s ease-in-out 1s infinite alternate;
         }
 
         .hero-title .w {
@@ -394,14 +376,18 @@
         .hero-actions { animation-delay: 1.1s; }
         .metrics-bar { animation-delay: 1.2s; }
 
+        @keyframes heroLogoGlow {
+            to {
+                filter: drop-shadow(0 3px 0 #173945)
+                    drop-shadow(0 5px 0 #091821)
+                    drop-shadow(0 0 17px rgba(0, 255, 160, 0.82))
+                    drop-shadow(0 0 36px rgba(0, 217, 192, 0.36));
+            }
+        }
+
         @keyframes heroRise {
             from { opacity: 0; transform: translateY(18px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes heroLogoIn {
-            from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
-            to { opacity: 1; transform: scale(1) rotate(0); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -780,69 +766,6 @@
             color: var(--muted-dim);
         }
 
-        /* 4. El Problema Section */
-        .problem-grid {
-            display: grid;
-            grid-template-columns: 0.9fr 1.1fr;
-            gap: 3.5rem;
-            align-items: start;
-        }
-
-        .problem-grid-single {
-            display: block;
-            max-width: 680px;
-            margin: 0 auto;
-        }
-
-        .problem-section {
-            position: relative;
-            overflow: hidden;
-            isolation: isolate;
-            background:
-                radial-gradient(circle at 82% 50%, rgba(108, 92, 231, 0.16), transparent 25rem),
-                linear-gradient(90deg, rgba(108, 92, 231, 0.06) 1px, transparent 1px),
-                linear-gradient(rgba(108, 92, 231, 0.06) 1px, transparent 1px);
-            background-size: auto, 48px 48px, 48px 48px;
-        }
-
-        .problem-section::before {
-            content: "";
-            position: absolute;
-            width: clamp(23rem, 38vw, 36rem);
-            aspect-ratio: 1;
-            right: clamp(-14rem, -8vw, -5rem);
-            top: 50%;
-            transform: translateY(-50%);
-            border: 1px solid rgba(139, 124, 246, 0.42);
-            border-radius: 50%;
-            box-shadow:
-                0 0 0 clamp(1.5rem, 3vw, 3rem) rgba(108, 92, 231, 0.06),
-                0 0 0 clamp(3.5rem, 7vw, 7rem) rgba(108, 92, 231, 0.035);
-            z-index: -1;
-        }
-
-        .problem-section::after {
-            content: "";
-            position: absolute;
-            width: 7px;
-            height: 7px;
-            right: 16%;
-            top: 24%;
-            border-radius: 50%;
-            background: var(--active);
-            box-shadow:
-                -84px 96px 0 -1px var(--primary),
-                72px 168px 0 -1px var(--primary-hover),
-                -28px 280px 0 -1px var(--active);
-            opacity: 0.85;
-            z-index: -1;
-        }
-
-        .problem-section .container {
-            position: relative;
-            z-index: 1;
-        }
-
         #nosotros, #modulos, #planes, #contacto {
             position: relative;
             overflow: hidden;
@@ -968,81 +891,7 @@
             z-index: -1;
         }
 
-        .quote-statement {
-            font-family: var(--font-display);
-            font-size: clamp(2.2rem, 4vw, 3.2rem);
-            line-height: 1;
-            color: var(--text);
-            border-left: 3px solid var(--primary);
-            padding-left: 1.25rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .problem-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            border-top: 1px solid var(--line);
-        }
-
-        .problem-item {
-            position: relative;
-            padding: 1.1rem 0.25rem 1.1rem 1.45rem;
-            border-bottom: 1px solid var(--line);
-            transition: color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-        }
-
-        .problem-item::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 1.15rem;
-            width: 5px;
-            height: 5px;
-            border: 1px solid var(--muted-dim);
-            border-radius: 50%;
-            transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-        }
-
-        .problem-item:hover {
-            border-color: var(--primary);
-            transform: translateX(6px);
-        }
-
-        .problem-item:hover::before {
-            background-color: var(--primary);
-            border-color: var(--primary);
-            transform: scale(1.3);
-        }
-
-        .problem-item h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 0.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .problem-item h4::before {
-            content: "✕";
-            color: var(--muted);
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-        }
-
-        .problem-item p {
-            color: var(--muted);
-            font-size: 0.9rem;
-            max-width: 58ch;
-        }
-
         /* 5. Cómo Funciona Section */
-        .problem-item h4::before {
-            display: none;
-        }
-
         .steps-list {
             display: flex;
             flex-direction: column;
@@ -1597,20 +1446,6 @@
             will-change: auto;
         }
 
-        .problem-list.reveal .problem-item {
-            opacity: 0;
-            transform: translateX(12px);
-            transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.25s ease;
-        }
-
-        .problem-list.reveal.active .problem-item {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .problem-list.reveal.active .problem-item:nth-child(2) { transition-delay: 80ms; }
-        .problem-list.reveal.active .problem-item:nth-child(3) { transition-delay: 160ms; }
-        .problem-list.reveal.active .problem-item:nth-child(4) { transition-delay: 240ms; }
 
         .state-card, .plan-card, .contact-info-item, .badge-card, .clandest-card {
             transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -1641,7 +1476,6 @@
         @media (max-width: 900px) {
             .hero-grid,
             .about-grid,
-            .problem-grid,
             .states-grid,
             .modules-grid,
             .plans-grid,
@@ -1663,6 +1497,10 @@
         }
 
         @media (max-width: 560px) {
+            :root { --header-height: 76px; }
+
+            .nav-container > .btn { width: auto; }
+
             .section {
                 min-height: auto;
                 padding: 3.5rem 0;
@@ -1946,15 +1784,6 @@
     to { opacity: 1; transform: none; }
 }
 
-/* Problema: la frase entra palabra por palabra con volteo 3D (las palabras las crea script.js) */
-.quote-statement { perspective: 800px; }
-.quote-statement .qw { display: inline-block; opacity: 0; transform-origin: 50% 100%; }
-.reveal.active .quote-statement .qw { animation: wordIn3d 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(0.15s + var(--i) * 0.07s); }
-@keyframes wordIn3d {
-    from { opacity: 0; transform: rotateX(-80deg) translateY(0.5em); }
-    to { opacity: 1; transform: none; }
-}
-
 /* Como funciona: la lista tiene profundidad; el paso activo avanza hacia ti */
 .steps-list { perspective: 1000px; }
 .js-steps .step-card {
@@ -2023,7 +1852,6 @@
     .plan-card.featured::after, .final-cta .btn-primary::after,
     .contact-info-list.reveal.active .contact-info-item { animation: none !important; }
     .plans-grid .plan-card.featured.reveal.active { animation: none; }
-    .quote-statement .qw { opacity: 1; animation: none !important; }
     .js-steps .step-card, .js-steps .step-card.is-active, .js-steps .step-card.is-done,
     .states-grid .state-card, .plans-grid .plan-card, .modules-grid .module-card { rotate: none; translate: none; }
     .module-card:hover .module-icon { rotate: none; transform: none; }

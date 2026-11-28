@@ -131,18 +131,7 @@
 
             runCycle();
 
-            // Logo del header: aparece solo cuando el logo del hero sale por arriba
             const header = document.querySelector('.header');
-            const heroLogo = document.getElementById('heroLogo');
-            if (header && heroLogo && 'IntersectionObserver' in window) {
-                new IntersectionObserver(([entry]) => {
-                    const passed = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-                    header.classList.toggle('logo-in', passed);
-                }, { rootMargin: '-70px 0px 0px 0px' }).observe(heroLogo);
-            } else if (header) {
-                header.classList.add('logo-in');
-            }
-
 
             // 4. Cómo funciona: el paso activo sigue al scroll + línea de progreso
             const stepsList = document.getElementById('stepsList');
@@ -300,23 +289,6 @@
                 };
                 window.addEventListener('scroll', () => { if (!pTick) { pTick = true; requestAnimationFrame(updateParallax); } }, { passive: true });
                 updateParallax();
-            }
-
-            // 10. Frase del problema: separa palabras para el volteo 3D (el texto accesible no cambia)
-            const quoteEl = document.querySelector('.quote-statement');
-            if (quoteEl && !reduceMotion) {
-                const txt = quoteEl.textContent.trim();
-                quoteEl.setAttribute('aria-label', txt);
-                quoteEl.textContent = '';
-                txt.split(/\s+/).forEach((w, i, arr) => {
-                    const span = document.createElement('span');
-                    span.className = 'qw';
-                    span.setAttribute('aria-hidden', 'true');
-                    span.style.setProperty('--i', i);
-                    span.textContent = w;
-                    quoteEl.appendChild(span);
-                    if (i < arr.length - 1) quoteEl.appendChild(document.createTextNode(' '));
-                });
             }
 
             // 11. Abanico 3D: --fan va de 1 (borde de pantalla) a 0 (centrado)
