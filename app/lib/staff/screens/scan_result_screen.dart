@@ -17,16 +17,20 @@ import '../widgets/staff_progress_bar.dart';
 /// completa. Color + ícono + texto redundantes (puerta con poca luz).
 /// Retorno automático a los 2.5 s; el botón inferior vuelve de inmediato.
 class ScanResultScreen extends StatefulWidget {
-  const ScanResultScreen({super.key, required this.outcome});
+  const ScanResultScreen({super.key, required this.outcome, this.simulated = false});
 
   final ScanOutcome outcome;
 
+  /// Resultado de ejemplo mostrado sobre datos reales: se avisa en pantalla.
+  final bool simulated;
+
   /// Ruta sin transición lenta: el resultado debe aparecer al instante.
-  static Route<void> route(ScanOutcome outcome) => PageRouteBuilder<void>(
+  static Route<void> route(ScanOutcome outcome, {bool simulated = false}) => PageRouteBuilder<void>(
         opaque: true,
         transitionDuration: const Duration(milliseconds: 120),
         reverseTransitionDuration: const Duration(milliseconds: 120),
-        pageBuilder: (context, animation, secondaryAnimation) => ScanResultScreen(outcome: outcome),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ScanResultScreen(outcome: outcome, simulated: simulated),
         transitionsBuilder: (context, anim, secondaryAnimation, child) => FadeTransition(opacity: anim, child: child),
       );
 
@@ -107,6 +111,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         padding: EdgeInsets.fromLTRB(24, mq.size.height * 176 / 844, 24, math.max(44, mq.padding.bottom + 16)),
         child: Column(
           children: [
+            if (widget.simulated) ...[
+              const SimulationNotice(),
+              const SizedBox(height: AppSpacing.s4),
+            ],
             Expanded(
               child: SingleChildScrollView(
                 child: Semantics(
@@ -204,6 +212,29 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Aviso visible de que lo que se ve es un ejemplo y no un ingreso.
+class SimulationNotice extends StatelessWidget {
+  const SimulationNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s1),
+      decoration: BoxDecoration(color: StaffColors.black, borderRadius: BorderRadius.circular(AppRadius.full)),
+      child: Text(
+        'SIMULACIÓN · No registra ingresos',
+        textAlign: TextAlign.center,
+        style: GoogleFonts.inter(
+          fontSize: AppTextSize.caption,
+          fontWeight: FontWeight.w700,
+          color: StaffColors.warning,
+          height: 1.4,
         ),
       ),
     );

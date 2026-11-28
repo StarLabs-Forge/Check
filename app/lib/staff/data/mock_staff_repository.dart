@@ -6,28 +6,34 @@ import 'staff_repository.dart';
 /// Tokens QR de prueba: `VALID` (ingreso nuevo), `USED` (ya registrado),
 /// `OFFLINE` (sin conexión), cualquier otro texto → denegado.
 class MockStaffRepository implements StaffRepository {
-  MockStaffRepository() {
+  MockStaffRepository() : this._(null);
+
+  /// Invitados de ejemplo sobre un evento real, para simular el escáner sin
+  /// tocar la base: nada de lo que haga se guarda.
+  MockStaffRepository.forEvent(StaffEvent event) : this._(event);
+
+  MockStaffRepository._(StaffEvent? only) {
     final now = DateTime.now();
+    final eventId = only?.id ?? 'ev-eclipse';
     _events = [
-      StaffEvent(
-        id: 'ev-eclipse',
-        name: 'Eclipse Party',
-        startsAt: DateTime(now.year, now.month, now.day, 22),
-        capacity: 200,
-        checkins: 143,
-      ),
+      only ??
+          StaffEvent(
+            id: eventId,
+            name: 'Eclipse Party',
+            startsAt: DateTime(now.year, now.month, now.day, 22),
+            capacity: 200,
+            checkins: 143,
+          ),
     ];
 
     DateTime today(int h, int m) => DateTime(now.year, now.month, now.day, h, m);
     _guests = [
-      StaffGuest(id: 'g1', eventId: 'ev-eclipse', name: 'Valentina Quispe', phone: '+591 7•• ••412'),
-      StaffGuest(
-          id: 'g2', eventId: 'ev-eclipse', name: 'Rodrigo Mamani', phone: '+591 6•• ••087', checkedInAt: today(21, 41)),
-      StaffGuest(id: 'g3', eventId: 'ev-eclipse', name: 'Andrés Condori', phone: '+591 7•• ••905'),
-      StaffGuest(id: 'g4', eventId: 'ev-eclipse', name: 'Camila Rojas', phone: '+591 7•• ••230'),
-      StaffGuest(
-          id: 'g5', eventId: 'ev-eclipse', name: 'Mateo Flores', phone: '+591 6•• ••561', checkedInAt: today(21, 12)),
-      StaffGuest(id: 'g6', eventId: 'ev-eclipse', name: 'Lucía Vargas', phone: '+591 7•• ••778'),
+      StaffGuest(id: 'g1', eventId: eventId, name: 'Valentina Quispe', phone: '+591 7•• ••412'),
+      StaffGuest(id: 'g2', eventId: eventId, name: 'Rodrigo Mamani', phone: '+591 6•• ••087', checkedInAt: today(21, 41)),
+      StaffGuest(id: 'g3', eventId: eventId, name: 'Andrés Condori', phone: '+591 7•• ••905'),
+      StaffGuest(id: 'g4', eventId: eventId, name: 'Camila Rojas', phone: '+591 7•• ••230'),
+      StaffGuest(id: 'g5', eventId: eventId, name: 'Mateo Flores', phone: '+591 6•• ••561', checkedInAt: today(21, 12)),
+      StaffGuest(id: 'g6', eventId: eventId, name: 'Lucía Vargas', phone: '+591 7•• ••778'),
     ];
   }
 
@@ -76,6 +82,16 @@ class MockStaffRepository implements StaffRepository {
     );
   }
 
+  /// Cuando ya entraron todos los de ejemplo se agrega otro, para que la
+  /// simulación se pueda repetir sin límite.
+  StaffGuest _extraGuest(String eventId) {
+    const names = ['Daniela Gutiérrez', 'Sebastián Choque', 'Mariana Suárez', 'Joaquín Mendoza'];
+    final n = _guests.length;
+    final guest = StaffGuest(id: 'g${n + 1}', eventId: eventId, name: names[n % names.length], phone: '+591 7•• ••000');
+    _guests.add(guest);
+    return guest;
+  }
+
   @override
   Future<ScanOutcome> scanQr({required String eventId, required String token}) async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -86,8 +102,7 @@ class MockStaffRepository implements StaffRepository {
         throw Exception('network unreachable');
       case 'VALID':
         final next = pool.where((g) => !g.hasEntered);
-        if (next.isEmpty) return const ScanOutcome.denied();
-        return _registerEntry(next.first);
+        return _registerEntry(next.isEmpty ? _extraGuest(eventId) : next.first);
       case 'USED':
         final used = pool.where((g) => g.hasEntered);
         if (used.isEmpty) return const ScanOutcome.denied();

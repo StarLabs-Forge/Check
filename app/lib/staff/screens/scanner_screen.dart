@@ -1,9 +1,12 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../config/demo_mode.dart';
 import '../../theme/app_theme.dart';
+import '../data/mock_staff_repository.dart';
 import '../data/staff_models.dart';
+import '../data/staff_repository.dart';
 import '../data/supabase_staff_repository.dart' show StaffForbidden;
 import '../staff_scope.dart';
 import '../theme/staff_tokens.dart';
@@ -13,9 +16,12 @@ import 'scan_result_screen.dart';
 /// Figma → 📱 App Móvil → "Scanner activo" (31:5) y "Sin conexión" (32:62).
 ///
 /// La cámara real requiere un plugin nativo (p. ej. `mobile_scanner`), que aún
-/// no está en el pubspec: el visor se dibuja como en el Figma y en modo debug
-/// una franja "DEMO" dispara escaneos simulados. La integración de la cámara
-/// solo debe llamar a [_onToken] con el texto leído del QR.
+/// no está en el pubspec: el visor se dibuja como en el Figma. Mientras tanto
+/// hay una simulación: aparece un QR en el visor, la línea lo recorre y se
+/// muestra el resultado. Con datos reales ([kScanSimulation], temporal) la
+/// resuelve un repositorio en memoria, se marca como simulación y no registra
+/// ingresos. La integración de la cámara solo debe llamar a [_onToken] con el
+/// texto leído del QR.
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key, required this.event});
 
@@ -25,23 +31,51 @@ class ScannerScreen extends StatefulWidget {
   State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _ScannerScreenState extends State<ScannerScreen> {
+class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProviderStateMixin {
   late StaffEvent _event = widget.event;
   bool _torch = false;
   bool _busy = false;
   bool _offline = false;
   bool _retrying = false;
 
-  Future<void> _onToken(String token) async {
+  /// Token del QR de ejemplo que se está "leyendo" en la simulación.
+  String? _reading;
+  late final AnimationController _sweep =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+
+  /// Resuelve las simulaciones cuando los datos son reales.
+  MockStaffRepository? _simulator;
+
+  @override
+  void dispose() {
+    _sweep.dispose();
+    super.dispose();
+  }
+
+  Future<void> _simulate(String token) async {
+    if (_reading != null || _busy || _offline) return;
+    setState(() => _reading = token);
+    await _sweep.forward(from: 0);
+    if (!mounted) return;
+    // Una simulación nunca llega al repositorio real.
+    final repo = StaffScope.of(context);
+    await _onToken(token, simulator: repo is MockStaffRepository ? repo : _simulator ??= MockStaffRepository.forEvent(_event));
+    if (mounted) setState(() => _reading = null);
+  }
+
+  Future<void> _onToken(String token, {StaffRepository? simulator}) async {
     if (_busy || _offline) return;
+    final real = StaffScope.of(context);
+    final repo = simulator ?? real;
+    final markAsSimulation = simulator != null && real is! MockStaffRepository;
     setState(() => _busy = true);
     try {
-      final outcome = await StaffScope.of(context).scanQr(eventId: _event.id, token: token);
+      final outcome = await repo.scanQr(eventId: _event.id, token: token);
       if (!mounted) return;
       if (outcome.kind == ScanResultKind.success) {
         _event = _event.copyWith(checkins: outcome.checkins);
       }
-      await Navigator.of(context).push(ScanResultScreen.route(outcome));
+      await Navigator.of(context).push(ScanResultScreen.route(outcome, simulated: markAsSimulation));
     } on StaffForbidden {
       // La base rechazó el escaneo: sin permiso o cuenta desactivada.
       if (!mounted) return;
@@ -71,6 +105,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
+    final demoData = StaffScope.of(context) is MockStaffRepository;
 
     return Scaffold(
       backgroundColor: StaffColors.black,
@@ -84,7 +119,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 children: [
                   const SizedBox(height: 44), // reserva de la cabecera (se dibuja arriba)
                   const SizedBox(height: AppSpacing.s4),
-                  Expanded(child: _Viewfinder(onDemoToken: kDebugMode ? _onToken : null, busy: _busy)),
+                  Expanded(
+                    child: _Viewfinder(
+                      onSimulate: demoData || kScanSimulation ? _simulate : null,
+                      realData: !demoData,
+                      reading: _reading,
+                      sweep: _sweep,
+                      busy: _busy,
+                    ),
+                  ),
                   const SizedBox(height: 46),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6),
@@ -288,9 +331,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
 /// "Visor de cámara" (520px, `bg-primary`): esquinas de 278px, línea de
 /// escaneo de 2px y guía en pastilla. Todo centrado horizontalmente.
 class _Viewfinder extends StatelessWidget {
-  const _Viewfinder({required this.onDemoToken, required this.busy});
+  const _Viewfinder({
+    required this.onSimulate,
+    required this.realData,
+    required this.reading,
+    required this.sweep,
+    required this.busy,
+  });
 
-  final Future<void> Function(String token)? onDemoToken;
+  /// `null` si no se ofrece simulación.
+  final Future<void> Function(String token)? onSimulate;
+  final bool realData;
+  final String? reading;
+  final Animation<double> sweep;
   final bool busy;
 
   @override
@@ -319,10 +372,32 @@ class _Viewfinder extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                top: top + 120, // 190 − 70 en el Figma
-                left: 0,
-                right: 0,
+              if (reading != null)
+                Positioned(
+                  top: top + 34, // QR de 210 centrado en el visor de 278
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Semantics(
+                      label: 'Código QR de ejemplo',
+                      child: QrImageView(
+                        data: 'CHECK-SIMULACION-$reading',
+                        size: 210,
+                        padding: const EdgeInsets.all(AppSpacing.s4),
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              AnimatedBuilder(
+                animation: sweep,
+                builder: (context, line) {
+                  // En reposo, donde la dibuja el Figma (190 − 70); leyendo,
+                  // baja y vuelve a subir sobre el QR.
+                  final v = sweep.value;
+                  final y = reading == null ? 120.0 : 40 + 198 * (v < 0.5 ? v * 2 : 2 - v * 2);
+                  return Positioned(top: top + y, left: 0, right: 0, child: line!);
+                },
                 child: Center(
                   child: Container(
                     width: 252,
@@ -346,17 +421,24 @@ class _Viewfinder extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Text(
-                      busy ? 'Validando…' : 'Apunta al código QR del ticket',
+                      busy
+                          ? 'Validando…'
+                          : reading != null
+                              ? 'Leyendo código…'
+                              : 'Apunta al código QR del ticket',
                       style: GoogleFonts.inter(fontSize: AppTextSize.body, color: AppColors.textPrimary, height: 1.4),
                     ),
                   ),
                 ),
               ),
-              if (onDemoToken != null)
+              if (onSimulate != null && realData)
+                const Positioned(top: 8, left: 0, right: 0, child: Center(child: SimulationNotice())),
+              if (onSimulate != null)
                 Positioned(
-                  top: 8,
-                  right: 8,
-                  child: _DemoStrip(onToken: onDemoToken!, enabled: !busy),
+                  bottom: 8,
+                  left: AppSpacing.s3,
+                  right: AppSpacing.s3,
+                  child: _SimulationBar(onToken: onSimulate!, enabled: !busy && reading == null),
                 ),
             ],
           );
@@ -366,9 +448,9 @@ class _Viewfinder extends StatelessWidget {
   }
 }
 
-/// Solo en debug: sustituye a la cámara hasta integrar el plugin.
-class _DemoStrip extends StatelessWidget {
-  const _DemoStrip({required this.onToken, required this.enabled});
+/// Sustituye a la cámara hasta integrar el plugin.
+class _SimulationBar extends StatelessWidget {
+  const _SimulationBar({required this.onToken, required this.enabled});
 
   final Future<void> Function(String token) onToken;
   final bool enabled;
@@ -378,17 +460,18 @@ class _DemoStrip extends StatelessWidget {
     Widget chip(String label, String token) => TextButton(
           onPressed: enabled ? () => onToken(token) : null,
           style: TextButton.styleFrom(
-            minimumSize: const Size(0, 32),
+            minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            foregroundColor: StaffColors.muted,
+            foregroundColor: AppColors.textPrimary,
           ),
-          child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+          child: Text(label, style: GoogleFonts.inter(fontSize: AppTextSize.caption, fontWeight: FontWeight.w600)),
         );
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Text('DEMO', style: GoogleFonts.inter(fontSize: 11, color: StaffColors.muted, letterSpacing: 0.6)),
+        Text('SIMULAR', style: GoogleFonts.inter(fontSize: 11, color: StaffColors.muted, letterSpacing: 0.6)),
         chip('Válido', 'VALID'),
         chip('Ya usado', 'USED'),
         chip('Inválido', 'NOPE'),
