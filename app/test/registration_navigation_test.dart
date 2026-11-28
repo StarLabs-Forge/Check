@@ -19,4 +19,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('¿Cómo quieres acceder?'), findsOneWidget);
   });
+
+  testWidgets('el enlace «Probar gratis» abre el registro conservando el contexto', skip: demoOnly != null, (tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/registro?origen=prueba';
+    addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+
+    await tester.pumpWidget(const CheckApp());
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.text('Crea tu cuenta'), findsOneWidget);
+    expect(find.textContaining('prueba gratuita de 14 días'), findsOneWidget);
+    expect(find.text('Inicia sesión'), findsOneWidget);
+  });
 }
