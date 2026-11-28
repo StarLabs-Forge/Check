@@ -257,128 +257,160 @@
         </div>
     </section>
 
-    <!-- 7. Módulos: escenas animadas por funcionalidad -->
+    <!-- 7. Módulos: recorrido visual conectado -->
     <section class="section section-alt" id="modulos">
         <div class="container">
             <div class="reveal">
                 <div class="kicker">TODO LO QUE NECESITAS</div>
                 <h2 class="section-title">Qué incluye CHECK</h2>
-                <p class="section-desc">Diseñados para la noche: herramientas robustas orientadas a acelerar la puerta y dar control al dueño.</p>
             </div>
 
-            <div class="modules-grid">
-                <!-- 1 -->
-                <article class="module-card scene-card reveal" data-scene="eventos" style="--accent: var(--primary);">
-                    <h3 class="module-title">Gestión de eventos</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc cal anim" style="--d: 100ms;">
-                                <i class="cell anim" style="--d: 150ms;"></i><i class="cell anim" style="--d: 180ms;"></i><i class="cell anim" style="--d: 210ms;"></i><i class="cell anim" style="--d: 240ms;"></i><i class="cell anim" style="--d: 270ms;"></i><i class="cell anim" style="--d: 300ms;"></i><i class="cell anim" style="--d: 330ms;"></i>
-                                <i class="cell anim" style="--d: 360ms;"></i><i class="cell sel anim" style="--d: 390ms;"></i><i class="cell anim" style="--d: 420ms;"></i><i class="cell anim" style="--d: 450ms;"></i><i class="cell anim" style="--d: 480ms;"></i><i class="cell anim" style="--d: 510ms;"></i><i class="cell anim" style="--d: 540ms;"></i>
-                                <i class="cell anim" style="--d: 570ms;"></i><i class="cell anim" style="--d: 600ms;"></i><i class="cell anim" style="--d: 630ms;"></i><i class="cell anim" style="--d: 660ms;"></i><i class="cell anim" style="--d: 690ms;"></i><i class="cell anim" style="--d: 720ms;"></i><i class="cell anim" style="--d: 750ms;"></i>
-                            </div>
-                            <div class="sc side">
-                                <span class="pill anim" style="--d: 600ms;">Apertura 20:00</span>
-                                <span class="pill anim" style="--d: 750ms;">Cierre 04:00</span>
-                                <div class="meter anim" style="--d: 900ms;"><span class="fill"></span></div>
-                                <span class="meter-label anim" style="--d: 1100ms;">Aforo configurado</span>
-                            </div>
-                            <div class="sc result anim" style="--d: 1250ms;">Evento activo</div>
-                        </div>
-                    </div>
-                    <p class="module-desc">Configura fechas, horarios, límites de aforo y parámetros de corte para cada fiesta o noche operativa.</p>
-                </article>
+            <div class="journey-wrap" id="journey">
+                <span class="journey-track" aria-hidden="true"></span>
+                <span class="journey-energy" aria-hidden="true"></span>
+            <ol class="journey">
 
-                <!-- 2 -->
-                <article class="module-card scene-card reveal" data-scene="mesas" style="--accent: var(--primary);">
-                    <h3 class="module-title">Gestión de mesas</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc zone anim" style="--d: 100ms; left: 6%; top: 14%; width: 88%; height: 22%;">
-                                <span class="zone-name">VIP</span>
-                                <i class="tbl on anim" style="--d: 500ms;"></i><i class="tbl anim" style="--d: 560ms;"></i><i class="tbl on anim" style="--d: 620ms;"></i><i class="tbl anim" style="--d: 680ms;"></i>
+                <!-- 1. Eventos -->
+                <li class="station" data-station="eventos" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">01</span>
+                        <h3 class="station-title">Gestión de eventos</h3>
+                        <p class="station-line">Crea y administra tus eventos desde un solo lugar.</p>
+                        <div class="mx mx-cal" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="cal3d">
+                                    <i class="d" style="--d: 120ms;"></i><i class="d" style="--d: 150ms;"></i><i class="d" style="--d: 180ms;"></i><i class="d" style="--d: 210ms;"></i><i class="d" style="--d: 240ms;"></i><i class="d" style="--d: 270ms;"></i><i class="d" style="--d: 300ms;"></i>
+                                    <i class="d" style="--d: 330ms;"></i><i class="d" style="--d: 360ms;"></i><i class="d hit" style="--d: 700ms;"></i><i class="d" style="--d: 390ms;"></i><i class="d" style="--d: 420ms;"></i><i class="d" style="--d: 450ms;"></i><i class="d" style="--d: 480ms;"></i>
+                                    <i class="d" style="--d: 510ms;"></i><i class="d" style="--d: 540ms;"></i><i class="d" style="--d: 570ms;"></i><i class="d" style="--d: 600ms;"></i><i class="d" style="--d: 630ms;"></i><i class="d" style="--d: 660ms;"></i><i class="d" style="--d: 690ms;"></i>
+                                </div>
+                                <div class="evcard j" style="--d: 900ms;">
+                                    <span class="ev-name">Noche de apertura</span>
+                                    <span class="ev-field"><small>Fecha</small><i class="fill" style="--w: 88%; --d: 1000ms;"></i></span>
+                                    <span class="ev-field"><small>Horario</small><i class="fill" style="--w: 70%; --d: 1100ms;"></i></span>
+                                    <span class="ev-field"><small>Aforo</small><i class="fill" style="--w: 60%; --d: 1200ms;"></i></span>
+                                </div>
+                                <span class="badge j" style="--d: 1400ms;">✓ Evento creado</span>
                             </div>
-                            <div class="sc zone anim" style="--d: 250ms; left: 6%; top: 42%; width: 88%; height: 22%;">
-                                <span class="zone-name">ULTRA VIP</span>
-                                <i class="tbl anim" style="--d: 700ms;"></i><i class="tbl on anim" style="--d: 760ms;"></i><i class="tbl anim" style="--d: 820ms;"></i>
-                            </div>
-                            <div class="sc zone anim" style="--d: 400ms; left: 6%; top: 70%; width: 88%; height: 18%;">
-                                <span class="zone-name">GENERAL</span>
-                                <i class="tbl on anim" style="--d: 900ms;"></i><i class="tbl anim" style="--d: 950ms;"></i><i class="tbl anim" style="--d: 1000ms;"></i><i class="tbl anim" style="--d: 1050ms;"></i><i class="tbl anim" style="--d: 1100ms;"></i>
-                            </div>
-                            <div class="sc result anim" style="--d: 1250ms;">Mesas asignadas con titular</div>
                         </div>
                     </div>
-                    <p class="module-desc">Control por zonas (VIP, Ultra VIP, General) con asignación de consumos mínimos y nombres de titulares.</p>
-                </article>
+                </li>
 
-                <!-- 3 -->
-                <article class="module-card scene-card reveal" data-scene="tickets" style="--accent: var(--primary);">
-                    <h3 class="module-title">Reservas y tickets</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc ticket anim" style="--d: 120ms;">
-                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
-                                <span class="ticket-id">TK-8842</span>
+                <!-- 2. Mesas -->
+                <li class="station" data-station="mesas" style="--accent: var(--active);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">02</span>
+                        <h3 class="station-title">Gestión de mesas</h3>
+                        <p class="station-line">Organiza mesas, reservas y disponibilidad.</p>
+                        <div class="mx mx-iso" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="floor">
+                                    <i class="tb" style="--x: 8%; --y: 10%; --d: 200ms;"></i>
+                                    <i class="tb" style="--x: 40%; --y: 10%; --d: 280ms;"></i>
+                                    <i class="tb" style="--x: 72%; --y: 10%; --d: 360ms;"></i>
+                                    <i class="tb bk" style="--x: 8%; --y: 46%; --d: 440ms;"></i>
+                                    <i class="tb sel" style="--x: 40%; --y: 46%; --d: 900ms;"></i>
+                                    <i class="tb" style="--x: 72%; --y: 46%; --d: 520ms;"></i>
+                                    <i class="tb bk" style="--x: 24%; --y: 74%; --d: 600ms;"></i>
+                                    <i class="tb" style="--x: 56%; --y: 74%; --d: 680ms;"></i>
+                                </div>
+                                <span class="badge j" style="--d: 1400ms;">Mesa 04 · ocupada</span>
                             </div>
-                            <div class="sc trail"><span class="trail-dot"></span></div>
-                            <div class="sc phone anim" style="--d: 700ms;"><span class="phone-screen">Enlace directo</span></div>
-                            <div class="sc result anim" style="--d: 1100ms;">Token QR emitido y enviado</div>
                         </div>
                     </div>
-                    <p class="module-desc">Emisión inmediata de tokens QR únicos. Envío por enlace directo para el cliente sin descargas obligatorias.</p>
-                </article>
+                </li>
 
-                <!-- 4 -->
-                <article class="module-card scene-card reveal" data-scene="staff" style="--accent: var(--primary);">
-                    <h3 class="module-title">Check-in de staff</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc people">
-                                <div class="person anim" style="--d: 150ms;"><span class="avatar"></span><span class="r-name">Portero</span><span class="role-tag">Entrada</span><b class="mark anim" style="--d: 700ms;">✓</b></div>
-                                <div class="person anim" style="--d: 330ms;"><span class="avatar"></span><span class="r-name">Cajero</span><span class="role-tag">Cobro</span><b class="mark anim" style="--d: 900ms;">✓</b></div>
-                                <div class="person anim" style="--d: 510ms;"><span class="avatar"></span><span class="r-name">RRPP</span><span class="role-tag">Lista</span><b class="mark anim" style="--d: 1100ms;">✓</b></div>
+                <!-- 3. Reservas y tickets -->
+                <li class="station" data-station="tickets" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">03</span>
+                        <h3 class="station-title">Reservas y tickets</h3>
+                        <p class="station-line">Genera entradas con códigos QR únicos.</p>
+                        <div class="mx mx-tk" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="req j" style="--d: 120ms;"><span>Solicitud de reserva</span><span class="prog"><i></i></span></div>
+                                <div class="tkf j t1" style="--d: 700ms; --tx: -30%; --ty: 6%; --rz: -8deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 01</span></div>
+                                <div class="tkf j t2" style="--d: 840ms; --tx: 0%; --ty: 12%; --rz: 0deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 02</span></div>
+                                <div class="tkf j t3" style="--d: 980ms; --tx: 30%; --ty: 6%; --rz: 8deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 03</span></div>
+                                <span class="badge j" style="--d: 1400ms;">3 tickets emitidos</span>
                             </div>
-                            <div class="sc result anim" style="--d: 1300ms;">Cada validación queda registrada</div>
                         </div>
                     </div>
-                    <p class="module-desc">Asignación de roles específicos para porteros, cajeros y RRPP. Registro de quién valida cada entrada.</p>
-                </article>
+                </li>
 
-                <!-- 5 -->
-                <article class="module-card scene-card reveal" data-scene="dashboard" style="--accent: var(--primary);">
-                    <h3 class="module-title">Dashboard en vivo</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc kpis">
-                                <span class="kpi anim" style="--d: 120ms;"><small>Aforo</small><b>72%</b></span>
-                                <span class="kpi anim" style="--d: 260ms;"><small>Ingresos</small><b>128</b></span>
+                <!-- 4. Check-in de staff -->
+                <li class="station" data-station="checkin" style="--accent: var(--success);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">04</span>
+                        <h3 class="station-title">Check-in de staff</h3>
+                        <p class="station-line">Valida entradas y controla accesos al instante.</p>
+                        <div class="mx mx-scan" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="phone3d j">
+                                    <div class="scr">
+                                        <span class="beam"></span>
+                                        <span class="valid j" style="--d: 1150ms;">✓ Válido</span>
+                                    </div>
+                                </div>
+                                <div class="tkf mini j" style="--d: 300ms; --tx: -24%; --ty: -16%; --rz: -6deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg></div>
+                                <div class="counter j" style="--d: 1300ms;"><small>Ingresos</small><b class="count" data-from="120" data-to="128">128</b></div>
                             </div>
-                            <div class="sc bars">
-                                <i class="col" style="--h: 35%; --d: 450ms;"></i><i class="col" style="--h: 58%; --d: 520ms;"></i><i class="col" style="--h: 46%; --d: 590ms;"></i><i class="col" style="--h: 74%; --d: 660ms;"></i><i class="col" style="--h: 62%; --d: 730ms;"></i><i class="col hi" style="--h: 88%; --d: 800ms;"></i>
-                            </div>
-                            <div class="sc result anim" style="--d: 1100ms;">Actualizado en tiempo real</div>
                         </div>
                     </div>
-                    <p class="module-desc">Métricas de aforo actual, porcentaje de ingresos completados y recaudación de puerta en tiempo real.</p>
-                </article>
+                </li>
 
-                <!-- 6 -->
-                <article class="module-card scene-card reveal" data-scene="auditoria" style="--accent: var(--primary);">
-                    <h3 class="module-title">Gestión de staff</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc log">
-                                <div class="log-row anim" style="--d: 150ms;"><span class="t">21:42</span><span class="a">Ingreso validado</span><span class="w">Portero</span></div>
-                                <div class="log-row anim" style="--d: 420ms;"><span class="t">21:47</span><span class="a">Cobro registrado</span><span class="w">Cajero</span></div>
-                                <div class="log-row anim" style="--d: 690ms;"><span class="t">21:53</span><span class="a">Mesa asignada</span><span class="w">RRPP</span></div>
-                                <div class="log-row anim" style="--d: 960ms;"><span class="t">22:05</span><span class="a">Acceso revisado</span><span class="w">Admin</span></div>
+                <!-- 5. Dashboard -->
+                <li class="station" data-station="dashboard" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">05</span>
+                        <h3 class="station-title">Dashboard en vivo</h3>
+                        <p class="station-line">Monitorea ingresos, ocupación y actividad en tiempo real.</p>
+                        <div class="mx mx-dash" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="holo">
+                                    <div class="kp">
+                                        <span class="j" style="--d: 150ms;"><small>Aforo</small><b class="count" data-from="40" data-to="72" data-suffix="%">72%</b></span>
+                                        <span class="j" style="--d: 300ms;"><small>Ingresos</small><b class="count" data-from="98" data-to="128">128</b></span>
+                                    </div>
+                                    <div class="hbars">
+                                        <i class="hb" style="--h: 35%; --d: 450ms;"></i><i class="hb" style="--h: 58%; --d: 520ms;"></i><i class="hb" style="--h: 46%; --d: 590ms;"></i><i class="hb" style="--h: 74%; --d: 660ms;"></i><i class="hb" style="--h: 62%; --d: 730ms;"></i><i class="hb hi" style="--h: 88%; --d: 800ms;"></i>
+                                    </div>
+                                    <svg class="trend" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="ln" pathLength="100" d="M0 32 L16 26 L32 28 L48 18 L64 20 L80 10 L100 6"/></svg>
+                                    <span class="live j" style="--d: 1100ms;"><i></i>En vivo</span>
+                                </div>
                             </div>
-                            <div class="sc result anim" style="--d: 1250ms;">Auditoría por usuario</div>
                         </div>
                     </div>
-                    <p class="module-desc">Auditoría completa de actividad por usuario para prevenir accesos no autorizados o cortesías falsas.</p>
-                </article>
+                </li>
+
+                <!-- 6. Staff -->
+                <li class="station" data-station="staff" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">06</span>
+                        <h3 class="station-title">Gestión de staff</h3>
+                        <p class="station-line">Administra equipos, roles y permisos.</p>
+                        <div class="mx mx-staff" aria-hidden="true">
+                            <div class="stage3d">
+                                <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path class="ln" pathLength="100" d="M50 42 L24 33"></path>
+                                    <path class="ln" pathLength="100" d="M50 42 L76 33"></path>
+                                    <path class="ln" pathLength="100" d="M50 42 L50 62"></path>
+                                </svg>
+                                <span class="hub j">CHECK</span>
+                                <span class="prof j" style="--px: 6%; --py: 12%; --d: 300ms;"><b class="av"></b>Portero <em class="chk">✓</em></span>
+                                <span class="prof j" style="--px: 58%; --py: 12%; --d: 450ms;"><b class="av"></b>Cajero <em class="chk">✓</em></span>
+                                <span class="prof j" style="--px: 32%; --py: 62%; --d: 600ms;"><b class="av"></b>RRPP <em class="chk">✓</em></span>
+                                <span class="badge j" style="--d: 1400ms;">Permisos asignados</span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ol>
             </div>
         </div>
     </section>
@@ -592,5 +624,6 @@
     <script src="./js/aurora.js" defer></script>
     <script src="./js/script.js"></script>
     <script src="./js/scenes.js"></script>
+    <script src="./js/journey.js"></script>
 </body>
 </html>
