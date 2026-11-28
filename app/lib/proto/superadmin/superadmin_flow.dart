@@ -327,6 +327,8 @@ class _VenueDetail extends StatelessWidget {
                 ]),
               ])),
               const SizedBox(height: 12),
+              _CommercialCard(v),
+              const SizedBox(height: 12),
               PButton(v.active ? 'Suspender local' : 'Reactivar local', kind: v.active ? BtnKind.danger : BtnKind.primary, onPressed: () => _toggle(context, v)),
               const SizedBox(height: 16),
               Text('Eventos del local', style: ts(AppTextSize.h3, w: FontWeight.w700)),
@@ -350,6 +352,128 @@ class _VenueDetail extends StatelessWidget {
   }
 }
 
+/// Pide un texto obligatorio (comprobación de pago, motivo...).
+Future<String?> _askText(BuildContext context, {required String title, required String body, required String label, required String action, int minLength = 3}) {
+  return showDialog<String>(
+    context: context,
+    builder: (_) => _TextPrompt(title: title, body: body, label: label, action: action, minLength: minLength),
+  );
+}
+
+class _TextPrompt extends StatefulWidget {
+  const _TextPrompt({required this.title, required this.body, required this.label, required this.action, required this.minLength});
+  final String title;
+  final String body;
+  final String label;
+  final String action;
+  final int minLength;
+  @override
+  State<_TextPrompt> createState() => _TextPromptState();
+}
+
+class _TextPromptState extends State<_TextPrompt> {
+  final _text = TextEditingController();
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = _text.text.trim();
+    return AlertDialog(
+      backgroundColor: AppColors.bgSurface,
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 440,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(widget.body),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _text,
+            autofocus: true,
+            maxLength: 300,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(labelText: widget.label, helperText: 'Mínimo ${widget.minLength} caracteres'),
+          ),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: value.length < widget.minLength ? null : () => Navigator.pop(context, value), child: Text(widget.action)),
+      ],
+    );
+  }
+}
+
+/// Prueba, plan contratado y recuperación de MFA de un local.
+class _CommercialCard extends StatelessWidget {
+  const _CommercialCard(this.v);
+  final SaVenue v;
+
+  Future<void> _run(BuildContext context, Future<void> Function() action, String ok) async {
+    try {
+      await action();
+      if (context.mounted) toast(context, ok);
+    } catch (e) {
+      if (context.mounted) toast(context, _msg(e), error: true);
+    }
+  }
+
+  Future<void> _activate(BuildContext context) async {
+    final note = await _askText(context,
+        title: 'Activar plan ${SuperadminService.planLabel(v.plan)}',
+        body: 'Confirma que verificaste el pago de ${v.name}. La activación queda registrada con tu usuario.',
+        label: 'Comprobación del pago',
+        action: 'Activar plan');
+    if (note == null || !context.mounted) return;
+    await _run(context, () => _svc.activatePlan(v, v.plan, note), 'Plan activado');
+  }
+
+  Future<void> _end(BuildContext context) async {
+    final reason = await _askText(context,
+        title: 'Terminar plan',
+        body: 'El local dejará de vender y publicar. Sus datos, pagos pendientes y entradas emitidas se conservan.',
+        label: 'Motivo',
+        action: 'Terminar plan');
+    if (reason == null || !context.mounted) return;
+    await _run(context, () => _svc.endPlan(v, reason), 'Plan terminado');
+  }
+
+  Future<void> _resetMfa(BuildContext context) async {
+    final reason = await _askText(context,
+        title: 'Restablecer MFA',
+        body: 'Verifica primero la identidad de la persona administradora de ${v.name}. Deberá configurar de nuevo su autenticador.',
+        label: 'Cómo verificaste su identidad',
+        action: 'Restablecer MFA',
+        minLength: 10);
+    if (reason == null || !context.mounted) return;
+    await _run(context, () => _svc.resetMfa(v, reason), 'MFA restablecido');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = v.commercial;
+    return PCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Prueba y plan contratado', style: ts(AppTextSize.body, w: FontWeight.w700)),
+      const SizedBox(height: 4),
+      Text(
+        state == null ? 'No disponible: falta aplicar la migración comercial.' : SuperadminService.commercialLabel(state),
+        style: ts(AppTextSize.caption, c: AppColors.textSecondary),
+      ),
+      if (v.trialEndsAt != null) Text('La prueba vence: ${fmtDateTime(v.trialEndsAt!)}', style: ts(AppTextSize.caption, c: AppColors.textSecondary)),
+      const SizedBox(height: 8),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        if (state != null) OutlinedButton(onPressed: () => _activate(context), child: const Text('Activar plan (pago verificado)')),
+        if (state == 'subscribed') OutlinedButton(onPressed: () => _end(context), child: const Text('Terminar plan')),
+        OutlinedButton(onPressed: () => _resetMfa(context), child: const Text('Restablecer MFA')),
+      ]),
+    ]));
+  }
+}
+
 String _genPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   final r = Random.secure();
@@ -369,13 +493,15 @@ class _CreateVenueDialogState extends State<_CreateVenueDialog> {
   final _email = TextEditingController();
   final _pass = TextEditingController(text: _genPassword());
   String _plan = _svc.settings.defaultPlan;
+  String _commercial = 'trial';
+  final _payment = TextEditingController();
   bool _show = false;
   bool _busy = false;
   String? _error;
 
   @override
   void dispose() {
-    for (final c in [_venue, _zone, _name, _email, _pass]) {
+    for (final c in [_venue, _zone, _name, _email, _pass, _payment]) {
       c.dispose();
     }
     super.dispose();
@@ -387,6 +513,7 @@ class _CreateVenueDialogState extends State<_CreateVenueDialog> {
     if (err == null && _name.text.trim().length < 2) err = 'Escribe el nombre del administrador.';
     if (err == null && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email.text.trim())) err = 'Correo no válido.';
     if (err == null && (_pass.text.length < 8 || _pass.text.length > 72)) err = 'La contraseña debe tener entre 8 y 72 caracteres.';
+    if (err == null && _commercial == 'plan' && _payment.text.trim().length < 3) err = 'Describe cómo verificaste el pago del plan.';
     if (err != null) {
       setState(() => _error = err);
       return;
@@ -396,15 +523,20 @@ class _CreateVenueDialogState extends State<_CreateVenueDialog> {
       _error = null;
     });
     try {
-      await _svc.createVenue(
+      final warning = await _svc.createVenue(
         venueName: _venue.text.trim(),
         zone: _zone.text.trim(),
         fullName: _name.text.trim(),
         email: _email.text.trim(),
         password: _pass.text,
         plan: _plan,
+        commercial: _commercial,
+        paymentNote: _payment.text.trim(),
       );
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) {
+        if (warning != null) toast(context, warning, error: true);
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -447,6 +579,16 @@ class _CreateVenueDialogState extends State<_CreateVenueDialog> {
               Wrap(spacing: 8, children: [
                 for (final p in SuperadminService.planNames.keys) ChoiceChip(label: Text(SuperadminService.planLabel(p)), selected: _plan == p, onSelected: (_) => setState(() => _plan = p)),
               ]),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, children: [
+                ChoiceChip(label: const Text('Prueba gratuita'), selected: _commercial == 'trial', onSelected: (_) => setState(() => _commercial = 'trial')),
+                ChoiceChip(label: const Text('Plan contratado'), selected: _commercial == 'plan', onSelected: (_) => setState(() => _commercial = 'plan')),
+              ]),
+              const SizedBox(height: 8),
+              if (_commercial == 'trial')
+                Text('La prueba de 14 días no empieza ahora: el local la activa desde su panel, una sola vez.', style: ts(AppTextSize.caption, c: AppColors.textSecondary))
+              else
+                TextField(controller: _payment, maxLength: 300, decoration: const InputDecoration(labelText: 'Comprobación del pago')),
               if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: ts(AppTextSize.caption, c: AppColors.error))),
             ]),
           ),

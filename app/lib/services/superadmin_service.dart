@@ -27,6 +27,11 @@ class SaVenue {
   final String zone;
   String plan;
   bool active;
+
+  /// Estado comercial calculado por el servidor: `subscribed`, `trial`,
+  /// `trial_expired`, `plan_ended`, `none` o `null` si aún no está disponible.
+  String? commercial;
+  DateTime? trialEndsAt;
   final DateTime? createdAt;
   final int events;
   final int eventsActive;
@@ -75,6 +80,7 @@ class SaLog {
         'venue_created' => 'Local creado',
         'plan_limits_changed' => 'Límites de plan editados',
         'settings_changed' => 'Ajustes de plataforma',
+        'mfa_reset' => 'MFA restablecido',
         _ => action,
       };
 }
@@ -180,6 +186,7 @@ class SuperadminService extends ChangeNotifier {
         ),
     ];
     final names = {for (final v in venues) v.ownerId: v.name};
+    await _loadCommercial();
 
     audit = [
       for (final m in (r[1] as List).cast<Map>())
@@ -247,6 +254,67 @@ class SuperadminService extends ChangeNotifier {
           capacity: _int(m['capacity']),
         ),
     ];
+  }
+
+  /// Estado de prueba/plan por local. Antes de la migración 19 no existe la RPC.
+  Future<void> _loadCommercial() async {
+    try {
+      final res = await _db.rpc('superadmin_commercial_overview');
+      final byOwner = {for (final m in (res as List).cast<Map>()) m['owner_id'] as String: m};
+      for (final v in venues) {
+        v.commercial = byOwner[v.ownerId]?['state'] as String?;
+        v.trialEndsAt = _dt(byOwner[v.ownerId]?['trial_ends_at']);
+      }
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow;
+    }
+  }
+
+  static String commercialLabel(String state) => switch (state) {
+        'subscribed' => 'Plan activo',
+        'trial' => 'Prueba vigente',
+        'trial_expired' => 'Prueba vencida',
+        'plan_ended' => 'Plan terminado',
+        _ => 'Sin prueba ni plan',
+      };
+
+  /// Activa el plan contratado tras verificar el pago manualmente.
+  Future<void> activatePlan(SaVenue v, String plan, String paymentNote) async {
+    if (kDemo) {
+      v
+        ..plan = plan
+        ..commercial = 'subscribed';
+      _logDemo('plan_changed', detail: paymentNote, venueName: v.name);
+      notifyListeners();
+      return;
+    }
+    await _db.rpc('superadmin_assign_plan', params: {'p_owner_id': v.ownerId, 'p_plan': plan, 'p_note': paymentNote});
+    await load();
+  }
+
+  Future<void> endPlan(SaVenue v, String reason) async {
+    if (kDemo) {
+      v.commercial = 'plan_ended';
+      notifyListeners();
+      return;
+    }
+    await _db.rpc('superadmin_end_plan', params: {'p_owner_id': v.ownerId, 'p_reason': reason});
+    await load();
+  }
+
+  /// Restablece el MFA de un administrador (Edge Function `mfa-reset`, auditado).
+  Future<void> resetMfa(SaVenue v, String reason) async {
+    if (kDemo) {
+      _logDemo('mfa_reset', detail: reason, venueName: v.name);
+      notifyListeners();
+      return;
+    }
+    final res = await _db.functions.invoke('mfa-reset', body: {'user_id': v.ownerId, 'reason': reason});
+    final data = res.data;
+    if (res.status >= 400 || (data is Map && data['error'] != null)) {
+      throw Exception(data is Map ? '${data['error']}' : 'No se pudo restablecer el MFA');
+    }
+    await load();
   }
 
   // ───────────────────────── demo ─────────────────────────
@@ -343,20 +411,24 @@ class SuperadminService extends ChangeNotifier {
     await load();
   }
 
-  Future<void> createVenue({
+  /// Devuelve un aviso si el local se creó pero no se pudo asignar prueba/plan.
+  Future<String?> createVenue({
     required String venueName,
     required String zone,
     required String fullName,
     required String email,
     required String password,
     required String plan,
+    String commercial = 'trial',
+    String paymentNote = '',
   }) async {
     if (kDemo) {
       venues.add(SaVenue(ownerId: 'demo-${venues.length + 1}', name: venueName, zone: zone, plan: plan, active: true, createdAt: DateTime.now()));
       users.insert(0, SaUser(ownerId: 'demo-${venues.length}', fullName: fullName, email: email, venueName: venueName, plan: plan, active: true, createdAt: DateTime.now()));
+      venues.last.commercial = commercial == 'plan' ? 'subscribed' : 'none';
       _logDemo('venue_created', detail: venueName, venueName: venueName);
       notifyListeners();
-      return;
+      return null;
     }
     final res = await _db.functions.invoke('create-venue', body: {
       'venue_name': venueName,
@@ -365,12 +437,15 @@ class SuperadminService extends ChangeNotifier {
       'email': email,
       'password': password,
       'plan': plan,
+      'commercial': commercial,
+      'payment_note': paymentNote,
     });
     final data = res.data;
     if (res.status >= 400 || (data is Map && data['error'] != null)) {
       throw Exception(data is Map ? '${data['error']}' : 'No se pudo crear el local');
     }
     await load();
+    return data is Map ? data['warning'] as String? : null;
   }
 
   Future<void> savePlan(SaPlan p) async {
