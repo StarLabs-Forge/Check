@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/admin_scaffold.dart';
 import '../widgets/async_states.dart';
+import '../widgets/payment_cutoff_alert.dart';
 import '../widgets/trial_banner.dart';
 
 /// Pantalla inicial del Admin — frame "Dashboard Principal" del Figma.
@@ -150,6 +151,7 @@ class _DashboardContent extends StatelessWidget {
         children: [
           const _Header(),
           const TrialBanner(),
+          PaymentCutoffAlert(onReview: () => Navigator.of(context).pushNamed('/pagos')),
           const SizedBox(height: AppSpacing.s8),
           Wrap(
             spacing: AppSpacing.s6,

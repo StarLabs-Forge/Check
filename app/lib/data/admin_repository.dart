@@ -193,6 +193,22 @@ class AdminRepository {
     if (rows.isEmpty) throw const PostgrestException(message: 'forbidden', code: '42501');
   }
 
+  /// Pagos informados sin revisar de eventos cuyo corte (10:00 del día del evento,
+  /// hora de Bolivia) ya pasó. Solo informa. Vacío en demo o sin la migración 23.
+  Future<List<CutoffAlert>> paymentCutoffAlerts() async {
+    if (kDemo) return const [];
+    try {
+      final res = await _db.rpc('payment_cutoff_alerts');
+      return [
+        for (final m in (res as List).cast<Map>())
+          CutoffAlert(eventName: m['event_name'] as String, pending: (m['pending'] as num).toInt()),
+      ];
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202') return const [];
+      rethrow;
+    }
+  }
+
   // ───────────────────────── Prueba gratuita ─────────────────────────
 
   /// Estado de la prueba de 14 días, calculado en el servidor (`trial_status`).
@@ -315,4 +331,11 @@ class TicketCategory {
   final int? available;
 
   bool get hasOperations => (sold ?? 0) + (reserved ?? 0) > 0;
+}
+
+/// Aviso de pagos sin revisar pasado el corte de un evento.
+class CutoffAlert {
+  const CutoffAlert({required this.eventName, required this.pending});
+  final String eventName;
+  final int pending;
 }
