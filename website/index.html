@@ -14,27 +14,9 @@
 </head>
 <body>
 
-    <!-- Fondo de video global (detrás de todas las secciones) -->
-    <div class="video-bg-wrap" id="videoBgWrap" aria-hidden="true"></div>
-    <div class="video-bg-overlay" aria-hidden="true"></div>
-    <script>
-        (function () {
-            // No cargamos el iframe en móvil ni si el usuario prefiere menos movimiento:
-            // ahorra datos/batería y evita el iframe de YouTube donde no aporta.
-            var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            var isNarrow = window.matchMedia('(max-width: 640px)').matches;
-            if (reduceMotion || isNarrow) return;
-
-            var wrap = document.getElementById('videoBgWrap');
-            var iframe = document.createElement('iframe');
-            iframe.src = 'https://www.youtube.com/embed/bLiVhw3Jb-E?autoplay=1&mute=1&loop=1&playlist=bLiVhw3Jb-E&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&disablekb=1&fs=0';
-            iframe.title = 'Video de fondo';
-            iframe.setAttribute('frameborder', '0');
-            iframe.setAttribute('allow', 'autoplay; encrypted-media');
-            iframe.setAttribute('tabindex', '-1');
-            wrap.appendChild(iframe);
-        })();
-    </script>
+    <div class="aurora" aria-hidden="true">
+        <canvas id="aurora-canvas"></canvas>
+    </div>
 
     <!-- 1. Header / Nav -->
     <header class="header">
@@ -520,6 +502,7 @@
         </div>
     </footer>
 
+    <script src="./js/aurora.js" defer></script>
     <script src="./js/script.js"></script>
 </body>
 </html>
