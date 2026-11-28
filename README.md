@@ -112,8 +112,16 @@ Interruptores de despliegue en `platform_settings` (apagados por defecto): `comm
   **Registro:** formulario → código OTP → datos pendientes → panel. **Inicio de sesión:**
   credenciales → rol real → panel. Con sesión activa, `/registro` lleva al panel; al cerrar sesión
   se vuelve a iniciar sesión.
-- **Compradores:** entran desde el sitio (`eventos.html`), que lee el catálogo real y abre la compra
-  en `/comprar?evento=<id>`. Los «eventos de referencia» del sitio son una simulación.
+- **Compradores:** compran en el sitio (`eventos.html`), sin cuenta: eligen categorías, reservan,
+  ven los datos de pago del local, avisan «Ya pagué» y reciben sus QR. Cada pedido tiene un enlace
+  privado (`eventos.html#pedido=<id>.<token>`) y queda en «Mis pedidos» de ese navegador. Las reglas
+  se validan en la base (`create_order`, `get_order`, `declare_payment`, `cancel_order`). La app
+  conserva su pantalla `/comprar`, que el sitio ya no enlaza. Los «eventos de referencia» son una
+  simulación.
+- **Sitio en local:** copia `website/config.local.example.json` a `website/config.local.json`
+  (no se versiona) con la URL y la clave publicable del proyecto de desarrollo. Sin ese archivo,
+  en local se lee el catálogo real y la compra queda desactivada. Prueba sin base:
+  `node website/tests/checkout.mjs`.
 - **Contraseñas:** mínimo 8, frases permitidas.
 - **MFA:** administradores y superadministradores usan TOTP (`/mfa`). La base exige `aal2`, un
   factor vigente y un código posterior al último restablecimiento.

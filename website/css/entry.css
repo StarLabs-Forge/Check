@@ -464,3 +464,21 @@ body.welcome .entry-header { flex: 0 0 auto; }
 .checkout-demo dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3rem .75rem; overflow-wrap: anywhere; }
 .checkout-demo dt { color: var(--muted); }
 .checkout-demo :focus-visible { outline: 2px solid var(--active); outline-offset: 3px; }
+
+/* Compra real y seguimiento del pedido */
+.checkout section { width: 100%; }
+.checkout form { margin: 0; }
+.checkout .checkout-type { grid-template-columns: minmax(0, 1fr) 6.5rem; align-items: center; gap: .75rem; }
+.checkout .checkout-total { color: var(--active); font-weight: 700; }
+.checkout .checkout-warning { color: #ffd479; }
+.checkout .checkout-link { width: 100%; overflow-wrap: anywhere; font: .75rem var(--font-mono); color: var(--muted); user-select: all; }
+.checkout .checkout-ticket { display: grid; justify-items: start; gap: .5rem; width: 100%; padding-top: .8rem; border-top: 1px solid var(--line); }
+.checkout .checkout-ticket h3 { font-size: 2rem; }
+.catalog-orders { display: grid; gap: .85rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.catalog-orders h2 { font: 400 2.15rem/1 var(--font-display); }
+.catalog-orders ul { display: flex; flex-wrap: wrap; gap: .6rem; margin: 0; padding: 0; list-style: none; }
+.catalog-orders form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.catalog-orders label { display: grid; flex: 1 1 16rem; gap: .3rem; color: var(--muted); }
+.catalog-orders input { min-height: 44px; padding: .5rem .7rem; border: 1px solid #61597d; border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+.catalog-orders [role="status"] { width: 100%; color: #ffd479; }
+.catalog-dev { position: fixed; right: .75rem; bottom: .75rem; z-index: 10; padding: .2rem .7rem; border-radius: 6px; background: #ffd479; color: #14101f; font: 700 .8rem var(--font-mono); }

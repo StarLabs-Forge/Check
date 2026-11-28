@@ -11,3 +11,4 @@ website/.cache/
 
 # Configuración local del entorno de desarrollo (ver app/env/dev.example.json)
 app/env/dev.json
+website/config.local.json

@@ -1,7 +1,4 @@
 (() => {
-    const endpoint = 'https://lvejfwatzdqpzftjraut.supabase.co/rest/v1/rpc/public_events';
-    const publishableKey = 'sb_publishable_45XCo6MIZ4Z1ERCD45Vk1Q_D4qIS4RW';
-    const buyerUrl = 'https://check-demo-three.vercel.app/#/comprar';
     const timeZone = 'America/La_Paz';
     const localDay = new Intl.DateTimeFormat('sv-SE', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
     const localDate = new Intl.DateTimeFormat('es-BO', { timeZone, dateStyle: 'long', timeStyle: 'short' });
@@ -14,6 +11,9 @@
     const category = /** @type {HTMLSelectElement | null} */ (document.getElementById('category'));
     if (!(when instanceof HTMLSelectElement) || !(category instanceof HTMLSelectElement)) return;
     let events = [];
+    let config;
+    const orders = element('section', '', 'catalog-orders');
+    orders.setAttribute('aria-label', 'Mis pedidos');
 
     // Reference listings provided for the visual review. Checkout uses public_events only.
     const references = [
@@ -151,6 +151,8 @@
             for (const date of performances) select.add(new Option(localDate.format(date), date.toISOString()));
             schedule.append(select);
             purchase.append(schedule);
+            // Los eventos reales tienen una sola función.
+            if (!event.reference) schedule.hidden = true;
             if (event.reference) {
                 const button = element('button', 'Probar compra', 'catalog-action catalog-action-primary');
                 button.type = 'button';
@@ -158,9 +160,13 @@
                     detail: { name: event.name, date: localDate.format(new Date(select.value)) }
                 })));
                 purchase.append(button);
+            } else if (hasSeats && config.canBuy) {
+                const button = element('button', 'Comprar entradas', 'catalog-action catalog-action-primary');
+                button.type = 'button';
+                button.addEventListener('click', () => window.checkCheckout.openPurchase(event));
+                purchase.append(button);
             } else if (hasSeats) {
-                // Abre ese mismo evento en la app.
-                purchase.append(link('Comprar en CHECK', buyerUrl + '?evento=' + encodeURIComponent(event.id), 'catalog-action catalog-action-primary'));
+                purchase.append(element('p', 'Compra desactivada en este equipo: falta website/config.local.json.', 'catalog-purchase-note'));
             }
             copy.append(purchase);
         } else {
@@ -200,14 +206,47 @@
         }
     }
 
-    async function load() {
-        state.textContent = 'Cargando eventos…';
+    async function renderOrders() {
+        const saved = await window.checkCheckout.savedOrders();
+        const list = element('ul');
+        for (const order of saved) {
+            const item = element('li');
+            const open = element('button', [order.number, order.event].filter(Boolean).join(' · '), 'catalog-action catalog-action-secondary');
+            open.type = 'button';
+            open.addEventListener('click', () => window.checkCheckout.openOrder(order));
+            item.append(open);
+            list.append(item);
+        }
+        const form = element('form');
+        const label = element('label', '¿Tienes el enlace de un pedido? Pégalo aquí');
+        const input = element('input');
+        input.required = true;
+        input.autocomplete = 'off';
+        label.append(input);
+        const submit = element('button', 'Consultar pedido', 'catalog-action catalog-action-secondary');
+        const note = element('p');
+        note.setAttribute('role', 'status');
+        form.append(label, submit, note);
+        form.addEventListener('submit', submission => {
+            submission.preventDefault();
+            const order = window.checkCheckout.parseCode(input.value);
+            note.textContent = order ? '' : 'Ese enlace no está completo.';
+            if (order) window.checkCheckout.openOrder(order);
+        });
+        orders.replaceChildren(element('h2', 'Mis pedidos'), list, form);
+    }
+
+    async function load(silent) {
+        if (!silent) {
+            state.textContent = 'Cargando eventos…';
+            results.replaceChildren();
+        }
         retry.hidden = true;
-        results.replaceChildren();
         try {
-            const response = await fetch(endpoint, {
+            config = await window.checkConfig;
+            const response = await fetch(config.supabaseUrl + '/rest/v1/rpc/public_events', {
                 method: 'POST',
-                headers: { apikey: publishableKey, 'Content-Type': 'application/json' },
+                headers: { apikey: config.publishableKey, 'Content-Type': 'application/json' },
                 body: '{}',
                 credentials: 'omit',
                 signal: AbortSignal.timeout(12000)
@@ -233,6 +272,7 @@
             }
             render();
         } catch {
+            if (silent) return;
             state.textContent = 'No se pudo cargar el catálogo. Intenta de nuevo.';
             retry.hidden = false;
         }
@@ -243,6 +283,14 @@
     }
     when.addEventListener('change', render);
     category.addEventListener('change', render);
-    retry.addEventListener('click', load);
-    load();
+    retry.addEventListener('click', () => load(false));
+    document.addEventListener('check:catalog-refresh', () => load(true));
+    window.checkConfig.then(value => {
+        if (value.dev) document.body.append(element('p', 'DEV', 'catalog-dev'));
+        if (!value.canBuy) return;
+        results.after(orders);
+        document.addEventListener('check:orders-changed', renderOrders);
+        renderOrders();
+    });
+    load(false);
 })();
