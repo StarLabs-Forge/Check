@@ -155,7 +155,7 @@ Detalle y las 22 decisiones aprobadas: [docs/reglas-negocio-v1.md](docs/reglas-n
 | `supabase/tests/23_sessions_cutoff.sql` | Revocación de sesiones y aviso de las 10:00 | 11/11 |
 | `python supabase/tests/integration/concurrency_orders.py` | Concurrencia real por HTTP | 5/5 |
 | `python supabase/tests/integration/api_security.py` | API pública anónima: tablas, funciones, Edge Functions | 9/9 |
-| `node website/tests/navigation.mjs` | Sitio en navegador real | Cada caso pasó en alguna corrida; sin corrida completa limpia (equipo lento) |
+| `node website/tests/navigation.mjs` | Sitio en navegador real | Escrita para el sitio anterior; **pendiente de adaptar** a `organizadores.html` tras traer `main` (28/11) |
 | `node website/tests/app_demo.mjs` | App demo en navegador real | 8/9: «adelante» del navegador no funciona tras retroceder |
 
 Las pruebas SQL se ejecutan **solo en un proyecto de desarrollo** (editor SQL); terminan en una
@@ -169,8 +169,7 @@ No hay integración continua ni pruebas de extremo a extremo con sesiones reales
 
 - Configurar OTP, SMTP, contraseña mínima y Google en los paneles.
 - Proveedor de correo para OTP a usuarios reales y avisos de vencimiento.
-- Despliegue público de la demo: los botones «Solicitar demo» del sitio apuntan a
-  `check-starlabs3.vercel.app`, que hoy muestra el inicio de sesión de Vercel.
+- Falta un despliegue público de la demo: los botones del sitio llevan a la app real.
 - La app real está en `check-demo-three.vercel.app` (nombre de proyecto engañoso).
 - En la app, el botón «adelante» del navegador no recupera la pantalla tras retroceder.
 - Sin implementar: ventas presenciales por staff, cierre de
