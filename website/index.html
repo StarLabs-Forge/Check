@@ -182,78 +182,52 @@
     </section>
 
     <!-- 6. Estados en la puerta -->
-    <!-- 6. Lenguaje visual: escenas animadas por estado -->
+    <!-- 6. Lenguaje visual: escenario 3D del escáner -->
     <section class="section" id="estados">
-        <div class="container">
-            <div class="reveal section-head">
+        <div class="container est">
+            <header class="est-head reveal">
                 <div class="kicker" style="justify-content: center;">LENGUAJE VISUAL REAL</div>
                 <h2 class="section-title">Respuesta instantánea en el escáner</h2>
-                <p class="section-desc" style="margin: 0 auto;">Escanea una entrada y conoce su estado al instante.</p>
+                <p class="est-lead">Escanea una entrada y conoce su estado al instante.</p>
+            </header>
+
+            <div class="est-stage-wrap">
+                <div class="stage" id="estStage" data-state="verde" data-phase="idle" aria-hidden="true">
+                    <div class="amb"></div>
+                    <div class="scene3d">
+                        <div class="floor"></div>
+                        <div class="rings"><i></i><i></i><i></i></div>
+                        <div class="phone">
+                            <div class="ph ph-back"></div>
+                            <div class="ph ph-mid"></div>
+                            <div class="ph ph-face">
+                                <div class="scr">
+                                    <div class="scr-idle"><b>CHECK</b><small>Listo para escanear</small></div>
+                                    <div class="scr-proc"><span class="pbar"><i></i></span><small>Procesando entrada</small></div>
+                                    <div class="scr-res s-verde"><b>Acceso autorizado</b><small>Pasa directo</small></div>
+                                    <div class="scr-res s-amarillo"><b>Pago pendiente</b><small>Cobrar en puerta</small></div>
+                                    <div class="scr-res s-rojo"><b>Acceso denegado</b><small>No ingresa</small></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tk tk-verde"><div class="tk-body"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><div class="tk-txt"><small>Entrada</small><b>TK-8842</b><em>Pagada</em></div></div><i class="beam"></i></div>
+                        <div class="tk tk-amarillo"><div class="tk-body"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><div class="tk-txt"><small>Entrada</small><b>TK-3109</b><em>Saldo Bs 100</em></div></div><i class="beam"></i></div>
+                        <div class="tk tk-rojo"><div class="tk-body"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><div class="tk-txt"><small>Entrada</small><b>TK-0021</b><em class="stamp">Usado</em></div></div><i class="beam"></i></div>
+                        <div class="sym sym-verde"><svg class="ly" style="transform: translateZ(-4px); color: color-mix(in srgb, var(--s) 40%, #000);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg><svg class="ly" style="transform: translateZ(-2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg><svg class="ly" style="transform: translateZ(0px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg><svg class="ly" style="transform: translateZ(2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg><svg class="ly" style="transform: translateZ(4px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg><svg class="ly" style="transform: translateZ(6px); color: color-mix(in srgb, var(--s) 55%, #fff);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 33 L27 46 L50 19" /></g></svg></div>
+                        <div class="sym sym-amarillo"><svg class="ly" style="transform: translateZ(-4px); color: color-mix(in srgb, var(--s) 40%, #000);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg><svg class="ly" style="transform: translateZ(-2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg><svg class="ly" style="transform: translateZ(0px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg><svg class="ly" style="transform: translateZ(2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg><svg class="ly" style="transform: translateZ(4px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg><svg class="ly" style="transform: translateZ(6px); color: color-mix(in srgb, var(--s) 55%, #fff);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13 L32 39" /><circle cx="32" cy="52" r="4.2" fill="currentColor" stroke="none"/></g></svg></div>
+                        <div class="sym sym-rojo"><svg class="ly" style="transform: translateZ(-4px); color: color-mix(in srgb, var(--s) 40%, #000);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg><svg class="ly" style="transform: translateZ(-2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg><svg class="ly" style="transform: translateZ(0px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg><svg class="ly" style="transform: translateZ(2px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg><svg class="ly" style="transform: translateZ(4px); color: var(--s);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg><svg class="ly" style="transform: translateZ(6px); color: color-mix(in srgb, var(--s) 55%, #fff);" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 19 L45 45 M45 19 L19 45" /></g></svg></div>
+                    </div>
+                    <div class="ind3d">
+                        <i style="--c: var(--success);" class="on"></i><i style="--c: var(--warning);"></i><i style="--c: var(--error);"></i>
+                    </div>
+                </div>
             </div>
 
-            <div class="states-grid">
-                <article class="state-card scene-card verde reveal" data-scene="verde" style="--accent: var(--success);">
-                    <h3 class="state-title" style="color:var(--success);">VERDE</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc ticket anim" style="--d: 120ms;">
-                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
-                                <span class="ticket-id">TK-8842</span>
-                            </div>
-                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
-                            <div class="sc roles">
-                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
-                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
-                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
-                            </div>
-                            <div class="sc result anim" style="--d: 1650ms;">Entrada válida. Acceso autorizado</div>
-                        </div>
-                    </div>
-                    <p class="state-desc"><strong>Pagado.</strong> Pasa directo.</p>
-                </article>
-
-                <article class="state-card scene-card amarillo reveal" data-scene="amarillo" style="--accent: var(--warning);">
-                    <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc ticket anim" style="--d: 120ms;">
-                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
-                                <span class="ticket-id">TK-3109</span>
-                                <span class="chip anim" style="--d: 700ms;">Saldo Bs 100</span>
-                            </div>
-                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
-                            <div class="sc roles">
-                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm">Ingreso</span></div>
-                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm on" style="--d: 1250ms;">Cobro</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
-                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
-                            </div>
-                            <div class="sc result anim" style="--d: 1650ms;">Saldo pendiente. Cobrar en puerta</div>
-                        </div>
-                    </div>
-                    <p class="state-desc"><strong>Pago pendiente.</strong> Cobrar antes de entrar.</p>
-                </article>
-
-                <article class="state-card scene-card rojo reveal" data-scene="rojo" style="--accent: var(--error);">
-                    <h3 class="state-title" style="color:var(--error);">ROJO</h3>
-                    <div class="scene" aria-hidden="true">
-                        <div class="scene-stage">
-                            <div class="sc ticket anim" style="--d: 120ms;">
-                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
-                                <span class="ticket-id">TK-0021</span>
-                                <span class="stamp anim" style="--d: 700ms;">USADO</span>
-                            </div>
-                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
-                            <div class="sc roles">
-                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark no anim" style="--d: 1450ms;">✕</b></div>
-                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
-                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
-                            </div>
-                            <div class="sc result anim" style="--d: 1650ms;">QR inválido. No ingresa</div>
-                        </div>
-                    </div>
-                    <p class="state-desc"><strong>Inválido.</strong> No ingresa.</p>
-                </article>
-            </div>
+            <ol class="est-steps" id="estSteps">
+                <li class="est-step" data-state="verde"><button type="button" class="est-btn" data-state="verde" aria-pressed="false"><span class="est-dot"></span><span class="est-txt"><span class="est-tag">VERDE</span><span class="est-name">Acceso autorizado</span><span class="est-phrase">Entrada válida y pagada. Pasa directo.</span></span></button></li>
+                <li class="est-step" data-state="amarillo"><button type="button" class="est-btn" data-state="amarillo" aria-pressed="false"><span class="est-dot"></span><span class="est-txt"><span class="est-tag">AMARILLO</span><span class="est-name">Pago pendiente</span><span class="est-phrase">Entrada válida con saldo. Cobrar antes de entrar.</span></span></button></li>
+                <li class="est-step" data-state="rojo"><button type="button" class="est-btn" data-state="rojo" aria-pressed="false"><span class="est-dot"></span><span class="est-txt"><span class="est-tag">ROJO</span><span class="est-name">Acceso denegado</span><span class="est-phrase">QR inválido o ya utilizado. No ingresa.</span></span></button></li>
+            </ol>
         </div>
     </section>
 
@@ -623,7 +597,7 @@
 
     <script src="./js/aurora.js" defer></script>
     <script src="./js/script.js"></script>
-    <script src="./js/scenes.js"></script>
     <script src="./js/journey.js"></script>
+    <script src="./js/estados.js"></script>
 </body>
 </html>
