@@ -22,7 +22,7 @@ contradice este documento, manda este documento y el cambio debe registrarse aqu
 | 10 | Los QR emitidos en borrador **solo permiten ingresar con el evento activo** y no se consumen antes | `validate_qr`, `confirm_checkin` (17) | BD + App |
 | 11 | Contraseñas de **mínimo 8** caracteres, frases permitidas, sin caducidad | App y Edge Functions; mínimo en Supabase Auth | App. **Configurar el mínimo en el panel.** Protección de contraseñas filtradas: requiere plan Pro |
 | 12 | **MFA TOTP** obligatorio para administradores y superadministradores, **condicionado a OTP validado** | `private.mfa_ok` + políticas restrictivas | BD + App, apagado hasta validar el OTP |
-| 13 | Recuperación del administrador **solo por el superadministrador**, auditada y con revocación de sesiones | `superadmin_authorize_mfa_reset`, `mfa-reset` | BD + App. Revocación de sesiones: migración 21 **pendiente de aprobación** |
+| 13 | Recuperación del administrador **solo por el superadministrador**, auditada y con revocación de sesiones | `superadmin_authorize_mfa_reset`, `mfa-reset` | BD + App (migración 21 aplicada en dev) |
 | 14 | Recuperación del superadministrador **manual por el propietario** del proyecto Supabase | `docs/super-admin.md` | Documentado |
 | 15 | La emisión manual exige **categoría** y descuenta cupo | `create_ticket` + triggers (18) | BD + App |
 | 16 | Un precio nuevo aplica **solo a pedidos nuevos**; cambios auditados | `order_lines.unit_price`, `tickets.unit_price`, `ticket_type_log` | BD |
@@ -42,6 +42,12 @@ categoría) · **máximo 3 pedidos activos por teléfono en toda la plataforma**
 instante · sin recuperar pedidos rechazados · nombre, teléfono y CI obligatorios, correo
 opcional · solo personal autorizado registra ingresos · sin reingreso.
 
+## Corte de las 10:00 (definido el 28/11/2026)
+
+A las 10:00 del día del evento (hora de Bolivia), si quedan pagos informados sin revisar,
+**solo se avisa al administrador** en el panel (`payment_cutoff_alerts`, migración 23). No se
+anulan pedidos, no se liberan cupos y se puede aprobar o rechazar después. Sin aviso por correo.
+
 ## Reglas citadas que aún NO existen en el código
 
 No se implementaron porque requieren definición o están fuera de lo entregado; no las des por
@@ -49,7 +55,6 @@ cumplidas:
 
 | Regla | Situación |
 |---|---|
-| Corte de las **10:00 del día del evento** para comprobantes pendientes | No existe en el código ni está definido su efecto (¿alerta, liberación, bloqueo?). **Requiere definición** |
 | Ventas presenciales y cobro por staff autorizado | No hay flujo de venta presencial; `create_ticket` solo lo usa el administrador |
 | Cierre de caja y justificación de diferencias | No implementado |
 | Operación offline, cupos preasignados, sincronización e incidencias | No implementado: la validación de QR es **solo en línea** (sin conexión no se valida nada) |

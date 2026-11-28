@@ -13,7 +13,7 @@ con inventario consistente y trazabilidad de cada decisión.
 ## Estado (27/11/2026)
 
 > **Nada de lo nuevo está desplegado en producción.** El proyecto principal de Supabase tiene las
-> migraciones hasta la 13. Las migraciones 14–22 están validadas solo en el proyecto temporal
+> migraciones hasta la 13. Las migraciones 14–23 están validadas solo en el proyecto temporal
 > `CHECK-DEV`. Plan: [docs/despliegue.md](docs/despliegue.md).
 
 | Funcionalidad | Estado |
@@ -22,10 +22,11 @@ con inventario consistente y trazabilidad de cada decisión.
 | Categorías, cupos, aforo, precios históricos, eliminación | Validado en Supabase DEV (SQL) · pendiente de despliegue |
 | Máximo 3 pedidos activos por teléfono y sin sobreventa | Validado en Supabase DEV con solicitudes HTTP simultáneas |
 | Prueba de 14 días, restricciones comerciales, planes | Validado en Supabase DEV (SQL) · interfaz probada con widgets |
-| MFA TOTP exigido en la base y recuperación | Validado en Supabase DEV con sesiones simuladas · **falta prueba con autenticador real** · migración 21 pendiente de aprobación |
+| MFA TOTP exigido en la base y recuperación | Validado en Supabase DEV con sesiones simuladas · **falta prueba con autenticador real** |
 | Registro con código OTP | Implementado · **falta configurar la plantilla y validar con un correo real** |
 | Google OAuth | Implementado · **pendiente de validación manual** |
 | Avisos de vencimiento | Panel implementado, cola probada · **envío por correo pendiente (sin proveedor)** |
+| Corte de las 10:00: aviso al administrador | Validado en Supabase DEV (SQL) · interfaz probada con widgets |
 | Demo | Validada con pruebas · **sin despliegue público** |
 
 ## Arquitectura
@@ -45,7 +46,7 @@ app/
   env/        dev.example.json (copia a dev.json, ignorado por git)
   test/       unitarias, de widgets y demo
 supabase/
-  migrations/ 01 … 22 (ver tabla)
+  migrations/ 01 … 23 (ver tabla)
   functions/  create-staff · create-venue · mfa-reset
   tests/      regresión SQL e integration/ (concurrencia por HTTP)
 website/      sitio y tests/ de navegador
@@ -94,7 +95,8 @@ en el repositorio.
 | 18 | Inventario, aforo, auditoría de categorías | Pendiente | Validada |
 | 19 + 22 | Prueba por local, planes, restricciones, avisos | Pendiente | Validadas |
 | 20 | MFA exigido y recuperación | Pendiente | Validada |
-| 21 | Revocar sesiones al restablecer MFA | Pendiente | **No aplicada: requiere aprobación** |
+| 21 | Revocar sesiones al restablecer MFA | Pendiente | Validada |
+| 23 | Aviso de pagos sin revisar tras las 10:00 del día del evento | Pendiente | Validada |
 
 Interruptores de despliegue en `platform_settings` (apagados por defecto): `commercial_gate`
 (restricciones comerciales) y `mfa_required`.
@@ -133,6 +135,8 @@ Detalle y las 22 decisiones aprobadas: [docs/reglas-negocio-v1.md](docs/reglas-n
 - **Prueba gratuita:** 14 días, activación manual, una por local. Sin prueba ni plan: preparar en
   borrador, sin publicar ni vender. Al vencer: no hay publicaciones ni ventas nuevas, pero se
   resuelven pagos, se controlan accesos y se conservan los datos.
+- **Corte de las 10:00** del día del evento (hora de Bolivia): si quedan pagos informados sin
+  revisar, **solo se avisa** al administrador; no se anulan ni se liberan cupos.
 - **Avisos:** 7, 3, 1 días y al vencer (panel; correo pendiente).
 - **Planes:** el superadministrador los activa tras verificar el pago; no hay cobro automático.
   El sitio publica Starter Bs 150, Pro Bs 350 y Local Premium Bs 600 al mes; en la base
@@ -148,9 +152,11 @@ Detalle y las 22 decisiones aprobadas: [docs/reglas-negocio-v1.md](docs/reglas-n
 | `supabase/tests/18_events_inventory.sql` | Eventos, inventario, expiración (SQL real) | 50/51; el fallo era de la prueba, corregida y verificada aparte |
 | `supabase/tests/19_trial_commercial.sql` | Prueba, restricciones, planes, avisos | 47/48; llevó a la migración 22, verificada aparte |
 | `supabase/tests/20_mfa_isolation.sql` | MFA, recuperación, aislamiento entre locales | 55/55 |
+| `supabase/tests/23_sessions_cutoff.sql` | Revocación de sesiones y aviso de las 10:00 | 11/11 |
 | `python supabase/tests/integration/concurrency_orders.py` | Concurrencia real por HTTP | 5/5 |
-| `python supabase/tests/integration/api_security.py` | API pública anónima: tablas, funciones, Edge Functions | 8/9; el fallo (`mfa-reset` respondía 400 antes de 401) se corrigió y redesplegó |
-| `node website/tests/navigation.mjs` | Sitio en navegador real | Ver informe de la entrega |
+| `python supabase/tests/integration/api_security.py` | API pública anónima: tablas, funciones, Edge Functions | 9/9 |
+| `node website/tests/navigation.mjs` | Sitio en navegador real | Cada caso pasó en alguna corrida; sin corrida completa limpia (equipo lento) |
+| `node website/tests/app_demo.mjs` | App demo en navegador real | 8/9: «adelante» del navegador no funciona tras retroceder |
 
 Las pruebas SQL se ejecutan **solo en un proyecto de desarrollo** (editor SQL); terminan en una
 excepción `RESULTS: …` que revierte todo. `14_status_audit_trial.sql` es histórica. La de
@@ -161,12 +167,13 @@ No hay integración continua ni pruebas de extremo a extremo con sesiones reales
 
 ## Pendiente y limitaciones conocidas
 
-- Aprobar la migración 21; configurar OTP, SMTP, contraseña mínima y Google en los paneles.
+- Configurar OTP, SMTP, contraseña mínima y Google en los paneles.
 - Proveedor de correo para OTP a usuarios reales y avisos de vencimiento.
 - Despliegue público de la demo: los botones «Solicitar demo» del sitio apuntan a
   `check-starlabs3.vercel.app`, que hoy muestra el inicio de sesión de Vercel.
 - La app real está en `check-demo-three.vercel.app` (nombre de proyecto engañoso).
-- Sin implementar: corte de las 10:00 (falta definirlo), ventas presenciales por staff, cierre de
+- En la app, el botón «adelante» del navegador no recupera la pantalla tras retroceder.
+- Sin implementar: ventas presenciales por staff, cierre de
   caja, operación offline, pantalla de ingreso manual, carga masiva CSV, recuperación de
   contraseña.
 - Protección contra contraseñas filtradas: requiere plan Pro de Supabase.

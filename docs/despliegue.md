@@ -6,7 +6,6 @@ persona propietaria.
 ## 0. Antes de empezar
 
 - [ ] Completar en `CHECK-DEV` las validaciones manuales (OTP real, MFA real, Google).
-- [ ] Aprobar y aplicar en dev la migración 21 y repetir `supabase/tests/20_mfa_isolation.sql`.
 - [ ] **Respaldo:** el plan gratuito no ofrece copias descargables automáticas. Exporta con
       `pg_dump` (cadena de conexión del panel) el esquema y los datos de `public` y `auth`, y
       guarda el archivo fuera del repositorio. Comprueba que se puede leer.
@@ -15,7 +14,7 @@ persona propietaria.
 ## 1. Diferencias entre producción y el repositorio
 
 Producción tiene aplicadas las migraciones hasta `superadmin_platform` (13). Pendientes, en orden:
-`14 → 16 → 17 → 18 → 19 → 20 → 21 → 22`, y **15 al final** (ver abajo). Las migraciones 01–05,
+`14 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23`, y **15 al final** (ver abajo). Las migraciones 01–05,
 10a y 10b ya están en producción: se añadieron al repositorio solo para poder reconstruir la base.
 
 ## 2. Compatibilidad entre app y base
@@ -31,7 +30,7 @@ Por eso: **migrar y publicar la app en la misma ventana**.
 
 ## 3. Orden
 
-1. Aplicar 14, 16, 17, 18, 19, 20, 21, 22 (interruptores `commercial_gate` y `mfa_required` quedan
+1. Aplicar 14, 16, 17, 18, 19, 20, 21, 22, 23 (interruptores `commercial_gate` y `mfa_required` quedan
    en `false`: no bloquean nada).
 2. Desplegar Edge Functions `create-staff`, `create-venue`, `mfa-reset`.
 3. Publicar la app (Vercel) y el sitio web desde el mismo commit.
