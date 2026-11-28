@@ -1828,6 +1828,559 @@
     .has-spotlight .cta-box.reveal.active, .has-spotlight .contact-info-item:hover { transform: none; }
 }
 
+/* ==========================================================================
+   Escenas animadas: "Lenguaje visual" y "Qué incluye CHECK"
+   Cada escena es un bloque con proporción fija (sin saltos de tamaño).
+   Estado de reposo -> .is-playing (se añade por JS) -> resultado visible.
+   Solo se usan transition sobre transform/opacity, sin bucles.
+   ========================================================================== */
+
+.scene-card {
+    position: relative;
+    --glow: 0;
+    box-shadow: 0 0 calc(var(--glow) * 26px) color-mix(in srgb, var(--accent, var(--primary)) calc(var(--glow) * 45%), transparent);
+    transition: transform 0.25s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+}
+
+/* Luz que recorre el borde superior al activarse */
+.scene-card::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent, var(--primary)), transparent);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+.scene-card.is-lit { --glow: 1; }
+.scene-card.is-lit::after { opacity: 1; animation: sceneEdge 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes sceneEdge {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+}
+
+/* Contenedor de la escena */
+.scene {
+    position: relative;
+    container-type: inline-size;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    margin: 0.2rem 0 0.4rem;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: radial-gradient(120% 90% at 50% 0%, #1B2030 0%, #0D1119 72%);
+    overflow: hidden;
+    perspective: 900px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+}
+
+.scene-stage {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: translate3d(calc(var(--px, 0) * -8px), calc(var(--py, 0) * -6px), 0);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Elementos animables: reposo -> reproducción (el retorno usa la misma transición) */
+.scene .anim {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scene.is-playing .anim {
+    opacity: 1;
+    transform: none;
+    transition-delay: var(--d, 0ms);
+}
+
+/* Contenedores absolutos */
+.scene .sc { position: absolute; }
+
+/* Ticket digital 3D */
+.scene .ticket.anim {
+    left: 7%; top: 16%; width: 34%; height: 52%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6cqi;
+    padding: 6cqi;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: linear-gradient(160deg, #1A2030, #0C1018);
+    box-shadow: 0 14px 24px -10px rgba(0, 0, 0, 0.6), 0 0 18px -8px var(--accent);
+    transform: translateY(14px) rotateX(55deg) rotateZ(-10deg);
+    transform-style: preserve-3d;
+}
+.scene.is-playing .ticket.anim { transform: rotateX(0) rotateZ(0); }
+.scene .qr { width: 62%; height: auto; aspect-ratio: 1; color: var(--text); }
+.scene .ticket-id { font-size: max(7.5px, 3cqi); color: var(--text); letter-spacing: 0.06em; }
+
+.scene .chip, .scene .stamp {
+    position: absolute;
+    font-size: max(7px, 2.8cqi);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.scene .chip { right: -10%; top: 8%; background: var(--warning); color: #0B0E14; }
+.scene .stamp { right: 8%; bottom: 12%; border: 1.5px solid var(--error); color: var(--error); transform: rotate(-12deg); font-size: max(8px, 3.4cqi); }
+.scene .stamp.anim { opacity: 0; transform: rotate(-12deg) scale(1.8); }
+.scene.is-playing .stamp.anim { opacity: 1; transform: rotate(-12deg) scale(1); }
+
+/* Lector de escaneo */
+.scene .scanner.anim {
+    left: 46%; top: 20%; width: 10%; height: 42%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #090C12;
+    overflow: hidden;
+    transform: translateX(-12px);
+}
+.scene.is-playing .scanner.anim { transform: none; }
+.scene .lens {
+    position: absolute; inset: 22% 18%;
+    border: 1px dashed var(--accent);
+    border-radius: 3px;
+    opacity: 0.7;
+}
+.scene .beam {
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    opacity: 0;
+    transition: top 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+.scene.is-playing .beam {
+    top: calc(100% - 2px);
+    opacity: 1;
+    transition-delay: var(--d, 0ms);
+}
+
+/* Roles y permisos */
+.scene .roles {
+    left: 58%; top: 11%; width: 39%; height: 54%;
+    display: flex; flex-direction: column; justify-content: space-between;
+}
+.scene .role {
+    display: flex; align-items: center; justify-content: space-between; gap: 2cqi;
+    padding: 3cqi 4cqi;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: max(6.5px, 2.5cqi);
+}
+.scene .r-name { color: var(--text); }
+.scene .perm {
+    white-space: nowrap;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: color 0.4s ease, background-color 0.4s ease;
+}
+.scene.is-playing .perm.on {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.scene .mark {
+    font-weight: 800;
+    font-size: max(8px, 3.4cqi);
+    color: var(--accent);
+    transform: scale(0.3);
+}
+.scene .mark.no { color: var(--error); }
+.scene.is-playing .mark { transform: none; }
+
+/* Resultado final: se mantiene visible */
+.scene .result.anim {
+    left: 6%; right: 6%; bottom: 7%;
+    text-align: center;
+    padding: 4cqi 3cqi;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    font-size: max(7.5px, 3cqi);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Cards de estado: el color de acento sale de --accent inline */
+.state-card .scene { margin-top: 0; }
+
+/* Tarjetas de estado: el título va sobre la escena */
+.state-card .state-title { margin-bottom: 0; }
+
+/* Accesibilidad: sin movimiento, las escenas se muestran en estado final */
+@media (prefers-reduced-motion: reduce) {
+    .scene-card, .scene-card::after, .scene .anim, .scene .beam,
+    .scene .perm, .scene .mark, .scene-stage, .scene .stamp.anim, .scene .ticket.anim {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+
+/* ==========================================================================
+   Qué incluye CHECK: recorrido visual conectado
+   Una línea de energía une seis estaciones. El scroll (js/journey.js) avanza
+   la energía y activa una estación a la vez. Cada microescena se reproduce
+   una vez y deja visible su resultado.
+   ========================================================================== */
+
+.journey-wrap { position: relative; margin-top: clamp(1.5rem, 5vh, 3rem); }
+
+.journey-track, .journey-energy {
+    position: absolute; top: 0; bottom: 0; left: 14px;
+    width: 2px; border-radius: 2px; pointer-events: none;
+}
+.journey-track { background: var(--line); }
+.journey-energy {
+    background: linear-gradient(180deg, var(--primary), var(--active));
+    box-shadow: 0 0 12px var(--primary);
+    transform-origin: top center;
+    transform: scaleY(var(--energy, 0));
+    z-index: 0;
+}
+
+.journey {
+    position: relative; z-index: 1;
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+    gap: clamp(3.5rem, 10vh, 6.5rem);
+}
+
+.station { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); }
+
+.station-node {
+    grid-column: 1; grid-row: 1;
+    justify-self: center; align-self: start; margin-top: 0.5rem;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--line);
+    transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    position: relative; z-index: 1;
+}
+.station.is-done .station-node { border-color: var(--accent); }
+.station.is-playing .station-node {
+    border-color: var(--accent); background: var(--accent);
+    box-shadow: 0 0 16px var(--accent);
+}
+
+.station-body {
+    grid-column: 2; grid-row: 1;
+    min-width: 0; padding-left: 16px;
+    display: flex; flex-direction: column; gap: 0.45rem;
+}
+.station-num {
+    font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.08em; color: var(--accent);
+}
+.station-title {
+    font-family: var(--font-display); font-size: clamp(1.7rem, 5vw, 2.3rem);
+    line-height: 1; letter-spacing: 0.03em; font-weight: 400;
+}
+.station-line { color: var(--muted); font-size: 1rem; line-height: 1.4; }
+
+/* ---- Microescena: contenedor común ---- */
+.mx {
+    position: relative; width: 100%; aspect-ratio: 16 / 10;
+    container-type: inline-size;
+    margin-top: 0.4rem;
+    border-radius: 14px; border: 1px solid var(--line);
+    background: radial-gradient(120% 90% at 50% 0%, #1B2030 0%, #0D1119 72%);
+    overflow: hidden; perspective: 900px;
+    font-family: var(--font-mono); color: var(--muted); text-align: left;
+    transition: box-shadow 0.5s ease, border-color 0.5s ease;
+}
+.station.is-hover .mx { box-shadow: 0 0 36px -12px var(--accent); }
+.station.is-playing .mx {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+    box-shadow: 0 20px 40px -26px var(--accent);
+}
+
+.stage3d {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transform: translate3d(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -8px), 0);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Elementos animables: reposo -> reproducción; el retorno usa la misma transición */
+.station .j {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station.is-playing .j { opacity: 1; transform: none; }
+.station.is-playing [style*="--d"] { transition-delay: var(--d, 0ms); }
+
+/* Etiqueta de resultado, centrada abajo */
+.station .badge {
+    position: absolute; left: 50%; bottom: 5%; translate: -50% 0;
+    padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: max(7.5px, 3cqi); font-weight: 700; letter-spacing: 0.03em;
+}
+
+/* ---- 1. Eventos: calendario 3D + tarjeta de evento ---- */
+.station .cal3d {
+    position: absolute; left: 6%; top: 14%; width: 46%; height: 60%;
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 4%;
+    transform: rotateX(72deg) rotateZ(-16deg) translateZ(-40px);
+    transform-style: preserve-3d; opacity: 0;
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+}
+.station.is-playing .cal3d { transform: rotateX(52deg) rotateZ(-16deg) translateZ(0); opacity: 1; }
+.station .cal3d .d {
+    display: block; border-radius: 3px; opacity: 0.35;
+    background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line);
+    transition: background-color 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, transform 0.5s ease;
+}
+.station.is-playing .cal3d .d { opacity: 1; }
+.station.is-playing .cal3d .d.hit {
+    background: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 14px var(--accent); transform: translateZ(16px);
+}
+.station .evcard {
+    position: absolute; right: 5%; top: 10%; width: 40%;
+    display: flex; flex-direction: column; gap: 3cqi;
+    padding: 4cqi; border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: rgba(14, 18, 27, 0.88);
+    box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.6), 0 0 18px -8px var(--accent);
+    transform: translateY(18px) scale(0.92);
+}
+.station.is-playing .evcard { transform: none; }
+.station .ev-name {
+    font-size: max(8px, 3.4cqi); font-weight: 700; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.station .ev-field { display: flex; flex-direction: column; gap: 2cqi; font-size: max(6.5px, 2.4cqi); }
+.station .ev-field .fill {
+    display: block; height: 4px; border-radius: 99px;
+    background: var(--accent); width: 0;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station.is-playing .ev-field .fill { width: var(--w); }
+
+/* ---- 2. Mesas: maqueta isométrica ---- */
+.station .floor {
+    position: absolute; left: 10%; top: 14%; width: 80%; height: 64%;
+    border: 1px solid var(--line); border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 12.5% 12.5%;
+    transform: rotateX(80deg) rotateZ(-40deg);
+    transform-style: preserve-3d; opacity: 0;
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+}
+.station.is-playing .floor { transform: rotateX(60deg) rotateZ(-40deg); opacity: 1; }
+.station .tb {
+    position: absolute; left: var(--x); top: var(--y);
+    width: 18%; height: 18%; border-radius: 3px;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.07);
+    opacity: 0; transform: scale(0.4);
+    transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
+}
+.station.is-playing .tb { opacity: 1; transform: none; }
+.station.is-playing .tb.bk {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    border-color: var(--accent);
+}
+.station.is-playing .tb.sel {
+    background: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent); transform: translateZ(18px);
+}
+
+/* ---- 3. Reservas y tickets ---- */
+.station .req {
+    position: absolute; left: 6%; top: 6%; width: 56%; white-space: nowrap;
+    display: flex; flex-direction: column; gap: 4cqi;
+    padding: 4cqi 5cqi; border-radius: 8px;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04);
+    font-size: max(7px, 2.8cqi); color: var(--text);
+}
+.station .req .prog { display: block; height: 4px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.station .req .prog i {
+    display: block; height: 100%; width: 0; background: var(--accent);
+    transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+.station.is-playing .req .prog i { width: 100%; }
+
+/* Ticket QR: posición final con left/top; el retorno se anima igual */
+.station .tkf {
+    position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+    width: 26%; display: flex; flex-direction: column; align-items: center; gap: 3cqi;
+    padding: 4cqi; border-radius: 8px; border: 1px solid var(--accent);
+    background: linear-gradient(160deg, #1A2030, #0C1018);
+    box-shadow: 0 14px 26px -12px rgba(0, 0, 0, 0.7), 0 0 16px -8px var(--accent);
+    color: var(--text); font-size: max(6.5px, 2.4cqi);
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 0.5s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                left 0.9s cubic-bezier(0.16, 1, 0.3, 1), top 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station .tkf .qr { width: 72%; height: auto; aspect-ratio: 1; color: var(--text); }
+.station.is-playing .tkf {
+    opacity: 1;
+    transform: rotate(var(--rz, 0deg));
+    left: calc(50% + var(--tx, 0%)); top: calc(50% + var(--ty, 0%));
+}
+
+/* ---- 4. Check-in: teléfono 3D y ticket que se escanea ---- */
+.station .phone3d {
+    position: absolute; left: 56%; top: 14%; width: 26%; height: 72%;
+    border: 1.5px solid var(--line); border-radius: 14px; background: #090C12;
+    box-shadow: 0 18px 30px -14px rgba(0, 0, 0, 0.8);
+    transform: rotateY(-26deg) rotateX(8deg) translateX(24px);
+    transform-style: preserve-3d;
+}
+.station.is-playing .phone3d { transform: rotateY(-14deg) rotateX(6deg) translateX(0); }
+.station .scr {
+    position: absolute; inset: 8%; border-radius: 8px; overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    background: #0E121B;
+}
+.station .beam {
+    position: absolute; left: 0; right: 0; top: 0; height: 2px;
+    background: var(--accent); box-shadow: 0 0 10px var(--accent);
+    opacity: 0; transition: top 0.9s ease, opacity 0.3s ease;
+}
+.station.is-playing .beam { top: calc(100% - 2px); opacity: 1; transition-delay: 0.7s; }
+.station .valid {
+    position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+    padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+    background: var(--success); color: #0B0E14;
+    font-size: max(7px, 3cqi); font-weight: 800;
+    transform: scale(0.6);
+}
+.station.is-playing .valid { transform: none; }
+.station .counter {
+    position: absolute; left: 7%; bottom: 9%;
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 4cqi 5cqi; border-radius: 8px;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03);
+}
+.station .counter small, .station .kp small { font-size: max(6.5px, 2.4cqi); color: var(--muted); }
+.station .counter b, .station .kp b {
+    font-size: max(14px, 8cqi); font-weight: 800; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- 5. Dashboard holográfico ---- */
+.station .holo {
+    position: absolute; left: 8%; top: 10%; width: 84%; height: 80%;
+    padding: 4cqi; border-radius: 12px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 3cqi;
+    border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+    background: linear-gradient(160deg, rgba(108, 92, 231, 0.16), rgba(0, 217, 192, 0.04)), rgba(12, 16, 24, 0.85);
+    box-shadow: 0 0 30px -12px var(--accent);
+    transform: rotateX(16deg) rotateY(-10deg) translateZ(-10px);
+    transform-style: preserve-3d; opacity: 0.2;
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+}
+.station.is-playing .holo { transform: rotateX(8deg) rotateY(-6deg) translateZ(0); opacity: 1; }
+.station .kp { display: flex; gap: 4cqi; margin-top: 4cqi; }
+.station .kp span {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 2cqi 3cqi; border-radius: 6px;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03);
+}
+.station .hbars { flex: 0 0 18%; display: flex; align-items: flex-end; gap: 4%; }
+.station .hb {
+    flex: 1; height: 0; border-radius: 3px 3px 0 0;
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+    transition: height 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.station.is-playing .hb { height: var(--h); }
+.station .hb.hi { background: var(--active); }
+.station .trend { flex: 0 0 14%; width: 100%; height: 14%; overflow: visible; margin-top: 1cqi; }
+.station .trend .ln {
+    fill: none; stroke: var(--active); stroke-width: 2;
+    stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100;
+    transition: stroke-dashoffset 1.4s ease 0.6s;
+}
+.station.is-playing .trend .ln { stroke-dashoffset: 0; }
+.station .kp { margin-top: 7cqi; }
+.station .live {
+    position: absolute; top: 4%; left: 6%;
+    display: flex; align-items: center; gap: 5px;
+    font-size: max(6.5px, 2.4cqi); color: var(--active);
+}
+.station .live i {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--active);
+}
+.station.is-playing .live i { animation: livePulse 1.6s ease-out 1.2s 3; }
+@keyframes livePulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--active) 70%, transparent); }
+    100% { box-shadow: 0 0 0 9px transparent; }
+}
+
+/* ---- 6. Staff: hub con perfiles conectados ---- */
+.station .links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.station .links .ln {
+    fill: none; stroke: var(--accent); stroke-width: 0.8;
+    stroke-dasharray: 100; stroke-dashoffset: 100;
+    transition: stroke-dashoffset 0.8s ease;
+}
+.station.is-playing .links .ln { stroke-dashoffset: 0; }
+.station.is-playing .links .ln:nth-child(1) { transition-delay: 0.3s; }
+.station.is-playing .links .ln:nth-child(2) { transition-delay: 0.45s; }
+.station.is-playing .links .ln:nth-child(3) { transition-delay: 0.6s; }
+.station .hub {
+    position: absolute; left: 50%; top: 42%; translate: -50% -50%;
+    padding: 4cqi 6cqi; border-radius: 8px; white-space: nowrap;
+    border: 1px solid var(--accent); background: rgba(12, 16, 24, 0.92);
+    box-shadow: 0 0 18px -6px var(--accent);
+    font-family: var(--font-display); font-size: max(11px, 5.5cqi); letter-spacing: 0.08em; color: var(--text);
+}
+.station .prof {
+    position: absolute; left: var(--px); top: var(--py); width: 36%;
+    display: flex; align-items: center; gap: 3cqi;
+    padding: 3.5cqi 4cqi; border-radius: 8px; white-space: nowrap;
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04);
+    color: var(--text); font-size: max(6.5px, 2.6cqi);
+}
+.station .prof .av {
+    display: block; flex-shrink: 0; width: 6cqi; height: 6cqi; min-width: 12px; min-height: 12px;
+    border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--active));
+}
+.station .prof .chk { margin-left: auto; font-style: normal; font-weight: 800; color: var(--active); opacity: 0; transition: opacity 0.4s ease; }
+.station.is-playing .prof .chk { opacity: 1; transition-delay: 1s; }
+
+/* Pantallas estrechas: escenas algo más altas y sin desbordes */
+@media (max-width: 900px) {
+    .station .mx { aspect-ratio: 4 / 3; }
+}
+
+/* Escritorio: línea central, estaciones alternadas a izquierda y derecha */
+@media (min-width: 901px) {
+    .journey-track, .journey-energy { left: calc(50% - 1px); }
+    .station { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); }
+    .station-node { grid-column: 2; }
+    .station-body { grid-column: 1; grid-row: 1; padding-left: 0; justify-self: end; width: 100%; max-width: 540px; text-align: right; align-items: flex-end; }
+    .station:nth-child(even) .station-body { grid-column: 3; justify-self: start; text-align: left; align-items: flex-start; }
+    .station .mx { aspect-ratio: 16 / 10; }
+}
+
+/* Accesibilidad: sin movimiento, toda la secuencia queda en su estado final */
+@media (prefers-reduced-motion: reduce) {
+    .journey *, .journey *::before, .journey *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
 .organizers .nav-link {
     display: block;
     color: var(--text);

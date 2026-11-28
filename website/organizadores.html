@@ -160,108 +160,235 @@
     </section>
 
     <!-- 6. Estados en la puerta -->
+    <!-- 6. Lenguaje visual: escenas animadas por estado -->
     <section class="section" id="estados">
         <div class="container">
             <div class="reveal section-head">
                 <div class="kicker" style="justify-content: center;">LENGUAJE VISUAL REAL</div>
                 <h2 class="section-title">Respuesta instantánea en el escáner</h2>
-                <p class="section-desc" style="margin: 0 auto;">El staff no pierde tiempo leyendo detalles complejos. El sistema responde con tres estados inequívocos.</p>
+                <p class="section-desc" style="margin: 0 auto;">Escanea una entrada y conoce su estado al instante.</p>
             </div>
 
             <div class="states-grid">
-                <div class="state-card verde reveal">
-                    <div class="state-header">
-                        <span class="state-dot v"></span>
-                        <h3 class="state-title" style="color:var(--success);">VERDE</h3>
+                <article class="state-card scene-card verde reveal" data-scene="verde" style="--accent: var(--success);">
+                    <h3 class="state-title" style="color:var(--success);">VERDE</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-8842</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">Entrada válida. Acceso autorizado</div>
+                        </div>
                     </div>
-                    <p class="state-desc"><strong>Ingresa directo.</strong> La entrada o reserva está 100% pagada y confirmada. El cliente pasa sin demoras.</p>
-                    <div class="state-tag v">PAGADO / CONFIRMADO</div>
-                </div>
+                    <p class="state-desc"><strong>Pagado.</strong> Pasa directo.</p>
+                </article>
 
-                <div class="state-card amarillo reveal">
-                    <div class="state-header">
-                        <span class="state-dot a"></span>
-                        <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
+                <article class="state-card scene-card amarillo reveal" data-scene="amarillo" style="--accent: var(--warning);">
+                    <h3 class="state-title" style="color:var(--warning);">AMARILLO</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-3109</span>
+                                <span class="chip anim" style="--d: 700ms;">Saldo Bs 100</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm">Ingreso</span></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm on" style="--d: 1250ms;">Cobro</span><b class="mark anim" style="--d: 1450ms;">✓</b></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">Saldo pendiente. Cobrar en puerta</div>
+                        </div>
                     </div>
-                    <p class="state-desc"><strong>Cobrar en puerta.</strong> Reserva válida pero existe un saldo pendiente de cobro antes de permitir el acceso.</p>
-                    <div class="state-tag a">PAGO PENDIENTE</div>
-                </div>
+                    <p class="state-desc"><strong>Pago pendiente.</strong> Cobrar antes de entrar.</p>
+                </article>
 
-                <div class="state-card rojo reveal">
-                    <div class="state-header">
-                        <span class="state-dot r"></span>
-                        <h3 class="state-title" style="color:var(--error);">ROJO</h3>
+                <article class="state-card scene-card rojo reveal" data-scene="rojo" style="--accent: var(--error);">
+                    <h3 class="state-title" style="color:var(--error);">ROJO</h3>
+                    <div class="scene" aria-hidden="true">
+                        <div class="scene-stage">
+                            <div class="sc ticket anim" style="--d: 120ms;">
+                                <svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg>
+                                <span class="ticket-id">TK-0021</span>
+                                <span class="stamp anim" style="--d: 700ms;">USADO</span>
+                            </div>
+                            <div class="sc scanner anim" style="--d: 420ms;"><span class="lens"></span><span class="beam" style="--d: 800ms;"></span></div>
+                            <div class="sc roles">
+                                <div class="role anim" style="--d: 1000ms;"><span class="r-name">Portero</span><span class="perm on" style="--d: 1250ms;">Ingreso</span><b class="mark no anim" style="--d: 1450ms;">✕</b></div>
+                                <div class="role anim" style="--d: 1100ms;"><span class="r-name">Cajero</span><span class="perm">Cobro</span></div>
+                                <div class="role anim" style="--d: 1200ms;"><span class="r-name">RRPP</span><span class="perm">Lista</span></div>
+                            </div>
+                            <div class="sc result anim" style="--d: 1650ms;">QR inválido. No ingresa</div>
+                        </div>
                     </div>
-                    <p class="state-desc"><strong>No ingresa.</strong> Código QR inválido, previamente utilizado en la misma noche o cancelado por el administrador.</p>
-                    <div class="state-tag r">INVÁLIDO / CANCELADO</div>
-                </div>
+                    <p class="state-desc"><strong>Inválido.</strong> No ingresa.</p>
+                </article>
             </div>
         </div>
     </section>
 
-    <!-- 7. Módulos -->
+    <!-- 7. Módulos: recorrido visual conectado -->
     <section class="section section-alt" id="modulos">
         <div class="container">
             <div class="reveal">
                 <div class="kicker">TODO LO QUE NECESITAS</div>
                 <h2 class="section-title">Qué incluye CHECK</h2>
-                <p class="section-desc">Diseñados para la noche: herramientas robustas orientadas a acelerar la puerta y dar control al dueño.</p>
             </div>
 
-            <div class="modules-grid">
-                <!-- 1 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    </div>
-                    <h3 class="module-title">Gestión de eventos</h3>
-                    <p class="module-desc">Configura fechas, horarios, límites de aforo y parámetros de corte para cada fiesta o noche operativa.</p>
-                </div>
+            <div class="journey-wrap" id="journey">
+                <span class="journey-track" aria-hidden="true"></span>
+                <span class="journey-energy" aria-hidden="true"></span>
+            <ol class="journey">
 
-                <!-- 2 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <!-- 1. Eventos -->
+                <li class="station" data-station="eventos" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">01</span>
+                        <h3 class="station-title">Gestión de eventos</h3>
+                        <p class="station-line">Crea y administra tus eventos desde un solo lugar.</p>
+                        <div class="mx mx-cal" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="cal3d">
+                                    <i class="d" style="--d: 120ms;"></i><i class="d" style="--d: 150ms;"></i><i class="d" style="--d: 180ms;"></i><i class="d" style="--d: 210ms;"></i><i class="d" style="--d: 240ms;"></i><i class="d" style="--d: 270ms;"></i><i class="d" style="--d: 300ms;"></i>
+                                    <i class="d" style="--d: 330ms;"></i><i class="d" style="--d: 360ms;"></i><i class="d hit" style="--d: 700ms;"></i><i class="d" style="--d: 390ms;"></i><i class="d" style="--d: 420ms;"></i><i class="d" style="--d: 450ms;"></i><i class="d" style="--d: 480ms;"></i>
+                                    <i class="d" style="--d: 510ms;"></i><i class="d" style="--d: 540ms;"></i><i class="d" style="--d: 570ms;"></i><i class="d" style="--d: 600ms;"></i><i class="d" style="--d: 630ms;"></i><i class="d" style="--d: 660ms;"></i><i class="d" style="--d: 690ms;"></i>
+                                </div>
+                                <div class="evcard j" style="--d: 900ms;">
+                                    <span class="ev-name">Noche de apertura</span>
+                                    <span class="ev-field"><small>Fecha</small><i class="fill" style="--w: 88%; --d: 1000ms;"></i></span>
+                                    <span class="ev-field"><small>Horario</small><i class="fill" style="--w: 70%; --d: 1100ms;"></i></span>
+                                    <span class="ev-field"><small>Aforo</small><i class="fill" style="--w: 60%; --d: 1200ms;"></i></span>
+                                </div>
+                                <span class="badge j" style="--d: 1400ms;">✓ Evento creado</span>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="module-title">Gestión de mesas</h3>
-                    <p class="module-desc">Control por zonas (VIP, Ultra VIP, General) con asignación de consumos mínimos y nombres de titulares.</p>
-                </div>
+                </li>
 
-                <!-- 3 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path></svg>
+                <!-- 2. Mesas -->
+                <li class="station" data-station="mesas" style="--accent: var(--active);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">02</span>
+                        <h3 class="station-title">Gestión de mesas</h3>
+                        <p class="station-line">Organiza mesas, reservas y disponibilidad.</p>
+                        <div class="mx mx-iso" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="floor">
+                                    <i class="tb" style="--x: 8%; --y: 10%; --d: 200ms;"></i>
+                                    <i class="tb" style="--x: 40%; --y: 10%; --d: 280ms;"></i>
+                                    <i class="tb" style="--x: 72%; --y: 10%; --d: 360ms;"></i>
+                                    <i class="tb bk" style="--x: 8%; --y: 46%; --d: 440ms;"></i>
+                                    <i class="tb sel" style="--x: 40%; --y: 46%; --d: 900ms;"></i>
+                                    <i class="tb" style="--x: 72%; --y: 46%; --d: 520ms;"></i>
+                                    <i class="tb bk" style="--x: 24%; --y: 74%; --d: 600ms;"></i>
+                                    <i class="tb" style="--x: 56%; --y: 74%; --d: 680ms;"></i>
+                                </div>
+                                <span class="badge j" style="--d: 1400ms;">Mesa 04 · ocupada</span>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="module-title">Reservas y tickets</h3>
-                    <p class="module-desc">Emisión inmediata de tokens QR únicos. Envío por enlace directo para el cliente sin descargas obligatorias.</p>
-                </div>
+                </li>
 
-                <!-- 4 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <!-- 3. Reservas y tickets -->
+                <li class="station" data-station="tickets" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">03</span>
+                        <h3 class="station-title">Reservas y tickets</h3>
+                        <p class="station-line">Genera entradas con códigos QR únicos.</p>
+                        <div class="mx mx-tk" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="req j" style="--d: 120ms;"><span>Solicitud de reserva</span><span class="prog"><i></i></span></div>
+                                <div class="tkf j t1" style="--d: 700ms; --tx: -30%; --ty: 6%; --rz: -8deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 01</span></div>
+                                <div class="tkf j t2" style="--d: 840ms; --tx: 0%; --ty: 12%; --rz: 0deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 02</span></div>
+                                <div class="tkf j t3" style="--d: 980ms; --tx: 30%; --ty: 6%; --rz: 8deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg><span>QR 03</span></div>
+                                <span class="badge j" style="--d: 1400ms;">3 tickets emitidos</span>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="module-title">Check-in de staff</h3>
-                    <p class="module-desc">Asignación de roles específicos para porteros, cajeros y RRPP. Registro de quién valida cada entrada.</p>
-                </div>
+                </li>
 
-                <!-- 5 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <!-- 4. Check-in de staff -->
+                <li class="station" data-station="checkin" style="--accent: var(--success);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">04</span>
+                        <h3 class="station-title">Check-in de staff</h3>
+                        <p class="station-line">Valida entradas y controla accesos al instante.</p>
+                        <div class="mx mx-scan" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="phone3d j">
+                                    <div class="scr">
+                                        <span class="beam"></span>
+                                        <span class="valid j" style="--d: 1150ms;">✓ Válido</span>
+                                    </div>
+                                </div>
+                                <div class="tkf mini j" style="--d: 300ms; --tx: -24%; --ty: -16%; --rz: -6deg;"><svg class="qr" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1zM4 4h1v1H4zM6 4h1v1H6zM4 6h1v1H4zM6 6h1v1H6zM3 3h1v1H3z"/></svg></div>
+                                <div class="counter j" style="--d: 1300ms;"><small>Ingresos</small><b class="count" data-from="120" data-to="128">128</b></div>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="module-title">Dashboard en vivo</h3>
-                    <p class="module-desc">Métricas de aforo actual, porcentaje de ingresos completados y recaudación de puerta en tiempo real.</p>
-                </div>
+                </li>
 
-                <!-- 6 -->
-                <div class="module-card reveal">
-                    <div class="module-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <!-- 5. Dashboard -->
+                <li class="station" data-station="dashboard" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">05</span>
+                        <h3 class="station-title">Dashboard en vivo</h3>
+                        <p class="station-line">Monitorea ingresos, ocupación y actividad en tiempo real.</p>
+                        <div class="mx mx-dash" aria-hidden="true">
+                            <div class="stage3d">
+                                <div class="holo">
+                                    <div class="kp">
+                                        <span class="j" style="--d: 150ms;"><small>Aforo</small><b class="count" data-from="40" data-to="72" data-suffix="%">72%</b></span>
+                                        <span class="j" style="--d: 300ms;"><small>Ingresos</small><b class="count" data-from="98" data-to="128">128</b></span>
+                                    </div>
+                                    <div class="hbars">
+                                        <i class="hb" style="--h: 35%; --d: 450ms;"></i><i class="hb" style="--h: 58%; --d: 520ms;"></i><i class="hb" style="--h: 46%; --d: 590ms;"></i><i class="hb" style="--h: 74%; --d: 660ms;"></i><i class="hb" style="--h: 62%; --d: 730ms;"></i><i class="hb hi" style="--h: 88%; --d: 800ms;"></i>
+                                    </div>
+                                    <svg class="trend" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="ln" pathLength="100" d="M0 32 L16 26 L32 28 L48 18 L64 20 L80 10 L100 6"/></svg>
+                                    <span class="live j" style="--d: 1100ms;"><i></i>En vivo</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="module-title">Gestión de staff</h3>
-                    <p class="module-desc">Auditoría completa de actividad por usuario para prevenir accesos no autorizados o cortesías falsas.</p>
-                </div>
+                </li>
+
+                <!-- 6. Staff -->
+                <li class="station" data-station="staff" style="--accent: var(--primary);">
+                    <span class="station-node" aria-hidden="true"></span>
+                    <div class="station-body">
+                        <span class="station-num">06</span>
+                        <h3 class="station-title">Gestión de staff</h3>
+                        <p class="station-line">Administra equipos, roles y permisos.</p>
+                        <div class="mx mx-staff" aria-hidden="true">
+                            <div class="stage3d">
+                                <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path class="ln" pathLength="100" d="M50 42 L24 33"></path>
+                                    <path class="ln" pathLength="100" d="M50 42 L76 33"></path>
+                                    <path class="ln" pathLength="100" d="M50 42 L50 62"></path>
+                                </svg>
+                                <span class="hub j">CHECK</span>
+                                <span class="prof j" style="--px: 6%; --py: 12%; --d: 300ms;"><b class="av"></b>Portero <em class="chk">✓</em></span>
+                                <span class="prof j" style="--px: 58%; --py: 12%; --d: 450ms;"><b class="av"></b>Cajero <em class="chk">✓</em></span>
+                                <span class="prof j" style="--px: 32%; --py: 62%; --d: 600ms;"><b class="av"></b>RRPP <em class="chk">✓</em></span>
+                                <span class="badge j" style="--d: 1400ms;">Permisos asignados</span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ol>
             </div>
         </div>
     </section>
@@ -475,5 +602,7 @@
     <script src="./js/aurora.js" defer></script>
     <script src="./js/tour.js" defer></script>
     <script src="./js/script.js"></script>
+    <script src="./js/scenes.js"></script>
+    <script src="./js/journey.js"></script>
 </body>
 </html>
