@@ -43,6 +43,27 @@ void main() {
     expect(find.text('Activar prueba'), findsNothing);
   });
 
+  testWidgets('muestra fecha de vencimiento y cómo contratar, sin precios inventados', (tester) async {
+    await _pump(tester, TrialBanner(loadStatus: () async => _t('active', 9)));
+    expect(find.textContaining('Vence el 11/12/2026'), findsOneWidget);
+    expect(find.textContaining('contacta al equipo de CHECK'), findsOneWidget);
+    expect(find.textContaining('Bs'), findsNothing);
+  });
+
+  testWidgets('plan activo y plan terminado', (tester) async {
+    await _pump(tester, TrialBanner(loadStatus: () async => const TrialStatus(state: 'subscribed', daysLeft: 0, plan: 'pro')));
+    expect(find.text('Plan Pro activo.'), findsOneWidget);
+    await _pump(tester, TrialBanner(key: UniqueKey(), loadStatus: () async => const TrialStatus(state: 'plan_ended', daysLeft: 0)));
+    expect(find.textContaining('Tu plan terminó'), findsOneWidget);
+    expect(find.text('Activar prueba'), findsNothing);
+  });
+
+  test('trial_status admite ends_at nulo (plan contratado)', () {
+    final s = TrialStatus.fromMap({'state': 'subscribed', 'plan': 'starter', 'days_left': 0, 'ends_at': null});
+    expect(s.endsAt, isNull);
+    expect(s.plan, 'starter');
+  });
+
   testWidgets('si el servidor rechaza la activación muestra el motivo', (tester) async {
     await _pump(tester, TrialBanner(
       loadStatus: () async => null,
