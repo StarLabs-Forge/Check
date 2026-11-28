@@ -5,9 +5,7 @@ import 'package:check/proto/buyer/buyer_flow.dart';
 import 'package:check/proto/data/proto_store.dart';
 import 'package:check/screens/complete_profile_screen.dart';
 import 'package:check/screens/login_screen.dart';
-import 'package:check/screens/platform_select_screen.dart';
 import 'package:check/screens/register_screen.dart';
-import 'package:check/screens/welcome_screen.dart';
 import 'package:check/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,8 +59,6 @@ void main() {
   };
 
   final screens = <String, Widget Function()>{
-    'Bienvenida': () => const WelcomeScreen(),
-    'Selección de plataforma': () => const PlatformSelectScreen(),
     'Login': () => const LoginScreen(),
     'Registro': () => const RegisterScreen(),
     'Completar perfil': () => const CompleteProfileScreen(),

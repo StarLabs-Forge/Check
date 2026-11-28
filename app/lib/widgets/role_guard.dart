@@ -6,7 +6,7 @@ import 'check_logo.dart';
 
 /// Protege rutas privadas por rol. NO concede permisos: solo mira el perfil
 /// autenticado (`AppSession`), que sale de Supabase (o del modo demo, que NO es
-/// seguridad real). Sin sesión → vuelve a la bienvenida; con otro rol → aviso
+/// seguridad real). Sin sesión → va a iniciar sesión; con otro rol → aviso
 /// con salida a su propio panel. La seguridad real sigue siendo RLS en la base.
 class RoleGuard extends StatefulWidget {
   const RoleGuard({super.key, required this.roles, required this.child, this.allowMfaPending = false});
@@ -32,7 +32,7 @@ class _RoleGuardState extends State<RoleGuard> {
           if (!_redirected) {
             _redirected = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/bienvenida', (r) => false);
+              if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/login', (r) => false);
             });
           }
           return const Scaffold(body: SizedBox.shrink());

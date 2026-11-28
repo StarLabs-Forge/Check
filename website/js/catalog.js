@@ -159,7 +159,8 @@
                 })));
                 purchase.append(button);
             } else if (hasSeats) {
-                purchase.append(link('Comprar en CHECK', buyerUrl, 'catalog-action catalog-action-primary'));
+                // Abre ese mismo evento en la app.
+                purchase.append(link('Comprar en CHECK', buyerUrl + '?evento=' + encodeURIComponent(event.id), 'catalog-action catalog-action-primary'));
             }
             copy.append(purchase);
         } else {

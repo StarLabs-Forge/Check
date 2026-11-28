@@ -107,9 +107,13 @@ Interruptores de despliegue en `platform_settings` (apagados por defecto): `comm
   datos de compradores ni personal), `admin` (local), `staff` (permisos `scanQr`,
   `verifyPayments`, `viewGuests`, `createTickets`, `viewEvents`). El comprador es anónimo y
   consulta su pedido con un token. El registro público solo crea `admin`.
-- **Inicio de sesión:** selector de tipo de usuario → credenciales → rol real → panel.
-  **Registro:** formulario → código OTP → datos pendientes → panel. Con sesión activa, `/registro`
-  lleva al panel.
+- **Entrada:** la app abre en el **registro** (en iniciar sesión si el registro está cerrado). No hay
+  selectores de tipo de usuario ni de plataforma.
+  **Registro:** formulario → código OTP → datos pendientes → panel. **Inicio de sesión:**
+  credenciales → rol real → panel. Con sesión activa, `/registro` lleva al panel; al cerrar sesión
+  se vuelve a iniciar sesión.
+- **Compradores:** entran desde el sitio (`eventos.html`), que lee el catálogo real y abre la compra
+  en `/comprar?evento=<id>`. Los «eventos de referencia» del sitio son una simulación.
 - **Contraseñas:** mínimo 8, frases permitidas.
 - **MFA:** administradores y superadministradores usan TOTP (`/mfa`). La base exige `aal2`, un
   factor vigente y un código posterior al último restablecimiento.

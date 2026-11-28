@@ -42,6 +42,13 @@ categoría) · **máximo 3 pedidos activos por teléfono en toda la plataforma**
 instante · sin recuperar pedidos rechazados · nombre, teléfono y CI obligatorios, correo
 opcional · solo personal autorizado registra ingresos · sin reingreso.
 
+## Entrada a la app (definido el 28/11/2026)
+
+La app abre directamente en el registro, con acceso a «Inicia sesión»; se retiraron los
+selectores de comprador/local y de web/móvil (sustituye al requisito anterior de elegir tipo de
+usuario). Los compradores entran desde el sitio web. Los eventos de referencia del sitio se
+conservan como simulación.
+
 ## Corte de las 10:00 (definido el 28/11/2026)
 
 A las 10:00 del día del evento (hora de Bolivia), si quedan pagos informados sin revisar,

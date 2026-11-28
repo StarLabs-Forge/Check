@@ -26,7 +26,10 @@ RouteSettings get _flowRoute => const RouteSettings(arguments: _flow);
 
 // ───────────────────────── A1 · Exploración ─────────────────────────
 class BuyerHome extends StatefulWidget {
-  const BuyerHome({super.key});
+  const BuyerHome({super.key, this.initialEventId});
+
+  /// Evento a abrir de entrada (enlace «Comprar en CHECK» del sitio web).
+  final String? initialEventId;
   @override
   State<BuyerHome> createState() => _BuyerHomeState();
 }
@@ -41,10 +44,24 @@ class _BuyerHomeState extends State<BuyerHome> {
   @override
   void initState() {
     super.initState();
-    _store.loadCatalog();
+    _store.loadCatalog().then((_) => _openInitialEvent());
     // El catálogo público no tiene Realtime (el comprador es anónimo): se
     // refresca cada minuto para reflejar publicaciones, estados y cupos.
     if (_store.live) _refresh = Timer.periodic(const Duration(seconds: 60), (_) => _store.loadCatalog());
+  }
+
+  void _openInitialEvent() {
+    final id = widget.initialEventId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _store.catalogError != null) return;
+      if (!_store.events.any((e) => e.id == id)) {
+        toast(context, 'Ese evento ya no está disponible. Estos son los que siguen a la venta.');
+        return;
+      }
+      Navigator.of(context).push(MaterialPageRoute(settings: _flowRoute, builder: (_) => EventDetailScreen(id)));
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override

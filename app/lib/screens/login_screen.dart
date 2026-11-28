@@ -173,8 +173,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.body),
                     )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  // Wrap: en pantallas angostas el botón baja de línea en vez de desbordarse.
+                  : Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Text(
                           '¿No tienes cuenta?',

@@ -56,14 +56,14 @@ try {
 
   await page.viewport(390, 844, true);
   await page.goto(`${url}/#/acceso-locales`, 3000);
-  await step('móvil: selector de tipo de usuario', 'acceder', '#/acceso-locales');
-  await shot('app-selector-movil.png');
+  await step('móvil: dirección antigua del selector → iniciar sesión', 'Continuar con Google', '#/acceso-locales');
+  await shot('app-login-movil.png');
   await page.goto(`${url}/#/comprar`, 3000);
   await step('móvil: catálogo del comprador', 'Mi pedido', '#/comprar');
   await shot('app-catalogo-movil.png');
   await page.goto(`${url}/#/superadmin`, 3000);
   await sleep(2000);
-  t.check('ruta privada sin sesión redirige a la bienvenida', (await hash()).startsWith('#/bienvenida'), await hash());
+  t.check('ruta privada sin sesión redirige a iniciar sesión', (await hash()).startsWith('#/login'), await hash());
   t.check('sin errores de JavaScript', page.errors.length === 0, page.errors.slice(0, 2).join(' | ').slice(0, 200));
 } finally {
   page.close();

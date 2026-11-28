@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
-                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/acceso-locales', (route) => false),
+                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false),
                   child: const Text('Iniciar sesión'),
                 ),
               ),
@@ -301,7 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/acceso-locales',
+                    '/login',
                     (route) => false,
                   ),
                   child: const Text('Inicia sesión'),

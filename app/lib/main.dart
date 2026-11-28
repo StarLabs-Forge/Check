@@ -6,8 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/demo_mode.dart';
 import 'config/supabase_config.dart';
 import 'screens/admin_tickets_screen.dart';
-import 'screens/platform_select_screen.dart';
-import 'screens/welcome_screen.dart';
 import 'staff/staff_panel.dart';
 import 'widgets/role_guard.dart';
 import 'screens/coming_soon_screen.dart';
@@ -84,7 +82,7 @@ class _CheckAppState extends State<CheckApp> {
   void _onDemoChange(bool signedIn) {
     final nav = _navigatorKey.currentState;
     if (nav == null) return;
-    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/bienvenida', (route) => false);
+    nav.pushNamedAndRemoveUntil(signedIn ? AppSession.entryRoute : '/login', (route) => false);
   }
 
   Future<void> _onAuthChange(AuthState state) async {
@@ -116,7 +114,7 @@ class _CheckAppState extends State<CheckApp> {
         nav.pushNamedAndRemoveUntil(AppSession.entryRoute, (route) => false);
       case AuthChangeEvent.signedOut:
         AppSession.clear();
-        nav.pushNamedAndRemoveUntil('/bienvenida', (route) => false);
+        nav.pushNamedAndRemoveUntil('/login', (route) => false);
       default:
         break;
     }
@@ -139,18 +137,26 @@ class _CheckAppState extends State<CheckApp> {
             ? Banner(message: 'DEV', location: BannerLocation.topEnd, color: AppColors.error, child: app)
             : app;
       },
-      home: const _Bootstrap(),
+      // Cada enlace abre UNA sola pantalla: sin la pantalla de carga debajo, «volver»
+      // nunca deja al usuario atascado.
+      onGenerateInitialRoutes: (name) => [_initialRoute(name)],
       // Rutas con nombre usadas por la navegación lateral del panel Admin
       // (AdminScaffold) y por el listener de auth. Login/Registro/Verificación
       // se siguen navegando con Navigator.push directo.
-      routes: {
-        // Públicas: bienvenida, selección de plataforma, login único y compra.
-        '/bienvenida': (_) => const WelcomeScreen(),
-        '/acceso-locales': (_) => const PlatformSelectScreen(),
+      routes: _routes,
+      onGenerateRoute: _onGenerateRoute,
+      onUnknownRoute: _onUnknownRoute,
+    );
+  }
+
+  Map<String, WidgetBuilder> get _routes => {
+        // Públicas. Los compradores llegan desde el sitio web a «/comprar».
         '/login': (_) => const LoginScreen(),
-        // Enlace directo desde la web (planes / prueba gratis): salta la selección de tipo de usuario.
         '/registro': (_) => const RegisterScreen(),
         '/comprar': (_) => const BuyerHome(),
+        // Direcciones antiguas (selectores ya retirados): siguen funcionando.
+        '/bienvenida': (_) => const RegisterScreen(),
+        '/acceso-locales': (_) => const LoginScreen(),
         '/mfa': (_) => const RoleGuard(roles: {'admin', 'super_admin'}, allowMfaPending: true, child: MfaScreen()),
         // Privadas: cada una exige el rol correspondiente (RoleGuard).
         '/completar-perfil': (_) => const RoleGuard(roles: {'admin'}, child: CompleteProfileScreen()),
@@ -170,34 +176,53 @@ class _CheckAppState extends State<CheckApp> {
               child: SuperadminExperience(onExit: AuthService.signOut),
             ),
         '/staff': (_) => const RoleGuard(roles: {'staff'}, child: StaffPanel()),
-      },
-      // `/registro?origen=prueba|demo`: conserva el contexto del botón de origen.
-      onGenerateRoute: (settings) {
-        final uri = Uri.tryParse(settings.name ?? '');
-        if (uri != null && uri.path == '/registro') {
-          return MaterialPageRoute(
-            settings: settings,
-            builder: (_) => RegisterScreen(origin: uri.queryParameters['origen']),
-          );
-        }
-        return null;
-      },
-      // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
-      onUnknownRoute: (settings) => MaterialPageRoute(
+      };
+
+  /// Rutas con parámetros: `/registro?origen=prueba|demo` conserva el contexto del
+  /// botón de origen y `/comprar?evento=<id>` abre directamente ese evento.
+  Route<void>? _onGenerateRoute(RouteSettings settings) {
+    final uri = Uri.tryParse(settings.name ?? '');
+    final Widget? screen = switch (uri?.path) {
+      '/registro' => RegisterScreen(origin: uri!.queryParameters['origen']),
+      '/comprar' => BuyerHome(initialEventId: uri!.queryParameters['evento']),
+      _ => null,
+    };
+    return screen == null ? null : MaterialPageRoute<void>(settings: settings, builder: (_) => screen);
+  }
+
+  // 404 — mismo frame "Estado — Próximamente" del Figma, standalone.
+  Route<void> _onUnknownRoute(RouteSettings settings) => MaterialPageRoute<void>(
+        settings: settings,
         builder: (_) => const ComingSoonScreen(
           title: 'Página no encontrada',
           message: 'La sección que buscas no existe o todavía no está disponible.',
           icon: '🔍',
         ),
-      ),
+      );
+
+  /// Primera pantalla según el enlace. Las públicas se abren tal cual; la raíz y
+  /// las privadas pasan por [_Bootstrap], que recupera la sesión guardada.
+  Route<dynamic> _initialRoute(String name) {
+    final path = Uri.tryParse(name)?.path ?? '/';
+    const public = {'/login', '/registro', '/comprar', '/bienvenida', '/acceso-locales'};
+    if (public.contains(path)) {
+      final settings = RouteSettings(name: name);
+      return _onGenerateRoute(settings) ?? MaterialPageRoute<void>(settings: settings, builder: _routes[path]!);
+    }
+    if (path != '/' && !_routes.containsKey(path)) return _onUnknownRoute(RouteSettings(name: name));
+    return MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/'),
+      builder: (_) => _Bootstrap(signedOutRoute: path == '/' ? '/registro' : '/login'),
     );
   }
 }
 
 /// Splash: muestra el logo un instante mientras se resuelve si hay una sesión
-/// persistida válida, y entonces va a Home o a Login.
+/// persistida válida, y entonces va a su panel, o a [signedOutRoute] sin sesión.
 class _Bootstrap extends StatefulWidget {
-  const _Bootstrap();
+  const _Bootstrap({required this.signedOutRoute});
+
+  final String signedOutRoute;
 
   @override
   State<_Bootstrap> createState() => _BootstrapState();
@@ -226,7 +251,9 @@ class _BootstrapState extends State<_Bootstrap> {
     if (hasSession && error == null) {
       Navigator.of(context).pushReplacementNamed(AppSession.entryRoute);
     } else {
-      Navigator.of(context).pushReplacementNamed('/bienvenida');
+      // Con un error (cuenta suspendida...) o el registro cerrado, va a iniciar sesión.
+      final register = error == null && PlatformStatus.instance.registrationOpen;
+      Navigator.of(context).pushReplacementNamed(register ? widget.signedOutRoute : '/login');
       if (error != null) {
         _messengerKey.currentState?.showSnackBar(SnackBar(content: Text(error)));
       }
