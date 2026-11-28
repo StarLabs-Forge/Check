@@ -24,6 +24,9 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authorization } },
   });
 
+  const { data: session } = await caller.auth.getUser(authorization.replace('Bearer ', ''));
+  if (!session.user) return json({ error: 'No autenticado' }, 401);
+
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
   const userId = String(body.user_id ?? '');
